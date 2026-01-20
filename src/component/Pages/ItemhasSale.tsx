@@ -14,6 +14,7 @@ type Item = {
 type Order = {
   id: number;
   orderId: string;
+  salerName: string;
   timestamp: string;
   totalAmount: number;
   salerId: number;
@@ -24,9 +25,7 @@ const OrdersTable: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const { darkLight } = useGlobleContextDarklight();
 
-  const [filterRange, setFilterRange] = useState<
-    'all' | 'today' | 'lastweek' | 'lastmonth' | 'lastyear' | 'custom'
-  >('all');
+  const [filterRange, setFilterRange] = useState<'all' | 'today' | 'lastweek' | 'lastmonth' | 'lastyear' | 'custom'>('today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [searchItem, setSearchItem] = useState('');
@@ -44,9 +43,8 @@ const OrdersTable: React.FC = () => {
         if (customTo) params.append('to', customTo);
       }
 
-      const url = `https://localhost:7095/api/Orders/filter${
-        params.toString() ? `?${params.toString()}` : ''
-      }`;
+      const url = `https://localhost:7095/api/Orders/filter${params.toString() ? `?${params.toString()}` : ''
+        }`;
       const response = await axios.get<Order[]>(url);
       setOrders(response.data);
     } catch (error) {
@@ -107,7 +105,7 @@ const OrdersTable: React.FC = () => {
   };
 
 
-  console.log(filteredOrders);
+  // console.log(filteredOrders);
 
   // Print item summary report
   const handlePrintReport = () => {
@@ -133,7 +131,7 @@ const OrdersTable: React.FC = () => {
           </style>
         </head>
         <body>
-          <h1>Item Summary Report (${filterRange == 'all' ? "Item All":filterRange == 'today'?"Today":filterRange == "lastweek" ? "LastWeek":filterRange == "lastmonth" ? "Last Month": filterRange=="lastyear"?"Last Year ":filterRange})</h1>
+          <h1>Item Summary Report (${filterRange == 'all' ? "Item All" : filterRange == 'today' ? "Today" : filterRange == "lastweek" ? "LastWeek" : filterRange == "lastmonth" ? "Last Month" : filterRange == "lastyear" ? "Last Year " : filterRange})</h1>
           <table>
             <thead>
               <tr>
@@ -144,16 +142,16 @@ const OrdersTable: React.FC = () => {
             </thead>
             <tbody>
               ${itemSummary
-                .map(
-                  (item) => `
+        .map(
+          (item) => `
                 <tr>
                   <td>${item.productName}</td>
                   <td>${item.quantity}</td>
                   <td>${item.total.toFixed(2)}</td>
                 </tr>
               `
-                )
-                .join('')}
+        )
+        .join('')}
             </tbody>
           </table>
           <div class="totals">
@@ -175,28 +173,27 @@ const OrdersTable: React.FC = () => {
     }
   };
 
+  // console.log("data filter show " , filteredOrders);
+
   return (
     <div
-      className={`min-h-screen mb-20 ${
-        darkLight ? 'bg-gray-900' : 'bg-gray-50'
-      }`}
+      className={`min-h-screen mb-20 ${darkLight ? 'bg-gray-900' : 'bg-gray-50'
+        }`}
     >
       <div className="flex flex-col sm:flex-row items-center justify-between mb-5 px-4 sm:px-8">
         <h1
-          className={`text-3xl font-bold ${
-            darkLight ? 'text-white' : 'text-slate-800'
-          }`}
+          className={`text-3xl font-bold ${darkLight ? 'text-white' : 'text-slate-800'
+            }`}
         >
           Orders Summary
         </h1>
 
         <div className="flex flex-wrap items-center gap-4 mt-3 sm:mt-0">
           <select
-            className={`px-3 py-2 border rounded-md focus:outline-none ${
-              darkLight
-                ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
-            }`}
+            className={`px-3 py-2 border rounded-md focus:outline-none ${darkLight
+              ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+              : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+              }`}
             value={filterRange}
             onChange={(e) => {
               setFilterRange(e.target.value as any);
@@ -218,29 +215,26 @@ const OrdersTable: React.FC = () => {
             <>
               <input
                 type="date"
-                className={`px-3 py-2 border rounded-md focus:outline-none ${
-                  darkLight
-                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
-                }`}
+                className={`px-3 py-2 border rounded-md focus:outline-none ${darkLight
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                  }`}
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
                 max={customTo || undefined}
               />
               <span
-                className={`${
-                  darkLight ? 'text-gray-300' : 'text-gray-700'
-                } font-semibold`}
+                className={`${darkLight ? 'text-gray-300' : 'text-gray-700'
+                  } font-semibold`}
               >
                 to
               </span>
               <input
                 type="date"
-                className={`px-3 py-2 border rounded-md focus:outline-none ${
-                  darkLight
-                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
-                }`}
+                className={`px-3 py-2 border rounded-md focus:outline-none ${darkLight
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                  }`}
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
                 min={customFrom || undefined}
@@ -253,11 +247,10 @@ const OrdersTable: React.FC = () => {
             placeholder="Search item..."
             value={searchItem}
             onChange={(e) => setSearchItem(e.target.value)}
-            className={`px-3 py-2 border rounded-md w-64 focus:outline-none ${
-              darkLight
-                ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
-            }`}
+            className={`px-3 py-2 border rounded-md w-64 focus:outline-none ${darkLight
+              ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+              : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+              }`}
           />
 
           <button
@@ -270,21 +263,20 @@ const OrdersTable: React.FC = () => {
       </div>
 
       <div
-        className={`overflow-x-auto shadow-md rounded-xl border mx-4 sm:mx-8 ${
-          darkLight ? 'border-gray-700 bg-gray-800' : 'border-slate-200 bg-white'
-        }`}
+        className={`overflow-x-auto shadow-md rounded-xl border mx-4 sm:mx-8 ${darkLight ? 'border-gray-700 bg-gray-800' : 'border-slate-200 bg-white'
+          }`}
       >
         <table className="min-w-full text-sm text-left">
           <thead
-            className={`uppercase text-xs tracking-wider ${
-              darkLight
-                ? 'bg-gray-700 text-gray-300'
-                : 'bg-slate-100 text-slate-700'
-            }`}
+            className={`uppercase text-xs tracking-wider ${darkLight
+              ? 'bg-gray-700 text-gray-300'
+              : 'bg-slate-100 text-slate-700'
+              }`}
           >
             <tr>
               <th className="px-6 py-4 border-b border-gray-600">Order ID</th>
               <th className="px-6 py-4 border-b border-gray-600">Saler ID</th>
+              <th className="px-6 py-4 border-b border-gray-600">Saler Name</th>
               <th className="px-6 py-4 border-b border-gray-600">Timestamp</th>
               <th className="px-6 py-4 border-b border-gray-600">Total Amount</th>
               <th className="px-6 py-4 border-b border-gray-600">Items</th>
@@ -295,21 +287,20 @@ const OrdersTable: React.FC = () => {
               filteredOrders.map((order) => (
                 <tr
                   key={order.id}
-                  className={`${
-                    darkLight ? 'hover:bg-gray-700' : 'hover:bg-slate-50'
-                  } transition`}
+                  className={`${darkLight ? 'hover:bg-gray-700' : 'hover:bg-slate-50'
+                    } transition`}
                 >
                   <td className="px-6 py-4 border-b border-gray-600 font-medium">
                     000{order.id}
                   </td>
                   <td className="px-6 py-4 border-b border-gray-600">{order.salerId}</td>
+                  <td className="px-6 py-4 border-b border-gray-600">{order.salerName}</td>
                   <td className="px-6 py-4 border-b border-gray-600 text-gray-400">
                     {new Date(order.timestamp).toLocaleString()}
                   </td>
                   <td
-                    className={`px-6 py-4 border-b border-gray-600 font-semibold ${
-                      darkLight ? 'text-indigo-400' : 'text-indigo-600'
-                    }`}
+                    className={`px-6 py-4 border-b border-gray-600 font-semibold ${darkLight ? 'text-indigo-400' : 'text-indigo-600'
+                      }`}
                   >
                     ${order.totalAmount}
                   </td>
@@ -318,9 +309,8 @@ const OrdersTable: React.FC = () => {
                       {order.items.map((item) => (
                         <li
                           key={item.id}
-                          className={`flex items-center space-x-2 ${
-                            darkLight ? 'text-gray-300' : 'text-slate-600'
-                          }`}
+                          className={`flex items-center space-x-2 ${darkLight ? 'text-gray-300' : 'text-slate-600'
+                            }`}
                         >
                           <img
                             src={item.productImage}
@@ -351,9 +341,8 @@ const OrdersTable: React.FC = () => {
 
         {/* Totals under the table */}
         <div
-          className={`px-6 py-4 font-semibold text-right space-x-10 ${
-            darkLight ? 'text-indigo-400' : 'text-indigo-600'
-          }`}
+          className={`px-6 py-4 font-semibold text-right space-x-10 ${darkLight ? 'text-indigo-400' : 'text-indigo-600'
+            }`}
         >
           <span>Total Cups: {totalCups}</span>
           <span>Total Amount: ${totalAmount.toFixed(2)}</span>

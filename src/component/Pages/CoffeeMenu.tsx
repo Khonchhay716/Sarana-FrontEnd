@@ -104,7 +104,7 @@ const CoffeePOS: React.FC = () => {
       })),
     };
 
-    createData("https://localhost:7095/api/Orders", newSale, () => {});
+    createData("https://localhost:7095/api/Orders", newSale, () => { });
 
     setTimeout(() => {
       addSaleRecord(newSale);

@@ -13,6 +13,7 @@ export interface SaleRecord {
   timestamp: string; // ISO string format for date
   totalAmount: number;
   salerId: number;
+  salerName: string;
   items: {
     productId: string;
     productName: string;

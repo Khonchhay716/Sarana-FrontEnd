@@ -129,9 +129,8 @@ const InvoicePage = () => {
 
       <div
         ref={printRef}
-        className={`max-w-2xl mx-auto p-6 shadow-md rounded-md ${
-          darkLight ? 'bg-gray-900 text-white' : 'bg-white text-black'
-        }`}
+        className={`max-w-2xl mx-auto p-6 shadow-md rounded-md ${darkLight ? 'bg-gray-900 text-white' : 'bg-white text-black'
+          }`}
       >
         {/* Invoice content */}
         <h1 className="text-3xl font-bold mb-2">Invoice #{order.orderId}</h1>

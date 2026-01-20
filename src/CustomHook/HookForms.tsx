@@ -1,6 +1,8 @@
 import { IoCloseSharp } from "react-icons/io5";
 import { useState, useEffect } from "react";
 
+// Types
+
 type Product = {
   id?: number;
   [key: string]: any;
@@ -22,6 +24,7 @@ type SingleField = {
   required?: boolean;
   placeholder?: string;
   accept?: string;
+  hidden?: boolean; // ✅ Add hidden toggle
 };
 
 type FieldConfig = SingleField | { row: SingleField[] };
@@ -34,9 +37,10 @@ type Props = {
   Title?: string;
   inputClass?: string;
   dailogSize?: string;
+  createUser?: boolean; // ✅ New prop to control hidden logic
 };
 
-export default function FormProduct({ onClose, onSubmit, productBack, formlayout, Title, inputClass, dailogSize }: Props) {
+export default function FormProduct({ onClose, onSubmit, productBack, formlayout, Title, inputClass, dailogSize, createUser }: Props) {
   const fields: FieldConfig[] = formlayout ?? [];
   const [formData, setFormData] = useState<Product>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -47,6 +51,7 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     const initialFormData = fields.reduce((acc, field) => {
       const group = "row" in field ? field.row : [field];
       group.forEach((f) => {
+        if (f.hidden) return;
         if (productBack && productBack[f.key] !== undefined) {
           acc[f.key] = productBack[f.key];
           if (f.type === "file" && productBack[f.key]) {
@@ -69,7 +74,7 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     fields.forEach((field) => {
       const group = "row" in field ? field.row : [field];
       group.forEach(async (f) => {
-        if (f.type === "select" && f.optionAPI) {
+        if (f.type === "select" && f.optionAPI && !f.hidden) {
           try {
             const res = await fetch(f.optionAPI);
             const data = await res.json();
@@ -88,11 +93,9 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
 
   const handleImageUpload = async (key: string, file: File) => {
     if (!file) return;
-
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result as string;
-
       handleChange(key, base64);
       setImagePreviews((prev) => {
         if (prev[key]?.startsWith("blob:")) {
@@ -118,6 +121,7 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     fields.forEach((field) => {
       const group = "row" in field ? field.row : [field];
       group.forEach((f) => {
+        if (f.hidden) return;
         const value = formData[f.key];
         if (f.required && (value === "" || value === null || value === undefined || (Array.isArray(value) && value.length === 0))) {
           newErrors[f.key] = `${f.label} is required`;
@@ -135,7 +139,10 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     }
   };
 
-  const renderField = ({ key, label, type, options, optionAPI, col, className, placeholder, required, accept }: SingleField) => {
+  const renderField = (field: SingleField) => {
+    if (field.hidden) return null; // ✅ Skip hidden
+
+    const { key, label, type, options, optionAPI, col, className, placeholder, required, accept } = field;
     const allOptions = options ?? apiOptions[key] ?? [];
     const colClass = col ? `col-span-${col}` : "col-span-12";
     const isError = !!errors[key];
@@ -186,9 +193,9 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     <div className={`fixed inset-0 bg-black/60 z-50 flex items-center justify-center pt-14`}>
       <div className={`bg-gray-800 text-white p-6 rounded-lg shadow-lg max-h-[97%] overflow-y-auto scrollbar-none ${dailogSize} ${inputClass}`} style={{
         overflowY: 'scroll',
-        scrollbarWidth: 'none',      // Firefox
-        msOverflowStyle: 'none',     // IE 10+
-      }} >
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+      }}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{Title ?? "Name Form"}</h2>
           <button onClick={onClose} className="p-2 rounded bg-red-600 hover:bg-red-700"><IoCloseSharp size={24} /></button>
@@ -197,6 +204,7 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
           {fields.map((field, idx) => "row" in field ? (
             <div key={idx} className="grid grid-cols-12 gap-4">{field.row.map((f) => renderField(f))}</div>
           ) : (renderField(field)))}
+
           <div className="flex justify-end gap-2 pt-4">
             <button type="submit" className="px-4 py-2 font-semibold rounded bg-blue-500 hover:bg-blue-600 cursor-pointer">{productBack ? "UPDATE" : "CREATE"}</button>
             <button type="button" onClick={onClose} className="px-4 py-2 font-semibold rounded bg-red-500 hover:bg-red-600 cursor-pointer">Cancel</button>

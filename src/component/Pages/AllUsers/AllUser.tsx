@@ -5,6 +5,7 @@ import { useGlobleContextDarklight } from "../../../AllContext/context";
 import { HookIntergrateAPI } from "../../../CustomHook/HookIntergrateAPI";
 import Form from "../../../CustomHook/Form2";
 import alertify from "alertifyjs";
+import { useRefreshTable } from "../../../AllContext/context";
 
 type Product = {
     id?: number;
@@ -24,6 +25,8 @@ export default function Alluser() {
     const { createData, DeleteData, GetDatabyID, updateData } = HookIntergrateAPI();
     const [isChange, setIsChange] = useState(false);
     const email = sessionStorage.getItem("email");
+    const { setRefreshTables } = useRefreshTable();
+    const { data: typeRole } = useFetchDataApi('https://localhost:7095/api/Role');
 
 
     // console.log(data);
@@ -32,6 +35,7 @@ export default function Alluser() {
 
     //// intergrate API 
     const HandleCreateAndUpdateData = (data: any) => {
+        console.log("data first ==>> ", data);
         if (isCreate) {  /// create data in api 
             createData("https://localhost:7095/api/User", data, () => {
                 alertify.success("Create users successfully ✅✅");
@@ -39,7 +43,7 @@ export default function Alluser() {
             });
         } else {  //Update data in API
             updateData("https://localhost:7095/api/User", data.id, data, () => {
-                console.log("data user all ==>>>" , data);
+                console.log("data user all ==>>>", data);
                 if (isChange) {
                     sessionStorage.setItem('email', data.email);
                     sessionStorage.setItem('roleId', data.roleId);
@@ -86,10 +90,29 @@ export default function Alluser() {
             <div className={`p-4 ${darkLight ? "bg-gray-900 text-white" : "bg-white text-gray-800"} w-[100%]`}>
                 <div className="h-[40px] flex justify-between mb-3">
                     <p className="text-2xl font-bold">User List</p>
-                    <button className={`h-[50px] px-7 ${darkLight ? "bg-blue-600 hover:bg-blue-700" : "bg-sky-500 hover:bg-amber-400"} cursor-pointer text-xl font-bold rounded-2xl text-white`}
-                        onClick={() => { setShowModal(true); setEditProduct(null) }}>
-                        +Add Product
-                    </button>
+                    <div>
+                        <select
+                            className={`border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-amber-500
+                            ${darkLight ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}
+                            `}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                // setTypeId(value ? Number(value) : 0);
+                                setRefreshTables(new Date());
+                            }}
+                        >
+                            <option value="">All Types</option>
+                            {typeRole.map((type: { id: number; name: string }) => (
+                                <option key={type.id} value={type.id}>
+                                    {type.name}
+                                </option>
+                            ))}
+                        </select>
+                        <button className={`h-[50px] px-7 ${darkLight ? "bg-blue-600 hover:bg-blue-700" : "bg-sky-500 hover:bg-amber-400"} cursor-pointer text-xl font-bold rounded-2xl text-white`}
+                            onClick={() => { setShowModal(true); setEditProduct(null) }}>
+                            +Add Product
+                        </button>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -162,33 +185,12 @@ export default function Alluser() {
                             ]
                         },
                         { key: "profilePicture", label: "Image", type: "file", accept: "image/*", col: 12 },
-                        // {
-                        //   key: "profilePicture",
-                        //   label: "Profile Image",
-                        //   type: "file",
-                        //   // required: true,
-                        //   placeholder: "Upload your profile picture",
-                        //   accept: "image/*",
-                        //   col: 12,
-                        // },
-
-
-                        // {
-                        //   key: "roleId", label: "Role", type: "select",
-                        //   options: [
-                        //     { label: "Admin", value: { id: 1, name: "Admin" } },
-                        //     { label: "User", value: { id: 2, name: "User" } },
-                        //     { label: "Teacher", value: { id: 3, name: "Teacher"} },
-                        //     { label: "Parent", value: { id: 4, name: "parent" } },
-                        //     { label: "Student", value: { id: 5, name: "Student" } }
-                        //   ],
-                        //   placeholder: "select"
-                        // },
+                        { key: "imageProduct", label: "Image", type: "file", accept: "image/*", required: true, col: 12 },
                         {
                             key: "roleId",
                             label: "Select Role",
                             type: "select",
-                            optionAPI: "https://localhost:7095/api/Role", // URL to fetch options from
+                            optionAPI: "https://localhost:7095/api/Role",
                             required: true,
                             placeholder: "Select",
                             col: 6,

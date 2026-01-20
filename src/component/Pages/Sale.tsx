@@ -1,4 +1,4 @@
-import React from 'react'
+
 import Form from "../../CustomHook/Form2";
 
 const Sale = () => {

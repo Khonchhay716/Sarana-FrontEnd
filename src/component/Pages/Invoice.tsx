@@ -37,9 +37,8 @@ const InvoicePage = () => {
 
   return (
     <div
-      className={`max-w-2xl mx-auto my-10 p-6 shadow-lg rounded-md border w-[500px] ${
-        darkLight ? 'bg-gray-900 text-gray-100 border-gray-700' : 'bg-white text-black border-gray-300'
-      }`}
+      className={`max-w-2xl mx-auto my-10 p-6 shadow-lg rounded-md border w-[500px] ${darkLight ? 'bg-gray-900 text-gray-100 border-gray-700' : 'bg-white text-black border-gray-300'
+        }`}
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-6">

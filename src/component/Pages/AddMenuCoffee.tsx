@@ -5,48 +5,56 @@ import { FaEye, FaEdit, FaTrash } from 'react-icons/fa';
 import { HookIntergrateAPI } from '../../CustomHook/HookIntergrateAPI';
 import Form2 from '../../CustomHook/Form2';
 import useFetchDataApi from '../../CustomHook/FetchDataApi';
+import { useRefreshTable } from '../../AllContext/context';
 type MenuItem = {
   id: string;
   name: string;
   price: number;
+  typeId: number;
   image: string;
 };
 
-export const coffeeMenu: MenuItem[] = [
-  { id: '101', name: 'Espresso', price: 2.5, image },
-  { id: '102', name: 'Cappuccino', price: 3.0, image },
-  { id: '103', name: 'Latte', price: 3.5, image },
-  { id: '104', name: 'Mocha', price: 4.0, image },
-  { id: '105', name: 'Americano', price: 2.75, image },
-  { id: '106', name: 'Macchiato', price: 3.25, image },
-  { id: '107', name: 'Cold Brew', price: 4.5, image },
-  { id: '108', name: 'Iced Latte', price: 4.0, image },
-  { id: '109', name: 'Flat White', price: 3.75, image },
-  { id: '110', name: 'Turkish Coffee', price: 3.0, image },
-  { id: '201', name: 'Croissant', price: 2.5, image },
-  { id: '202', name: 'Blueberry Muffin', price: 3.0, image },
-];
+// export const coffeeMenu: MenuItem[] = [
+//   { id: '101', name: 'Espresso', price: 2.5, image },
+//   { id: '102', name: 'Cappuccino', price: 3.0, image },
+//   { id: '103', name: 'Latte', price: 3.5, image },
+//   { id: '104', name: 'Mocha', price: 4.0, image },
+//   { id: '105', name: 'Americano', price: 2.75, image },
+//   { id: '106', name: 'Macchiato', price: 3.25, image },
+//   { id: '107', name: 'Cold Brew', price: 4.5, image },
+//   { id: '108', name: 'Iced Latte', price: 4.0, image },
+//   { id: '109', name: 'Flat White', price: 3.75, image },
+//   { id: '110', name: 'Turkish Coffee', price: 3.0, image },
+//   { id: '201', name: 'Croissant', price: 2.5, image },
+//   { id: '202', name: 'Blueberry Muffin', price: 3.0, image },
+// ];
 
 type menucoffee = {
   id?: number;
   title?: string;
   price?: number;
+  typeId?: number;
   image?: string;
 };
 
 const CoffeeMenuTable: React.FC = () => {
   const { createData, updateData, DeleteData, GetDatabyID } = HookIntergrateAPI();
-  const { data } = useFetchDataApi('https://localhost:7095/api/CoffeeMenu');
+  // const { data } = useFetchDataApi('https://localhost:7095/api/CoffeeMenu');
+  const [typeId, setTypeId] = useState<number | null>(0);
+  const { data } = useFetchDataApi(`https://localhost:7095/api/CoffeeMenu/filter?typeId=${typeId}`);
+  const { data: typeProduct } = useFetchDataApi(`https://localhost:7095/api/TypeOfProducts`);
+
   const { darkLight } = useGlobleContextDarklight();
   const [showModal, setShowModal] = useState(false);
   const [editmenu, setEditmenu] = useState<menucoffee | null>(null);
   const [Isadd, setIsadd] = useState(true);
+  const { setRefreshTables } = useRefreshTable();
 
   const handleView = (item: MenuItem) => {
     alert(`Viewing: ${item.name}`);
   };
 
-  const handleEdit = async(id: number) => {
+  const handleEdit = async (id: number) => {
     const productData: any = await GetDatabyID('https://localhost:7095/api/CoffeeMenu', id);
     if (productData) {
       console.log(productData);
@@ -85,12 +93,34 @@ const CoffeeMenuTable: React.FC = () => {
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">☕ Coffee & Pastry Menu</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition"
-          >
-            + Add Menu
-          </button>
+          <div className="flex items-center gap-4">
+            <select
+              className={`border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-amber-500
+      ${darkLight ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}
+    `}
+              onChange={(e) => {
+                const value = e.target.value;
+                setTypeId(value ? Number(value) : 0);
+                setRefreshTables(new Date());
+              }}
+            >
+              <option value="">All Types</option>
+              {typeProduct.map((type: { id: number; name: string }) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition"
+            >
+              + Add Menu
+            </button>
+          </div>
+
+
         </div>
 
         <div className="overflow-x-auto">
@@ -100,13 +130,14 @@ const CoffeeMenuTable: React.FC = () => {
                 <th className="p-3 text-left w-[60px]">ID</th>
                 <th className="p-3 text-left w-[70px]">Image</th>
                 <th className="p-3 text-left">Name</th>
+                <th className="p-3 text-left">Type ID</th>
                 <th className="p-3 text-right w-[100px]">Price ($)</th>
                 <th className="p-3 text-center w-[200px]">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {data.map((item: { id: number, title: string, price: number, image: string }, index) => (
+              {data.map((item: { id: number, title: string, price: number, typeId: number, image: string }, index) => (
                 <tr
                   key={item.id}
                   className={`transition ${darkLight
@@ -123,6 +154,7 @@ const CoffeeMenuTable: React.FC = () => {
                     />
                   </td>
                   <td className={`p-3 font-medium ${darkLight ? 'text-white' : 'text-brown-700'}`}>{item.title}</td>
+                  <td className={`p-3 font-medium ${darkLight ? 'text-white' : 'text-brown-700'}`}>{item.typeId}</td>
                   <td className={`p-3 text-right ${darkLight ? 'text-amber-200' : 'text-brown-600'}`}>
                     ${item.price.toFixed(2)}
                   </td>
@@ -168,6 +200,15 @@ const CoffeeMenuTable: React.FC = () => {
                   { key: "title", label: "Title", type: "text", required: true, col: 6 },
                   { key: "price", label: "Price", type: "number", col: 6, required: true },
                 ]
+              },
+              {
+                key: "typeId",
+                label: "Type Product",
+                type: "select",
+                optionAPI: "https://localhost:7095/api/TypeOfProducts",
+                required: true,
+                placeholder: "Select",
+                col: 6,
               },
               { key: "image", label: "Image", type: "file", accept: "image/*", required: true, col: 12 },
             ]

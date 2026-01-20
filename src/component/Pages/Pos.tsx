@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Coffee, ShoppingCart, Trash2, BadgeCheck, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Coffee, ShoppingCart, Trash2, BadgeCheck, Loader2, UtensilsCrossed, LucideList } from 'lucide-react';
+import { motion} from 'framer-motion';
 // import { MenuItem } from '../utils/data';
 import { CartItem, SaleRecord, addSaleRecord } from '../utils/saleUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { useGlobleContextDarklight } from '../../AllContext/context';
 import { HookIntergrateAPI } from '../../CustomHook/HookIntergrateAPI';
 import useFetchDataApi from '../../CustomHook/FetchDataApi';
+import { Wine, CakeSlice} from 'lucide-react';
+import { GlassWater } from 'lucide-react';
+import { useRefreshTable } from '../../AllContext/context';
+// import { LucideList } from 'lucide-react';
 
 type UserProfile = {
   id: number;
@@ -26,16 +30,17 @@ interface MenuItem {
   price: number;
   image: string; // This will now hold the imported image path
 }
-
-const CoffeePOS: React.FC = () => {
+const Pos: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [lastOrder, setLastOrder] = useState<SaleRecord | null>(null);
   const { darkLight } = useGlobleContextDarklight();
   const { createData } = HookIntergrateAPI();
+  const [typeId, setTypeId] = useState<number | null>(0);
+  const { setRefreshTables } = useRefreshTable();
 
-  const {data: CoffeeMenu} = useFetchDataApi("https://localhost:7095/api/CoffeeMenu");
+  const { data: CoffeeMenu } = useFetchDataApi(`https://localhost:7095/api/CoffeeMenu/filter?typeId=${typeId}`);
   const { data } = useFetchDataApi("https://localhost:7095/api/User");
   const [imformationuserAdmin, setImformationuserAdmin] = useState<UserProfile | null>(null);
 
@@ -50,12 +55,14 @@ const CoffeePOS: React.FC = () => {
   }, [data]);
 
   const addToCart = (item: MenuItem) => {
+    console.log("item ==>> ", item);
     setIsPaid(false);
     const exists = cart.find(c => c.id === item.id);
     if (exists) {
+      console.log("exist ==> ", cart.map(c => c.id === item.id ? { ...c, qty: c.qty + 1 } : c));
       setCart(cart.map(c => c.id === item.id ? { ...c, qty: c.qty + 1 } : c));
     } else {
-      setCart([...cart, { ...item, qty: 1 }]);
+      setCart([...cart, { ...item, qty: 1 }]); // if manu
     }
   };
 
@@ -72,6 +79,7 @@ const CoffeePOS: React.FC = () => {
     const newSale: SaleRecord = {
       orderId: uuidv4(),
       salerId: imformationuserAdmin.id,
+      salerName: imformationuserAdmin.name,
       timestamp: new Date().toISOString(),
       totalAmount: parseFloat(getTotal().toFixed(2)),
       items: cart.map(item => ({
@@ -135,10 +143,56 @@ const CoffeePOS: React.FC = () => {
   return (
     <div className={`flex-col flex h-screen transition-colors duration-500 w-full pb-20 ${darkLight ? "bg-gradient-to-tr from-gray-900 to-gray-800 text-white" : "bg-gradient-to-tr from-gray-100 to-white text-gray-900"}`}>
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-4xl font-bold flex items-center gap-3">
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-bold flex items-center gap-3">
           <Coffee className="text-amber-700" size={36} /> Coffee POS System
         </h1>
+        <div className="menu_filter flex flex-wrap gap-3 my-4">
+          <button
+            onClick={() => { setTypeId(0); setRefreshTables(new Date()) }}
+            className="w-[110px] h-[45px] bg-gray-600 hover:bg-gray-700 text-white cursor-pointer rounded-2xl font-bold flex items-center justify-center gap-2 transition"
+          >
+            <LucideList size={18} />
+            ទាំងអស់
+          </button>
+          <button
+            onClick={() => { setTypeId(1); setRefreshTables(new Date()) }}
+            className="w-[110px] h-[45px] bg-amber-600 hover:bg-amber-700 text-white cursor-pointer rounded-2xl font-bold flex items-center justify-center gap-2 transition"
+          >
+            <Coffee size={18} />
+            កាហ្វេ
+          </button>
+          <button
+            onClick={() => { setTypeId(2); setRefreshTables(new Date()) }}
+            className="w-[110px] h-[45px] bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold flex cursor-pointer items-center justify-center gap-2 transition"
+          >
+            <UtensilsCrossed size={18} />
+            បាយ
+          </button>
+
+          <button
+            onClick={() => { setTypeId(3); setRefreshTables(new Date()) }}
+            className="w-[110px] h-[45px] bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex items-center cursor-pointer justify-center gap-2 transition"
+          >
+            <GlassWater size={18} />
+            ភេសជ្ជៈ
+          </button>
+          <button
+            onClick={() => { setTypeId(4); setRefreshTables(new Date()) }}
+            className="w-[110px] h-[45px] bg-purple-600 hover:bg-purple-700n text-white rounded-2xl font-bold flex cursor-pointer items-center justify-center gap-2 transition"
+          >
+            <Wine size={18} />
+            ស្រា
+          </button>
+          <button
+            onClick={() => { setTypeId(5); setRefreshTables(new Date()) }}
+            className="w-[110px] h-[45px] bg-pink-600 hover:bg-pink-700 text-white rounded-2xl font-bold flex cursor-pointer items-center justify-center gap-2 transition"
+          >
+            <CakeSlice size={18} />
+            នំ
+          </button>
+        </div>
+
       </div>
 
       {/* Main Content */}
@@ -200,7 +254,7 @@ const CoffeePOS: React.FC = () => {
             <button
               onClick={handleCheckout}
               disabled={isLoading || cart.length === 0}
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full"
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -322,7 +376,7 @@ const CoffeePOS: React.FC = () => {
         {/* Menu Section */}
         <div className="w-full md:w-2/3 lg:w-3/4 overflow-y-auto pr-2 scrollbar-hide">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-            {CoffeeMenu.map((item:MenuItem) => (
+            {CoffeeMenu.map((item: MenuItem) => (
               <motion.div
                 key={item.id}
                 whileHover={{
@@ -357,4 +411,4 @@ const CoffeePOS: React.FC = () => {
   );
 };
 
-export default CoffeePOS;
+export default Pos;

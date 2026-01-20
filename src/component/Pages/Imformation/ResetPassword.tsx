@@ -4,6 +4,7 @@ import alertify from 'alertifyjs';
 import { useGlobleContextDarklight } from '../../../AllContext/context';
 import { HookIntergrateAPI } from '../../../CustomHook/HookIntergrateAPI';
 import { useNavigate } from 'react-router-dom';
+import bcrypt from 'bcryptjs';
 
 type UserProfile = {
     id: number;
@@ -25,9 +26,10 @@ const ChangePasswordForm: React.FC = () => {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState<UserProfile | null>(null);
+
     const { updateData } = HookIntergrateAPI();
     const { data } = useFetchDataApi('https://localhost:7095/api/User');
-    const email = sessionStorage.getItem("email");
+    const email = sessionStorage.getItem('email');
     const { darkLight } = useGlobleContextDarklight();
     const navigate = useNavigate();
 
@@ -45,44 +47,58 @@ const ChangePasswordForm: React.FC = () => {
             return;
         }
 
-        if (oldPassword !== user?.passwordHash) {
-            setMessage("❌⚠️ Old password is incorrect!");
+        if (!user) {
+            setMessage('❌ User not found.');
+            return;
+        }
+
+        // Compare old password with stored hash
+        const isOldPasswordCorrect = bcrypt.compareSync(oldPassword, user.passwordHash); // for compare pasword 
+        if (!isOldPasswordCorrect) {
+            setMessage('❌⚠️ Old password is incorrect!');
+            alertify.warning('❌⚠️ Old password is incorrect!');
             return;
         }
 
         if (oldPassword === newPassword) {
             setMessage('⚠️ New password cannot be the same as old password.');
+            alertify.warning('⚠️ New password cannot be the same as old password.');
             return;
         }
 
         if (newPassword.length < 8) {
             setMessage('❌ Password must be at least 8 characters.');
+            alertify.warning('❌ Password must be at least 8 characters.');
             return;
         }
 
         if (newPassword !== confirmPassword) {
             setMessage('❌ New password and confirm password do not match.');
+            alertify.warning('❌ New password and confirm password do not match.');
             return;
         }
 
         setLoading(true);
 
-        if (user) {
-            const updatePayload = {
-                ...user,
-                passwordHash: newPassword,
-                passwordSalt: confirmPassword,
-            };
+        // // Hash new password
+        // const salt = bcrypt.genSaltSync(10);
+        // const hashedPassword = bcrypt.hashSync(newPassword, salt);
 
-            updateData("https://localhost:7095/api/User", user.id, updatePayload, () => {
-                alertify.success("✅✅ Changed password successfully!");
-                setLoading(false);
-                setMessage('✅✅ Password changed successfully!');
-                setOldPassword('');
-                setNewPassword('');
-                setConfirmPassword('');
-            });
-        }
+        // Prepare update
+        const updatePayload = {
+            ...user,
+            passwordHash: newPassword,
+            passwordSalt: confirmPassword,
+        };
+
+        updateData('https://localhost:7095/api/User', user.id, updatePayload, () => {
+            alertify.success('✅✅ Changed password successfully!');
+            setLoading(false);
+            setMessage('✅✅ Password changed successfully!');
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        });
     };
 
     return (

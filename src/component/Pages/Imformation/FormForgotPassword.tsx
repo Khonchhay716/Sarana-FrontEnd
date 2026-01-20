@@ -23,6 +23,26 @@ const ForgotPasswordRequestForm: React.FC = () => {
 
         const randomCode = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
 
+        const codemessage = `We've received your request to transfer your account to a new device.
+
+            Please note: Once this verification code is entered, your account will no longer be accessible from the original device.
+
+            If this request was made by you, please enter the verification code below to complete the process.
+
+            Your verification code is: ${randomCode}
+            Note: This code is valid for 1 minute only.
+
+            [Important Notice]  
+            We will never ask for your verification code through social media or chat apps.
+
+            Please be cautious of scams. Some individuals may falsely offer rewards like "free coffee points" to steal your account information.  
+            Always keep your login details and verification codes private. Do not share them with anyone.
+
+            Thank you for being a valued customer at Coffee Bliss.
+
+            Need help? Contact us at:  
+            https://www.coffeebliss.com/support`;
+
         if (!email) {
             setMessage('❌ Please enter your email.');
             setLoading(false);
@@ -37,7 +57,7 @@ const ForgotPasswordRequestForm: React.FC = () => {
                     createData("https://localhost:7095/api/Mail/send", {
                         To: email,
                         subject: subject,
-                        body: randomCode
+                        body: codemessage
                     }, () => { });
 
                     alertify.success("✅ Code sent to email.");

@@ -26,8 +26,8 @@ export function HookIntergrateAPI<T>() {
         alert("Failed to create item: " + (err?.message || "Unknown error"));
       }
     } catch (error) {
-      console.error("API error:", error);
-      alert("Something went wrong.");
+      console.log("Error :  ", error);
+      alertify.warning("Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -46,10 +46,13 @@ export function HookIntergrateAPI<T>() {
           setRefreshTables(new Date());
           alertify.success('Delete Successfuly!!');
         } else {
-          console.error("Failed to delete product.");
+          const errorData = await response.json();
+          alert(errorData.message);
+          alertify.error(errorData.message || "Delete failed");
+          return;
         }
       } catch (error) {
-        console.error("Error deleting product:", error);
+        alert(error);
       }
     }
   }
@@ -73,7 +76,7 @@ export function HookIntergrateAPI<T>() {
       }
     } catch (error) {
       console.error("API error:", error);
-      alert("Something went wrong.");
+      // alert("Something went wrong.");
       return null;
     }
 
@@ -161,7 +164,7 @@ export function HookIntergrateAPI<T>() {
   //   }, [url]);
   // }
 
-  return {GetDataAll, createData, DeleteData, GetDatabyID, loading, updateData };
+  return { GetDataAll, createData, DeleteData, GetDatabyID, loading, updateData };
 }
 
 
