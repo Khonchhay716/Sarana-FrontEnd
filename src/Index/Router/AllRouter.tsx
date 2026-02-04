@@ -1,5 +1,3 @@
-
-
 export const all_routes = {
     //// page no login 
     formLogin: "/login",
@@ -11,26 +9,16 @@ export const all_routes = {
 
     //// page login success
     dashbord: "/dashbord",
-    users: "/users",
-    allUsers: "/alluser",
-    product: "/product",
-    myProfile: "/myprofile",
-    admin: "/admin",
-    sale: "/sale",
-    report: "/report",
-    dashbordcoffee: "/dashbordcoffee",
-    historySale: "/historySale",
-    invoicetest: "/invoicetest",
-    addmenucoffee: "/addmenucoffee",
-    testtoken: "/testtoken",
-    testimage2: "/testimage2",
-    sendmail: "/sendmail",
-    resetPassword: "/reset-password",
-    forgotpassword: "/forgotpassword",
-    formverifycode: "/formverifycode",
-    createpasswordnew: "/createpasswordnew",
-    productall: "/pos",
-    typeproduct: "/typeproduct",
-    role: "/role",
     pageNotFound: "/*",
+    Book: "book",
+    UserList: "userlist",
+    RoleList: "rolelist",
+    LibraryMember: "librarymember",
+    Category: "category",
+    permission: "permissions/:id",
+    issuebook: "issuebook",
+    myissuebook: "myissuebook",
+    ListLibraryMemberApprove: "approvemember",
+    ListRequestMember: "requestmember",
+    Profile: "myprofile",
 }

@@ -1,8 +1,8 @@
 import alertify from 'alertifyjs';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HookIntergrateAPI } from '../../../CustomHook/HookIntergrateAPI';
 import useFetchDataApi from '../../../CustomHook/FetchDataApi';
+import { HookIntergrateAPI } from '../../HookintagrateAPI/HookintegarteApi';
 
 type UserProfile = {
     id: number;

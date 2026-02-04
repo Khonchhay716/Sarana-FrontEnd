@@ -5,7 +5,7 @@ type ContextProviderProps = {
 };
 
 const GlobalContext = createContext<any>(null);
-export const useGlobalContext = () => useContext(GlobalContext); // ✅✅✅✅✅✅
+export const useGlobalContext = () => useContext(GlobalContext); 
 
 export const ContextProvider = ({ children }: ContextProviderProps) => {
   const [count, setCount] = useState(0);
@@ -17,7 +17,7 @@ export const ContextProvider = ({ children }: ContextProviderProps) => {
 };
 
 const GlobleContextHeart = createContext<any>(null);
-export const useGlobleContextHeart = () => useContext(GlobleContextHeart); // ✅✅✅✅✅✅
+export const useGlobleContextHeart = () => useContext(GlobleContextHeart);
 
 
 export const ContextProviderHeart = ({ children }: ContextProviderProps) => {
@@ -30,10 +30,10 @@ export const ContextProviderHeart = ({ children }: ContextProviderProps) => {
 };
 
 const GlobleContextDarklight = createContext<any>(null);
-export const useGlobleContextDarklight = () => useContext(GlobleContextDarklight); // ✅✅✅✅✅✅
+export const useGlobleContextDarklight = () => useContext(GlobleContextDarklight);
 
 export const ContextProviderDarklight = ({ children }: ContextProviderProps) => {
-  const [darkLight, setDarkLight] = useState(true);
+  const [darkLight, setDarkLight] = useState(false);
   return (
     <GlobleContextDarklight.Provider value={{ darkLight, setDarkLight }}>
       {children}
