@@ -7,6 +7,7 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import RoleForm from './Roleform';
 import { Link } from 'react-router-dom';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface Role {
     id: number;
@@ -42,26 +43,32 @@ const RoleList = () => {
             width: 120,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    <Link
-                        to={`/permissions/${record?.id}`}
-                        className="me-2 d-flex align-items-center p-2 border rounded"
-                    >
-                        <MdAdminPanelSettings style={{fontSize:'20px'}}/>
-                    </Link>
-                    <button
-                        onClick={() => handleEdit(record)}
-                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                        title="Edit"
-                    >
-                        Edit
-                    </button>
-                    <button
-                        onClick={() => handleOpenDeleteModal(record)}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                        title="Delete"
-                    >
-                        Delete
-                    </button>
+                    <ComponentPermission scopes={["role:assign-permissions"]}>
+                        <Link
+                            to={`/permissions/${record?.id}`}
+                            className="me-2 d-flex align-items-center p-2 border rounded"
+                        >
+                            <MdAdminPanelSettings style={{ fontSize: '20px' }} />
+                        </Link>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["role:update"]}>
+                        <button
+                            onClick={() => handleEdit(record)}
+                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                            title="Edit"
+                        >
+                            Edit
+                        </button>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["role:delete"]}>
+                        <button
+                            onClick={() => handleOpenDeleteModal(record)}
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                            title="Delete"
+                        >
+                            Delete
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         }
@@ -119,12 +126,14 @@ const RoleList = () => {
                         ROLE MANAGEMENT
                     </h3>
                 </div>
-                <button
-                    onClick={handleAddRole}
-                    className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'
-                >
-                    Add Role
-                </button>
+                <ComponentPermission scopes={["role:create"]}>
+                    <button
+                        onClick={handleAddRole}
+                        className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'
+                    >
+                        Add Role
+                    </button>
+                </ComponentPermission>
             </div>
 
             <XDataTable

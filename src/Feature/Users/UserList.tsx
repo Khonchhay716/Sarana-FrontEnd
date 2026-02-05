@@ -7,6 +7,7 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import UserForm from './userForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import NoImage from "../../assets/NoProfile.png";
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 
 interface Role {
@@ -113,20 +114,24 @@ const UserList = () => {
             width: 120,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    <button
-                        onClick={() => handleEdit(record)}
-                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                        title="Edit"
-                    >
-                        Edit
-                    </button>
-                    <button
-                        onClick={() => handleOpenDeleteModal(record)}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                        title="Delete"
-                    >
-                        Delete
-                    </button>
+                    <ComponentPermission scopes={["user:update"]}>
+                        <button
+                            onClick={() => handleEdit(record)}
+                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                            title="Edit"
+                        >
+                            Edit
+                        </button>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["user:delete"]}>
+                        <button
+                            onClick={() => handleOpenDeleteModal(record)}
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                            title="Delete"
+                        >
+                            Delete
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         }
@@ -184,12 +189,14 @@ const UserList = () => {
                         USER MANAGEMENT
                     </h3>
                 </div>
-                <button
-                    onClick={handleAddUser}
-                    className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'
-                >
-                    Add User
-                </button>
+                <ComponentPermission scopes={["user:create"]}>
+                    <button
+                        onClick={handleAddUser}
+                        className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'
+                    >
+                        Add User
+                    </button>
+                </ComponentPermission>
             </div>
 
             <XDataTable

@@ -164,12 +164,12 @@ const LibraryMemberList = () => {
                         LIBRARY MEMBER MANAGEMENT
                     </h3>
                 </div>
-                <button
+                {/* <button
                     onClick={handleAddMember}
                     className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'
                 >
                     Add Member
-                </button>
+                </button> */}
             </div>
 
             <XDataTable

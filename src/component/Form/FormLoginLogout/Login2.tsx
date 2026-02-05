@@ -20,7 +20,7 @@ const Login: React.FC = () => {
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: 'khonchhay6@gmail.com',
-    password: 'string',
+    password: 'Chhay123!',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});

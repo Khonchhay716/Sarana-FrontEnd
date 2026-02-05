@@ -299,14 +299,14 @@ const BookIssueList: React.FC = () => {
                 <div className="flex gap-2 justify-end items-center">
                     {!record.returnDate && (
                         <>
-                            <button
+                            {/* <button
                                 onClick={() => openModal('return', record)}
                                 className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-[11px] flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={loading}
                                 title="Return Book"
                             >
                                 <BiArrowBack /> Return
-                            </button>
+                            </button> */}
                             <button
                                 onClick={() => openModal('renew', record)}
                                 className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded text-[11px] flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -354,13 +354,13 @@ const BookIssueList: React.FC = () => {
                         BOOK ISSUE MANAGEMENT
                     </h3>
                 </div>
-                <button
+                {/* <button
                     onClick={() => openModal('create')}
                     className='bg-sky-500 hover:bg-sky-600 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2'
                 >
                     <BiBook size={18} />
                     Issue Book
-                </button>
+                </button> */}
             </div>
 
             {/* Data Table */}

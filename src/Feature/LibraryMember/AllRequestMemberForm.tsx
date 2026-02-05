@@ -275,10 +275,10 @@ const AllRequestMemberForm = ({ memberId, onClose }: LibraryMemberFormProps) => 
                                         onChange={handleInputChange}
                                         className={inputClass}
                                     >
-                                        <option value={0}>Select membership type</option>
-                                        <option value={1}>Basic</option>
-                                        <option value={2}>Standard</option>
-                                        <option value={3}>Premium</option>
+                                        <option value={0}>Select type</option>
+                                        <option value={1}>Student</option>
+                                        <option value={2}>Staff</option>
+                                        <option value={3}>Teacher</option>
                                     </select>
                                 </div>
 
