@@ -19,8 +19,8 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<LoginFormData>({
-    email: 'khonchhay6@gmail.com',
-    password: 'Chhay123!',
+    email: "superadmin@system.com",
+    password: 'Password123!',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});

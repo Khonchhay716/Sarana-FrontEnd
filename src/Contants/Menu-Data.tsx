@@ -1,72 +1,68 @@
-import { FiBarChart2, FiUsers, FiShield } from "react-icons/fi";
-import { FaChalkboardTeacher, FaUser, FaBook } from "react-icons/fa";
-import { MdApproval, MdCardMembership, MdCategory, MdRememberMe } from "react-icons/md";
-import { FaCodePullRequest } from "react-icons/fa6";
-import { CiLogout } from "react-icons/ci";
+import {
+  FiBarChart2,
+  FiUsers,
+  FiShield,
+  FiGrid,
+  FiPackage,
+  FiTag,
+  FiLayers
+} from "react-icons/fi";
+
+import {
+  FaWarehouse,
+  FaExclamationTriangle
+} from "react-icons/fa";
 
 const menuItems = [
   {
     label: "Dashboard",
     icon: <FiBarChart2 />,
     path: "/dashbord",
+    permission: "role:list"
+  },
+  {
+    label: "Sale Product",
+    icon: <FaWarehouse />,
+    path: "/sale-product",
+  },
+  {
+    label: "Branch",
+    icon: <FaWarehouse />,
+    path: "/branch",
   },
   {
     label: "Category",
-    icon: <MdCategory />,
+    icon: <FiGrid />, 
     path: "/category",
-    permission: "category:list"
   },
   {
-    label: "Book",
-    icon: <FaBook />,
-    path: "/book",
-    permission: "book:list"
+    label: "Product",
+    icon: <FiPackage />,
+    path: "/product",
   },
   {
-    label: "BookIssue All",
-    icon: <CiLogout />,
-    path: "/issuebook",
-    permission: "bookissue:list"
+    label: "Low Stock",
+    icon: <FaExclamationTriangle />,
+    path: "/lowstock",
   },
   {
-    label: "My Book Issue",
-    icon: <CiLogout />,
-    path: "/myissuebook",
-    permission: "bookissue:currentuser"
+    label: "Discount",
+    icon: <FiTag />,
+    path: "/discount",
   },
   {
-    label: "Member",
-    icon: <MdCardMembership />,
-    children: [
-      {
-        name: "All Request Member",
-        path: "/requestmember",
-        icon: <FaCodePullRequest />,
-        permission: "librarymember:requestall"
-      },
-      {
-        name: "My Request Member",
-        path: "/approvemember",
-        icon: <MdApproval />,
-        permission: "librarymember:request"
-      },
-      {
-        name: "LibraryMember",
-        path: "/librarymember",
-        icon: <MdRememberMe />,
-        permission: "librarymember:list"
-      },
-    ]
+    label: "Stock",
+    icon: <FiLayers />,
+    path: "/stock",
   },
   {
     label: "User Management",
-    icon: <FaChalkboardTeacher />,
+    icon: <FiUsers />,
     children: [
       {
         name: "User",
         path: "/userlist",
         icon: <FiUsers />,
-        permission: "user:list"
       },
       {
         name: "Role",

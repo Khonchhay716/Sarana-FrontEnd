@@ -104,7 +104,7 @@ const UserForm = ({ userId, onClose }: UserFormProps) => {
 
     const loadUserData = async () => {
         if (!userId) return;
-        const data: any = await GetDatabyID("Users", userId);
+        const data: any = await GetDatabyID("Person", userId);
         if (data) {
             setFormData({
                 id: data.id,
@@ -198,13 +198,13 @@ const UserForm = ({ userId, onClose }: UserFormProps) => {
         }
 
         if (userId) {
-            await updateData("Users", userId, formData, () => {
+            await updateData("Person", userId, formData, () => {
                 setTimeout(() => {
                     handleClose();
                 }, 500);
             });
         } else {
-            await createData("Users", formData, () => {
+            await createData("Person", formData, () => {
                 setTimeout(() => {
                    handleClose(); 
                 }, 500);

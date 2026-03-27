@@ -1,71 +1,72 @@
 import type { TableColumnsType } from 'antd';
 import XDataTable from '../../component/XDataTable/XDataTable';
 import "../../component/XDataTable/XdataTable.css";
-import { BiCategory } from 'react-icons/bi';
+import { BiGitBranch } from 'react-icons/bi';
 import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
-import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
-import CategoryForm from './Categoryform';
+// import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
+import BranchForm from './Branchform';
 
-interface Category {
+interface Branch {
     id: number;
-    name: string;
+    branchName: string;
+    logo: string;
+    status: string; 
     description: string;
-    image: string;
-    isActive: boolean;
+    isDeleted: boolean;
     createdDate: string;
     updatedDate: string;
     createdBy: string;
 }
 
-const CategoryList = () => {
+const BranchList = () => {
     const { darkLight } = useGlobleContextDarklight();
     const [showModal, setShowModal] = useState(false);
-    const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+    const [selectedBranchId, setSelectedBranchId] = useState<number | undefined>(undefined);
     const [idDelete, setIdDelete] = useState<number | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
 
-    const columns: TableColumnsType<Category> = [
+    const columns: TableColumnsType<Branch> = [
         {
-            title: 'Image',
-            key: 'image',
+            title: 'Logo',
+            key: 'Logo',
             width: 70,
             align: 'center',
             render: (_, record) => (
-                record.image
-                    ? <img src={record.image} alt={record.name}
+                record.logo
+                    ? <img src={record.logo} alt={""}
                         onError={(e) => { (e.target as HTMLImageElement).src = "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"; }}
                         className="w-10 h-10 rounded-lg object-cover mx-auto" />
                     : <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto text-lg font-bold
                         ${darkLight ? "bg-gray-700 text-gray-400" : "bg-purple-100 text-purple-500"}`}>
-                        {record.name?.charAt(0).toUpperCase()}
+                        {record.branchName?.charAt(0).toUpperCase()}
                     </div>
             ),
         },
         {
-            title: 'Category Name',
-            key: 'name',
+            title: 'Branch Name',
+            key: 'branchName',
             render: (_, record) => (
                 <div>
-                    <p className={`font-semibold text-sm ${darkLight ? "text-white" : "text-gray-800"}`}>{record.name}</p>
+                    <p className={`font-semibold text-sm ${darkLight ? "text-white" : "text-gray-800"}`}>{record.branchName}</p>
                 </div>
             ),
         },
         {
             title: 'Status',
-            key: 'isActive',
+            key: 'status',
             align: 'center',
             render: (_, record) => (
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${record.isActive
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${record.status === "Active"
                     ? "bg-green-100 text-green-700"
                     : "bg-red-100 text-red-600"
                     }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${record.isActive ? "bg-teal-500" : "bg-red-400"}`} />
-                    {record.isActive ? "Active" : "Inactive"}
+                    <span className={`w-1.5 h-1.5 rounded-full ${record.status === "Active" ? "bg-green-500" : "bg-red-500"}`} />
+                    {record.status}
                 </span>
             ),
         },
@@ -74,7 +75,7 @@ const CategoryList = () => {
             key: 'description',
             render: (_, record) => (
                 <div>
-                    <p className={`text-xs mt-0.5 truncate max-w-[220px] ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
+                    <p className={` mt-0.5 truncate max-w-[220px] ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
                         {record.description}
                     </p>
                 </div>
@@ -87,28 +88,28 @@ const CategoryList = () => {
             width: 130,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    <ComponentPermission scopes={["category:update"]}>
-                        <button onClick={() => handleEdit(record)}
-                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                            Edit
-                        </button>
-                    </ComponentPermission>
-                    <ComponentPermission scopes={["category:delete"]}>
-                        <button onClick={() => handleOpenDeleteModal(record)}
-                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                            Delete
-                        </button>
-                    </ComponentPermission>
+                    {/* <ComponentPermission scopes={["branch:update"]}> */}
+                    <button onClick={() => handleEdit(record)}
+                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                        Edit
+                    </button>
+                    {/* </ComponentPermission> */}
+                    {/* <ComponentPermission scopes={["branch:delete"]}> */}
+                    <button onClick={() => handleOpenDeleteModal(record)}
+                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                        Delete
+                    </button>
+                    {/* </ComponentPermission> */}
                 </div>
             ),
         },
     ];
 
-    const handleAddCategory = () => { setSelectedCategoryId(undefined); setShowModal(true); };
-    const handleEdit = (record: Category) => { setSelectedCategoryId(record.id); setShowModal(true); };
-    const handleCloseModal = () => { setShowModal(false); setSelectedCategoryId(undefined); };
+    const handleAddBranch = () => { setSelectedBranchId(undefined); setShowModal(true); };
+    const handleEdit = (record: Branch) => { setSelectedBranchId(record.id); setShowModal(true); };
+    const handleCloseModal = () => { setShowModal(false); setSelectedBranchId(undefined); };
 
-    const handleOpenDeleteModal = (record: Category) => {
+    const handleOpenDeleteModal = (record: Branch) => {
         setIdDelete(record.id);
         setShowDeleteModal(true);
         setTimeout(() => setIsDeleteAnimating(true), 10);
@@ -120,11 +121,11 @@ const CategoryList = () => {
     const handleDeleteConfirm = async () => {
         if (idDelete !== null) {
             try {
-                await DeleteData("Category", idDelete);
+                await DeleteData("Branch", idDelete);
                 handleCloseDeleteModal();
                 setRefreshTables(new Date());
             } catch (error) {
-                console.error("Error deleting category:", error);
+                console.error("Error deleting branch:", error);
             }
         }
     };
@@ -133,27 +134,27 @@ const CategoryList = () => {
         <>
             <div className='flex justify-between my-2'>
                 <div className='flex items-center gap-3'>
-                    <BiCategory className="w-[50px] h-[40px] drop-shadow-lg animate-bounce" />
-                    <h3 className={`font-bold text-2xl ${darkLight ? 'text-white' : 'text-gray-900'}`}>CATEGORY MANAGEMENT</h3>
+                    <BiGitBranch className="w-[50px] h-[40px] drop-shadow-lg animate-bounce" />
+                    <h3 className={`font-bold text-2xl ${darkLight ? 'text-white' : 'text-gray-900'}`}>BRANCH MANAGEMENT</h3>
                 </div>
-                <ComponentPermission scopes={["category:create"]}>
-                    <button onClick={handleAddCategory}
-                        className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'>
-                        Add Category
-                    </button>
-                </ComponentPermission>
+                {/* <ComponentPermission scopes={["branch:create"]}> */}
+                <button onClick={handleAddBranch}
+                    className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'>
+                    Add Branch
+                </button>
+                {/* </ComponentPermission> */}
             </div>
 
             <XDataTable
-                TableName='Category list'
+                TableName='Branch list'
                 columns={columns}
-                apiUrl='Category'
+                apiUrl='Branch'
                 selection={true}
                 hideAction={true}
                 searchPlaceholder="Search by name, description..."
             />
 
-            {showModal && <CategoryForm categoryId={selectedCategoryId} onClose={handleCloseModal} />}
+            {showModal && <BranchForm branchId={selectedBranchId} onClose={handleCloseModal} />}
 
             {/* Delete Modal */}
             {showDeleteModal && (
@@ -172,7 +173,7 @@ const CategoryList = () => {
                                 </div>
                                 <h3 className={`text-xl font-bold mb-2 ${darkLight ? "text-white" : "text-gray-900"}`}>Confirm Deletion</h3>
                                 <p className={`mb-6 ${darkLight ? "text-gray-300" : "text-gray-600"}`}>
-                                    This action cannot be undone. Do you want to delete this category?
+                                    This action cannot be undone. Products assigned to this branch will not be deleted.
                                 </p>
                                 <div className="flex justify-center gap-3">
                                     <button onClick={handleCloseDeleteModal}
@@ -193,4 +194,4 @@ const CategoryList = () => {
     );
 };
 
-export default CategoryList;
+export default BranchList;

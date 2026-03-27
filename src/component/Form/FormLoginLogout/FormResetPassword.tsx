@@ -117,7 +117,7 @@ const ResetPassword: React.FC = () => {
 
     try {
       // Note: Update this endpoint based on your actual API
-      const res: any = await AxiosApi.put('Users/update-password-by-email', {
+      const res: any = await AxiosApi.put('Person/update-password-by-email', {
         email: emailFromState,
         // verificationCode: verificationCode,
         newPassword: formData.newPassword,

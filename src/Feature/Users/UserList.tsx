@@ -169,7 +169,7 @@ const UserList = () => {
     const handleDeleteConfirm = async () => {
         if (idDelete !== null) {
             try {
-                await DeleteData("Users", idDelete);
+                await DeleteData("Person", idDelete);
                 handleCloseDeleteModal();
                 setRefreshTables(new Date());
             } catch (error) {
@@ -202,8 +202,8 @@ const UserList = () => {
             <XDataTable
                 TableName='User list'
                 columns={columns}
-                apiUrl='Users'
-                selection={true}
+                apiUrl='Person'
+                selection={false}
                 hideAction={true}
                 searchPlaceholder="Search users..."
             />

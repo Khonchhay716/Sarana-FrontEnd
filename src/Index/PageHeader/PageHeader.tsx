@@ -44,7 +44,7 @@ const Index = () => {
             return allowedChildren.length > 0;
         }
         // If it's a direct link, check permission
-        return hasPermission(item.permission);
+        return hasPermission(item?.permission);
     });
 
     return (
@@ -71,7 +71,6 @@ const Index = () => {
                         {/* Navigation */}
                         <nav className="flex-1 overflow-y-auto px-2 space-y-2">
                             {filteredMenu.map((item) => {
-                                // Filter children again for the render
                                 const visibleChildren = item.children?.filter(child => hasPermission(child.permission));
 
                                 return (
@@ -106,7 +105,6 @@ const Index = () => {
                                             )}
                                         </div>
 
-                                        {/* Submenu Items */}
                                         {item.children && active === item.label && menuOpen && (
                                             <div className={`ml-6 mt-1 space-y-1 text-sm ${darkLight ? "text-gray-300" : "text-gray-600"}`}>
                                                 {visibleChildren?.map((child) => (

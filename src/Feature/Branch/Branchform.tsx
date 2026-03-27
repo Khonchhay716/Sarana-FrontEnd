@@ -4,53 +4,53 @@ import { HookIntergrateAPI } from "../../component/HookintagrateAPI/Hookintegart
 import { alertError } from "../../HtmlHelper/Alert";
 import { AxiosApi } from "../../component/Axios/Axios";
 
-interface CategoryFormData {
+interface BranchFormData {
     id?: number;
-    name: string;
+    branchName: string;
+    logo: string;
+    status: string;
     description: string;
-    image: string;
-    isActive: boolean;
 }
 
-interface CategoryFormProps {
-    categoryId?: number;
+interface BranchFormProps {
+    branchId?: number;
     onClose: () => void;
 }
 
-const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
+const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
     const { darkLight } = useGlobleContextDarklight();
-    const { createData, updateData, GetDatabyID, loading } = HookIntergrateAPI<CategoryFormData>();
+    const { createData, updateData, GetDatabyID, loading } = HookIntergrateAPI<BranchFormData>();
     const [isAnimating, setIsAnimating] = useState(false);
     const hasInitialized = useRef(false);
-    const [imagePreview, setImagePreview] = useState<string>("");
-    const [uploadingImage, setUploadingImage] = useState(false);
+    const [logoPreview, setLogoPreview] = useState<string>("");
+    const [uploadingLogo, setUploadingLogo] = useState(false);
 
-    const [formData, setFormData] = useState<CategoryFormData>({
-        name: "",
+    const [formData, setFormData] = useState<BranchFormData>({
+        branchName: "",
+        logo: "",
+        status: "Active",
         description: "",
-        image: "",
-        isActive: true,
     });
 
     useEffect(() => {
         if (hasInitialized.current) return;
         hasInitialized.current = true;
         setTimeout(() => setIsAnimating(true), 10);
-        if (categoryId) loadCategoryData();
-    }, [categoryId]);
+        if (branchId) loadBranchData();
+    }, [branchId]);
 
-    const loadCategoryData = async () => {
-        if (!categoryId) return;
-        const data: any = await GetDatabyID("Category", categoryId);
+    const loadBranchData = async () => {
+        if (!branchId) return;
+        const data: any = await GetDatabyID("Branch", branchId);
         if (data) {
             setFormData({
                 id: data.id,
-                name: data.name || "",
+                branchName: data.branchName || "",
+                logo: data.logo || "",
+                status: data.status || "Active",
                 description: data.description || "",
-                image: data.image || "",
-                isActive: data.isActive ?? true,
             });
-            if (data.image) setImagePreview(data.image);
+            if (data.logo) setLogoPreview(data.logo);
         }
     };
 
@@ -59,9 +59,10 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleInputChangeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // ✅ File upload — same as CategoryForm / ProductForm
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         try {
-            setUploadingImage(true);
+            setUploadingLogo(true);
             const file = e.target.files?.[0];
             if (!file) return;
             const fd = new FormData();
@@ -70,44 +71,40 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                 headers: { "Content-Type": "multipart/form-data" }
             });
             const url = res?.data?.url;
-            setImagePreview(url);
-            setFormData(prev => ({ ...prev, image: url }));
+            setLogoPreview(url);
+            setFormData(prev => ({ ...prev, logo: url }));
         } catch (error) {
             console.error("Upload error:", error);
         } finally {
-            setTimeout(() => setUploadingImage(false), 500);
+            setTimeout(() => setUploadingLogo(false), 500);
         }
     };
 
-    const handleRemoveImage = () => {
-        setImagePreview("");
-        setFormData(prev => ({ ...prev, image: "" }));
+    const handleRemoveLogo = () => {
+        setLogoPreview("");
+        setFormData(prev => ({ ...prev, logo: "" }));
     };
 
     const handleClose = () => { setIsAnimating(false); setTimeout(() => onClose(), 300); };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name.trim()) { alertError("Category name is required!"); return; }
-
+        if (!formData.branchName.trim()) { alertError("Branch name is required!"); return; }
         const payload = {
-            name: formData.name,
+            branchName: formData.branchName,
+            logo: logoPreview || formData.logo,
+            status: formData.status,
             description: formData.description,
-            image: imagePreview || formData.image,
-            isActive: formData.isActive,
         };
-
-        if (categoryId) {
-            await updateData("Category", categoryId, payload as any, () => {
-                setTimeout(() => handleClose(), 500);
-            });
+        if (branchId) {
+            await updateData("Branch", branchId, payload as any, () => setTimeout(() => handleClose(), 500));
         } else {
-            await createData("Category", payload as any, () => setTimeout(() => handleClose(), 500));
+            await createData("Branch", payload as any, () => setTimeout(() => handleClose(), 500));
         }
     };
 
     const dl = darkLight;
-    const isActive = formData.isActive;
+    const isActive = formData.status === "Active";
 
     const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${dl
         ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-blue-500"
@@ -127,10 +124,10 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                         <div className="flex justify-between items-start">
                             <div>
                                 <h2 className={`text-2xl font-bold ${dl ? "text-white" : "text-gray-900"}`}>
-                                    {categoryId ? "Edit Category" : "Add New Category"}
+                                    {branchId ? "Edit Branch" : "Add New Branch"}
                                 </h2>
                                 <p className={`text-sm mt-1 ${dl ? "text-gray-400" : "text-gray-500"}`}>
-                                    {categoryId ? "Update category information" : "Fill in the details to create a new category"}
+                                    {branchId ? "Update branch information" : "Fill in the details to create a new branch"}
                                 </p>
                             </div>
                             <button onClick={handleClose}
@@ -147,23 +144,23 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
 
                             <div className="flex flex-col gap-5">
 
-                                {/* Image upload */}
+                                {/* ✅ Logo — file upload (same as Category image) */}
                                 <div>
-                                    <label className={labelClass}>Category Image</label>
+                                    <label className={labelClass}>Logo</label>
                                     <div className="flex items-start gap-4">
                                         <div className="relative mt-2 flex-shrink-0">
                                             <img
-                                                src={imagePreview || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8MmaS1S0FTclHTMMLicf-O0tOGth44cBGt03HQ4jh3phLijQ_k17nFf4eyrqyxHHkgQwLSzwIViOoi81phleVJoBLZbanBf5QRODj9g&s=10"}
-                                                alt="Preview"
+                                                src={logoPreview || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8MmaS1S0FTclHTMMLicf-O0tOGth44cBGt03HQ4jh3phLijQ_k17nFf4eyrqyxHHkgQwLSzwIViOoi81phleVJoBLZbanBf5QRODj9g&s=10"}
+                                                alt="Logo preview"
                                                 className="w-20 h-20 object-cover rounded-xl border"
                                             />
-                                            {imagePreview && (
-                                                <button type="button" onClick={handleRemoveImage}
+                                            {logoPreview && (
+                                                <button type="button" onClick={handleRemoveLogo}
                                                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg text-xs">
                                                     ✕
                                                 </button>
                                             )}
-                                            {uploadingImage && (
+                                            {uploadingLogo && (
                                                 <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
                                                     <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24">
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -174,18 +171,18 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                                         </div>
                                         <div className="flex flex-col gap-2 mt-2 flex-1">
                                             <label className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>JPEG, PNG, GIF, WEBP • Max 12 MB</label>
-                                            <input type="file" name="image" onChange={handleInputChangeImage}
+                                            <input type="file" onChange={handleLogoUpload}
                                                 className={inputClass} accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                                                disabled={uploadingImage} />
+                                                disabled={uploadingLogo} />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Name */}
+                                {/* Branch Name */}
                                 <div>
-                                    <label className={labelClass}>Category Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="name" value={formData.name} onChange={handleInputChange}
-                                        className={inputClass} placeholder="Enter category name" />
+                                    <label className={labelClass}>Branch Name <span className="text-red-500">*</span></label>
+                                    <input type="text" name="branchName" value={formData.branchName} onChange={handleInputChange}
+                                        className={inputClass} placeholder="Enter branch name" />
                                 </div>
 
                                 {/* Status toggle */}
@@ -203,17 +200,17 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                                                 {isActive ? "Active" : "Inactive"}
                                             </p>
                                             <p className={`text-xs ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                                                {isActive ? "Category is visible in POS" : "Category is hidden from POS"}
+                                                {isActive ? "Branch is operational" : "Branch is closed"}
                                             </p>
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
+                                            onClick={() => setFormData(prev => ({ ...prev, status: isActive ? "Inactive" : "Active" }))}
                                             className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 focus:outline-none shadow-inner ${
                                                 isActive ? "bg-teal-500" : dl ? "bg-gray-600" : "bg-gray-300"
                                             }`}>
                                             <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ${
-                                                isActive ? "left-5" : "left-0.5"
+                                                isActive ? "left-4" : "left-0.5"
                                             }`} />
                                         </button>
                                     </div>
@@ -223,7 +220,7 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                                 <div>
                                     <label className={labelClass}>Description</label>
                                     <textarea name="description" value={formData.description} onChange={handleInputChange}
-                                        className={`${inputClass} resize-none`} placeholder="Enter category description" rows={3} />
+                                        className={`${inputClass} resize-none`} placeholder="Enter branch description" rows={3} />
                                 </div>
 
                             </div>
@@ -236,8 +233,8 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                                     className={`px-6 py-2.5 rounded-lg font-medium transition-all ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                     Cancel
                                 </button>
-                                <button type="submit" disabled={loading || uploadingImage}
-                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${loading || uploadingImage
+                                <button type="submit" disabled={loading || uploadingLogo}
+                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${loading || uploadingLogo
                                         ? "bg-blue-400 cursor-not-allowed"
                                         : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                                     } text-white disabled:opacity-50`}>
@@ -249,7 +246,7 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
                                             </svg>
                                             Saving...
                                         </span>
-                                    ) : (categoryId ? "Update Category" : "Create Category")}
+                                    ) : (branchId ? "Update Branch" : "Create Branch")}
                                 </button>
                             </div>
                         </div>
@@ -260,4 +257,4 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
     );
 };
 
-export default CategoryForm;
+export default BranchForm;

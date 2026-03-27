@@ -11,17 +11,17 @@ import PageNotFound from "../../page DashBoard/PagenotFound.tsx";
 import { Route } from "react-router-dom";
 import { all_routes } from "./AllRouter.tsx";
 import UserList from "../../Feature/Users/UserList.tsx";
-import CategoryList from "../../Feature/Category/CategoryList.tsx";
-import BookList from "../../Feature/Book/BookList.tsx";
-import LibraryMemberList from "../../Feature/LibraryMember/Librarymemberlist.tsx";
 import RoleList from "../../Feature/Role/Rolelist.tsx";
 import Permissions from "../../Feature/Role/Rolepermission.tsx";
-import BookIssueList from "../../Feature/issueBook/Bookissuelist.tsx";
-import BookIssueListCurrent from "../../Feature/issueBook/BookIssueCurrentUser.tsx";
-import LibraryMemberListApprove from "../../Feature/LibraryMember/LibraryMemberCurrent.tsx";
-import LibraryMemberListRequest from "../../Feature/LibraryMember/LibrarymemberRequest.tsx";
 import ProtextRoute from "../../component/ProtextRoute/AuthPermissionScope.tsx";
 import Profile from "../../Feature/Profile.tsx/Profile.tsx";
+import ProductList from "../../Feature/Product/ProductList.tsx";
+import StockList from "../../Feature/Stock/StockList.tsx";
+import BranchList from "../../Feature/Branch/Branchlist.tsx";
+import CategoryList from "../../Feature/Category/Categorylist.tsx";
+import DiscountList from "../../Feature/Discount/Discountlist.tsx";
+import ProductLowStockList from "../../Feature/Product/Productlowstocklist.tsx";
+import PosShop from "../../Feature/POS-Sale/Pos-Sale.tsx";
 
 const routes = all_routes;
 export const publicRoutes = [
@@ -83,11 +83,65 @@ export const path = [
         route: Route,
     },
     {
-        path: routes.Book,
+        path: routes.SaleProduct,
         element: (
-            <ProtextRoute scopes={["book:list"]}>
-                <BookList />
-            </ProtextRoute>
+            // <ProtextRoute scopes={["user:list"]}>
+            <PosShop />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Product,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <ProductList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Stock,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <StockList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Branch,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <BranchList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Category,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <CategoryList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Discount,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <DiscountList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.LowStock,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <ProductLowStockList />
+            // </ProtextRoute>
         ),
         route: Route,
     },
@@ -110,62 +164,10 @@ export const path = [
         route: Route,
     },
     {
-        path: routes.Category,
-        element: (
-            <ProtextRoute scopes={["category:list"]}>
-                <CategoryList />
-            </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.LibraryMember,
-        element: (
-            <ProtextRoute scopes={["librarymember:list"]}>
-                <LibraryMemberList />
-            </ProtextRoute>),
-        route: Route,
-    },
-    {
-        path: routes.ListRequestMember,
-        element: (
-            <ProtextRoute scopes={["librarymember:list"]}>
-                <LibraryMemberListRequest />
-            </ProtextRoute>),
-        route: Route,
-    },
-    {
-        path: routes.ListLibraryMemberApprove,
-        element: (
-            <ProtextRoute scopes={["librarymember:request"]}>
-                <LibraryMemberListApprove />
-            </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
         path: routes.permission,
         element: (
             <ProtextRoute scopes={["permission:read"]}>
                 <Permissions />
-            </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.issuebook,
-        element: (
-            <ProtextRoute scopes={["bookissue:list"]}>
-                <BookIssueList />
-            </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.myissuebook,
-        element: (
-            <ProtextRoute scopes={["bookissue:currentuser"]}>
-                <BookIssueListCurrent />
             </ProtextRoute>
         ),
         route: Route,

@@ -409,3 +409,33 @@
 .xdata-table-dark .ant-empty-image svg {
     opacity: 0.3;
 }
+
+.xdata-table-row td {
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+}
+ 
+/* Optional: slightly taller for image rows */
+.xdata-table-row td:first-child {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}
+ 
+.xdata-table .ant-table-body::-webkit-scrollbar {
+    display: none;
+}
+ 
+.xdata-table .ant-table-body {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+ 
+.xdata-table .ant-table-content::-webkit-scrollbar {
+    display: none;
+}
+ 
+.xdata-table .ant-table-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+ 

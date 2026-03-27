@@ -140,7 +140,7 @@ const RoleList = () => {
                 TableName='Role list'
                 columns={columns}
                 apiUrl='Roles'
-                selection={true}
+                selection={false}
                 hideAction={true}
                 searchPlaceholder="Search roles..."
             />

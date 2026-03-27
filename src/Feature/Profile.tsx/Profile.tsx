@@ -55,7 +55,7 @@ const Profile = () => {
     const getCurrentUser = async (userid: number) => {
         try {
             setLoading(true);
-            const res = await AxiosApi.get(`Users/${userid}`);
+            const res = await AxiosApi.get(`Person/${userid}`);
             const userData = res?.data?.data;
             setUser(userData);
             setFormData({
@@ -150,7 +150,7 @@ const Profile = () => {
 
         try {
             setSaving(true);
-            const res = await AxiosApi.put(`Users/${user.id}`, formData);
+            const res = await AxiosApi.put(`Person/${user.id}`, formData);
             if (res?.data?.data) {
                 setTimeout(() => {
                     setUser(res.data.data);
