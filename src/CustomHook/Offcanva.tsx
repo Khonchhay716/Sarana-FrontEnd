@@ -1,6 +1,5 @@
-import React, { ReactNode, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import Logo from "../assets/logo2.png"
 
 interface ItemMenu {
   item: string | ReactNode;

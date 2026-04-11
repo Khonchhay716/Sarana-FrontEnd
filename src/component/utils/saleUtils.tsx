@@ -1,7 +1,6 @@
 // src/utils/salesUtils.ts
 
 import { MenuItem } from './data'; // Import MenuItem from the new data.ts file
-import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 
 // TypeScript Interfaces
 export interface CartItem extends MenuItem {

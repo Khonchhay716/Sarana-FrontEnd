@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import alertify from 'alertifyjs';
 import 'alertifyjs/build/css/alertify.min.css';
-import axios from 'axios';
 import { message } from 'antd';
 import { AxiosApi } from '../../Axios/Axios';
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type ResetPasswordFormData = {
   newPassword: string;

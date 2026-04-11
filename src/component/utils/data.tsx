@@ -15,8 +15,6 @@
 // import muffinImage from '../assets/muffin.jpg';
 // import cookieImage from '../assets/cookie.jpg';
 
-import image from '../../assets/image.png';
-
 
 // TypeScript Interfaces (moved here for shared access)
 export interface MenuItem {

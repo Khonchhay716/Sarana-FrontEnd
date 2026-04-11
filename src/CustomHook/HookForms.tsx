@@ -40,7 +40,7 @@ type Props = {
   createUser?: boolean; // ✅ New prop to control hidden logic
 };
 
-export default function FormProduct({ onClose, onSubmit, productBack, formlayout, Title, inputClass, dailogSize, createUser }: Props) {
+export default function FormProduct({ onClose, onSubmit, productBack, formlayout, Title, inputClass, dailogSize }: Props) {
   const fields: FieldConfig[] = formlayout ?? [];
   const [formData, setFormData] = useState<Product>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -142,7 +142,7 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
   const renderField = (field: SingleField) => {
     if (field.hidden) return null; // ✅ Skip hidden
 
-    const { key, label, type, options, optionAPI, col, className, placeholder, required, accept } = field;
+    const { key, label, type, options, col, className, placeholder, required, accept } = field;
     const allOptions = options ?? apiOptions[key] ?? [];
     const colClass = col ? `col-span-${col}` : "col-span-12";
     const isError = !!errors[key];

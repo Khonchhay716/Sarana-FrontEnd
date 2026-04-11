@@ -171,7 +171,6 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     label,
     type,
     options,
-    optionAPI,
     col,
     className,
     placeholder,

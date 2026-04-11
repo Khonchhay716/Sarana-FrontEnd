@@ -24,7 +24,7 @@ const ForgotPassword: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [loading, setLoading] = useState(false);
+  const [,setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 

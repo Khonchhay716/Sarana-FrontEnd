@@ -1,4 +1,3 @@
-import MyLeaveRequest from "../../Feature/LeaveRequest/LeaveRequestAll";
 
 export const all_routes = {
     //// page no login 

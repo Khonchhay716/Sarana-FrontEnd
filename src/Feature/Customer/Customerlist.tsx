@@ -7,7 +7,6 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import CustomerForm from './CustomerForm';
 import PersonForm from './PersonForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
-import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import { FaUserCheck, FaUserPlus } from 'react-icons/fa';
 
 interface UserInfo {

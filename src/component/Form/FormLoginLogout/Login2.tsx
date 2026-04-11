@@ -24,8 +24,8 @@ const Login: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [loading, setLoading] = useState(false);
-  const [invalidLogin, setInvalidLogin] = useState(false);
+  const [, setLoading] = useState(false);
+  const [, setInvalidLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

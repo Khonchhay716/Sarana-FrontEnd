@@ -135,7 +135,7 @@ export default function FormProduct({ onClose, onSubmit, productBack, formlayout
     }
   };
 
-  const renderField = ({ key, label, type, options, optionAPI, col, className, placeholder, required, accept }: SingleField) => {
+  const renderField = ({ key, label, type, options, col, className, placeholder, required, accept }: SingleField) => {
     const allOptions = options ?? apiOptions[key] ?? [];
     const colClass = col ? `col-span-${col}` : "col-span-12";
     const isError = !!errors[key];

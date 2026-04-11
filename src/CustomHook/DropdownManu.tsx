@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { MdOutlineArrowDropDown } from "react-icons/md";
 import { IoMdSettings } from "react-icons/io";
-import { BsCheck2All } from "react-icons/bs";
 
 interface DropdownOption {
   profile?: string;
@@ -61,7 +60,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             {settingHide?"":<IoMdSettings className="text-2xl cursor-pointer"/>}
           </div>:""}
           {options.map((option) => (
-            <button key={option.option} onClick={() => { onSelect(option.option); setIsOpen(false);}} className="block w-full text-left px-4 py-2 bg-gray-200 hover:bg-gray-300 cursor-pointer flex mt-0.5">
+            <button key={option.option} onClick={() => { onSelect(option.option); setIsOpen(false);}} className="block w-full text-left px-4 py-2 bg-gray-200 hover:bg-gray-300 cursor-pointer mt-0.5">
               {shoeProfilr?<img src={option.profile} className="w-[40px] h-[40px] bg-white rounded-full border-2 border-amber-200" alt="" />:""}
               {showIconItem?<span className="text-2xl mt-1">{option.iconsItem}</span>  :""}
               <span className="mt-1 ml-2">{option.option}</span>

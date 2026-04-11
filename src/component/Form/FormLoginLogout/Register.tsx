@@ -40,7 +40,7 @@ const Register: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

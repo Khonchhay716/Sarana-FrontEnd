@@ -2625,7 +2625,7 @@ function SerialNumberModal({ product, dark, existingSerials = [], existingWarran
 }
 
 // ─── Product Row ──────────────────────────────────────────────────────────────
-function ProductRow({ product, cartItem, onAdd, dark, productBg, borderColor, textPrimary, textSub, textMuted, imgFallback }: ProductRowProps) {
+function ProductRow({ product, cartItem, onAdd, dark, productBg, borderColor, textPrimary, textMuted, imgFallback }: ProductRowProps) {
   const outOfStock   = (product.stock ?? 0) <= 0;
   const productPrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
 

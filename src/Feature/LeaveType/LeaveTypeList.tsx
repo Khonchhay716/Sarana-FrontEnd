@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import LeaveTypeForm from './LeaveTypeForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
-import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface LeaveType {
     id: number;
