@@ -18,11 +18,12 @@ interface Product {
     barcode: string;
     price: number;
     costPrice: number;
+    taxRate: Number;
     stock: number;
     imageProduct: string;
     categoryId: number;
     category: Category;
-    isSerialNumber: boolean; // ✅ NEW
+    isSerialNumber: boolean;
     isDeleted: boolean;
     createdDate: string;
     updatedDate: string;
@@ -87,14 +88,13 @@ const ProductList = () => {
             ),
         },
         {
-            // ✅ NEW: Show tracking type
             title: 'Type',
             key: 'isSerialNumber',
             align: 'center',
             render: (_, record) => (
                 <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${record.isSerialNumber
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                        : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                    : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                     }`}>
                     {record.isSerialNumber ? "Serialized" : " Non-Serialized"}
                 </span>
@@ -115,6 +115,15 @@ const ProductList = () => {
             render: (_, record) => (
                 <p className={`text-sm ${darkLight ? "text-gray-300" : "text-gray-600"}`}>
                     ${(record.costPrice ?? 0).toFixed(2)}
+                </p>
+            ),
+        },
+        {
+            title: 'Tax Rate',
+            key: 'taxRate',
+            render: (_, record) => (
+                <p className={`text-sm ${darkLight ? "text-gray-300" : "text-gray-600"}`}>
+                    {(Number(record.taxRate) ?? 0).toFixed(2)}%
                 </p>
             ),
         },

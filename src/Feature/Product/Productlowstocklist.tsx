@@ -102,29 +102,6 @@ const ProductLowStockList = () => {
                 </span>
             ),
         },
-        {
-            title: 'Min Stock',
-            key: 'minStock',
-            align: 'center',
-            render: (_, record) => (
-                <span className={`text-xs font-medium ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
-                    {record.minStock}
-                </span>
-            ),
-        },
-        {
-            title: 'Shortage',
-            key: 'shortage',
-            align: 'center',
-            render: (_, record) => {
-                const shortage = record.minStock - record.stock;
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-orange-100 text-orange-700">
-                        ↓ {shortage}
-                    </span>
-                );
-            },
-        },
     ];
 
     return (

@@ -1,3 +1,5 @@
+import MyLeaveRequest from "../../Feature/LeaveRequest/LeaveRequestAll";
+
 export const all_routes = {
     //// page no login 
     formLogin: "/login",
@@ -22,4 +24,11 @@ export const all_routes = {
     Discount: "discount",
     LowStock: "lowstock",
     SaleProduct: "sale-product",
+    OrderList: "order-list",
+    Customer: "customer",
+    Staff: "staff",
+    AllLeaveRequest: "all-leave-request",
+    MyLeaveRequest: "my-leave-request",
+    LeaveType: "leave-type",
+    PointSetting: "point-setting",
 }

@@ -22,6 +22,13 @@ import CategoryList from "../../Feature/Category/Categorylist.tsx";
 import DiscountList from "../../Feature/Discount/Discountlist.tsx";
 import ProductLowStockList from "../../Feature/Product/Productlowstocklist.tsx";
 import PosShop from "../../Feature/POS-Sale/Pos-Sale.tsx";
+import OrderList from "../../Feature/OrderList/OrderList.tsx";
+import CustomerList from "../../Feature/Customer/Customerlist.tsx";
+import StaffList from "../../Feature/Staff/Stafflist.tsx";
+import LeaveRequestAll from "../../Feature/LeaveRequest/LeaveRequestAll.tsx";
+import MyLeaveRequest from "../../Feature/LeaveRequest/MyLeaveRequest.tsx";
+import LeaveTypeList from "../../Feature/LeaveType/LeaveTypeList.tsx";
+import PointSetupPage from "../../Feature/PointSetup/PointSetupPage.tsx";
 
 const routes = all_routes;
 export const publicRoutes = [
@@ -92,6 +99,60 @@ export const path = [
         route: Route,
     },
     {
+        path: routes.OrderList,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <OrderList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Customer,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <CustomerList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.AllLeaveRequest,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <LeaveRequestAll />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.MyLeaveRequest,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <MyLeaveRequest />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.LeaveType,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <LeaveTypeList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Staff,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <StaffList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
         path: routes.Product,
         element: (
             // <ProtextRoute scopes={["user:list"]}>
@@ -141,6 +202,15 @@ export const path = [
         element: (
             // <ProtextRoute scopes={["user:list"]}>
             <ProductLowStockList />
+            // </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.PointSetting,
+        element: (
+            // <ProtextRoute scopes={["user:list"]}>
+            <PointSetupPage />
             // </ProtextRoute>
         ),
         route: Route,

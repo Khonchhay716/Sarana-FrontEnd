@@ -13,13 +13,14 @@ interface ProductFormData {
     barcode: string;
     price: number;
     costPrice: number;
+    taxRate: number;
     categoryId: number | null;
     branchId: number | null;
     imageProduct: string;
     isSerialNumber: boolean;
     minStock: number;
-    ram: string;      // ✅ optional — only for serialized
-    storage: string;  // ✅ optional — only for serialized
+    ram: string;
+    storage: string;
 }
 
 interface ProductFormProps {
@@ -39,11 +40,20 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
     const [alertEnabled, setAlertEnabled] = useState(false);
 
     const [formData, setFormData] = useState<ProductFormData>({
-        name: "", description: "", sku: "", barcode: "",
-        price: 0, costPrice: 0, categoryId: null,
-        branchId: null, imageProduct: "",
-        isSerialNumber: false, minStock: 0,
-        ram: "", storage: "",  // ✅
+        name: "",
+        description: "",
+        sku: "",
+        barcode: "",
+        price: 0,
+        costPrice: 0,
+        taxRate: 0,
+        categoryId: null,
+        branchId: null,
+        imageProduct: "",
+        isSerialNumber: false,
+        minStock: 0,
+        ram: "",
+        storage: "",
     });
 
     const dl = darkLight;
@@ -71,6 +81,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                 barcode: data.barcode || "",
                 price: data.price ?? 0,
                 costPrice: data.costPrice ?? 0,
+                taxRate: data.taxRate ?? 0,
                 categoryId: data.categoryId ?? null,
                 branchId: data.branchId ?? null,
                 imageProduct: data.imageProduct || "",
@@ -147,12 +158,13 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
             barcode: formData.barcode,
             price: formData.price,
             costPrice: formData.costPrice,
+            taxRate: formData.taxRate,
             categoryId: formData.categoryId,
             branchId: formData.branchId,
             imageProduct: imagePreview,
             isSerialNumber: formData.isSerialNumber,
             minStock: alertEnabled ? formData.minStock : 0,
-            ram:     formData.isSerialNumber ? (formData.ram     || null) : null,
+            ram: formData.isSerialNumber ? (formData.ram || null) : null,
             storage: formData.isSerialNumber ? (formData.storage || null) : null,
         };
 
@@ -271,10 +283,17 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                 </div>
 
                                 {/* Cost Price */}
-                                <div className="md:col-span-2">
+                                <div>
                                     <label className={labelClass}>Cost Price ($)</label>
                                     <input type="number" name="costPrice" value={formData.costPrice} onChange={handleInputChange}
                                         className={inputClass} placeholder="0.00" min={0} step="0.01" />
+                                </div>
+
+                                {/* Tax Rate */}
+                                <div>
+                                    <label className={labelClass}>Tax Rate (%)</label>
+                                    <input type="number" name="taxRate" value={formData.taxRate} onChange={handleInputChange}
+                                        className={inputClass} placeholder="0" min={0} step="0.01" />
                                 </div>
 
                                 {/* Stock Tracking Type */}
@@ -287,7 +306,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                             className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${!formData.isSerialNumber
                                                 ? "border-purple-500 bg-purple-50"
                                                 : dl ? "border-gray-600 bg-gray-700/30" : "border-gray-200 bg-gray-50"
-                                            } ${!!productId ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-purple-400"}`}>
+                                                } ${!!productId ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-purple-400"}`}>
                                             <div>
                                                 <p className={`text-sm font-bold ${!formData.isSerialNumber ? "text-purple-600" : dl ? "text-gray-300" : "text-gray-700"}`}>Non-Serialized</p>
                                                 <p className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>Track by quantity</p>
@@ -300,7 +319,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                             className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${formData.isSerialNumber
                                                 ? "border-blue-500 bg-blue-50"
                                                 : dl ? "border-gray-600 bg-gray-700/30" : "border-gray-200 bg-gray-50"
-                                            } ${!!productId ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-blue-400"}`}>
+                                                } ${!!productId ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-blue-400"}`}>
                                             <div>
                                                 <p className={`text-sm font-bold ${formData.isSerialNumber ? "text-blue-600" : dl ? "text-gray-300" : "text-gray-700"}`}>Serialized</p>
                                                 <p className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>Track by serial number</p>
@@ -421,7 +440,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                     className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${loading || uploadingImage
                                         ? "bg-blue-400 cursor-not-allowed"
                                         : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                                    } text-white disabled:opacity-50`}>
+                                        } text-white disabled:opacity-50`}>
                                     {loading ? (
                                         <span className="flex items-center gap-2">
                                             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
