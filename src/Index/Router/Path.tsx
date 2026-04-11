@@ -18,7 +18,6 @@ import Profile from "../../Feature/Profile.tsx/Profile.tsx";
 import ProductList from "../../Feature/Product/ProductList.tsx";
 import StockList from "../../Feature/Stock/StockList.tsx";
 import BranchList from "../../Feature/Branch/Branchlist.tsx";
-import CategoryList from "../../Feature/Category/Categorylist.tsx";
 import DiscountList from "../../Feature/Discount/Discountlist.tsx";
 import ProductLowStockList from "../../Feature/Product/Productlowstocklist.tsx";
 import PosShop from "../../Feature/POS-Sale/Pos-Sale.tsx";
@@ -29,6 +28,7 @@ import LeaveRequestAll from "../../Feature/LeaveRequest/LeaveRequestAll.tsx";
 import MyLeaveRequest from "../../Feature/LeaveRequest/MyLeaveRequest.tsx";
 import LeaveTypeList from "../../Feature/LeaveType/LeaveTypeList.tsx";
 import PointSetupPage from "../../Feature/PointSetup/PointSetupPage.tsx";
+import CategoryList from "../../Feature/Category/CategoryList";
 
 const routes = all_routes;
 export const publicRoutes = [
