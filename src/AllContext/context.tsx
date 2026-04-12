@@ -1,11 +1,11 @@
-import { useState, useContext, createContext, ReactNode } from "react";
+import { useState, useContext, createContext, ReactNode, useEffect } from "react";
 
 type ContextProviderProps = {
   children: ReactNode;
 };
 
 const GlobalContext = createContext<any>(null);
-export const useGlobalContext = () => useContext(GlobalContext); 
+export const useGlobalContext = () => useContext(GlobalContext);
 
 export const ContextProvider = ({ children }: ContextProviderProps) => {
   const [count, setCount] = useState(0);
@@ -32,14 +32,33 @@ export const ContextProviderHeart = ({ children }: ContextProviderProps) => {
 const GlobleContextDarklight = createContext<any>(null);
 export const useGlobleContextDarklight = () => useContext(GlobleContextDarklight);
 
+// export const ContextProviderDarklight = ({ children }: ContextProviderProps) => {
+//   const [darkLight, setDarkLight] = useState(true);
+//   return (
+//     <GlobleContextDarklight.Provider value={{ darkLight, setDarkLight }}>
+//       {children}
+//     </GlobleContextDarklight.Provider>
+//   );
+// };
+
 export const ContextProviderDarklight = ({ children }: ContextProviderProps) => {
-  const [darkLight, setDarkLight] = useState(false);
+  const [darkLight, setDarkLight] = useState<boolean>(() => {
+    const savedTheme = localStorage.getItem('darkLight');
+    return savedTheme !== null ? JSON.parse(savedTheme) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('darkLight', JSON.stringify(darkLight));
+  }, [darkLight]);
+
   return (
     <GlobleContextDarklight.Provider value={{ darkLight, setDarkLight }}>
       {children}
     </GlobleContextDarklight.Provider>
   );
 };
+
+
 
 
 const RefreshTableContext = createContext<any>(null);

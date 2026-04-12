@@ -10,6 +10,6 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
     ],
-    base: env.VITE_BASE_PATH || "/Sarana-FrontEnd",
+    base: env.VITE_BASE_PATH || "",
   }
 })
