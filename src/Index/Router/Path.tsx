@@ -28,7 +28,7 @@ import LeaveRequestAll from "../../Feature/LeaveRequest/LeaveRequestAll.tsx";
 import MyLeaveRequest from "../../Feature/LeaveRequest/MyLeaveRequest.tsx";
 import LeaveTypeList from "../../Feature/LeaveType/LeaveTypeList.tsx";
 import PointSetupPage from "../../Feature/PointSetup/PointSetupPage.tsx";
-import CategoryList from "../../Feature/Category/CategoryList";
+import CategoryList from "../../Feature/Category/CategoryList1.tsx";
 
 const routes = all_routes;
 export const publicRoutes = [

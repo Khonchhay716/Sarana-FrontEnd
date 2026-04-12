@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
-import CategoryForm from './Categoryform';
+import CategoryForm from './CategoryForm1';
 
 interface Category {
     id: number;
