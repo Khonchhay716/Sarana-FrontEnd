@@ -35,11 +35,10 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
     });
 
     const dl = darkLight;
-    const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-        dl
-            ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-blue-500"
-            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-blue-50/30"
-    }`;
+    const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${dl
+        ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-blue-500"
+        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-blue-50/30"
+        }`;
     const labelClass = `block mb-1.5 text-sm font-semibold ${dl ? "text-gray-200" : "text-gray-700"}`;
 
     useEffect(() => {
@@ -131,20 +130,19 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
                     style={{ maxHeight: "calc(100vh - 80px)" }}
                 >
                     {/* Header */}
-                    <div className={`px-6 py-4 border-b flex-shrink-0 ${dl ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h2 className={`text-2xl font-bold ${dl ? "text-white" : "text-gray-900"}`}>
+                    <div className={`px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0 ${dl ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+                        <div className="flex justify-between items-start gap-3">
+                            <div className="min-w-0">
+                                <h2 className={`text-base sm:text-2xl font-bold truncate ${dl ? "text-white" : "text-gray-900"}`}>
                                     {customerId ? "Edit Customer" : "Add New Customer"}
                                 </h2>
-                                <p className={`text-sm mt-1 ${dl ? "text-gray-400" : "text-gray-500"}`}>
+                                <p className={`text-xs sm:text-sm mt-0.5 truncate ${dl ? "text-gray-400" : "text-gray-500"}`}>
                                     {customerId ? "Update customer information" : "Fill in the details to create a new customer"}
                                 </p>
                             </div>
-                            <button
-                                onClick={handleClose}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xl transition-all ${dl ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
-                            >
+                            <button onClick={handleClose}
+                                className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xl transition-all
+                ${dl ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}>
                                 ×
                             </button>
                         </div>
@@ -242,11 +240,10 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
 
                                 {/* Status */}
                                 <div className="md:col-span-2">
-                                    <div className={`rounded-xl border-2 transition-all p-4 ${
-                                        formData.status
-                                            ? dl ? "border-green-600 bg-green-900/10" : "border-green-400 bg-green-50"
-                                            : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"
-                                    }`}>
+                                    <div className={`rounded-xl border-2 transition-all p-4 ${formData.status
+                                        ? dl ? "border-green-600 bg-green-900/10" : "border-green-400 bg-green-50"
+                                        : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"
+                                        }`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <span className="text-xl">{formData.status ? "✅" : "⛔"}</span>
@@ -274,33 +271,34 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
                         </div>
 
                         {/* Footer */}
-                        <div className={`px-6 py-3 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleClose}
-                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                                >
+                        <div className={`px-4 sm:px-6 py-3 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
+                            <div className="flex justify-end gap-2 sm:gap-3">
+                                <button type="button" onClick={handleClose}
+                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all
+                                    ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                     Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading || uploadingImage}
-                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${
-                                        loading || uploadingImage
+                                <button type="submit" disabled={loading || uploadingImage}
+                                    className={`px-5 sm:px-8 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all shadow-lg
+                                        ${loading || uploadingImage
                                             ? "bg-blue-400 cursor-not-allowed"
                                             : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                                    } text-white disabled:opacity-50`}
-                                >
+                                        } text-white disabled:opacity-50`}>
                                     {loading ? (
                                         <span className="flex items-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            Saving...
+                                            <span className="hidden sm:inline">Saving...</span>
+                                            <span className="sm:hidden">...</span>
                                         </span>
-                                    ) : customerId ? "Update Customer" : "Create Customer"}
+                                    ) : (
+                                        <>
+                                            <span className="hidden sm:inline">{customerId ? "Update Customer" : "Create Customer"}</span>
+                                            <span className="sm:hidden">{customerId ? "Update" : "Create"}</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

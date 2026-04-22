@@ -90,13 +90,16 @@ const LeaveTypeList = () => {
 
     return (
         <>
-            <div className='flex justify-between my-4 items-center'>
-                <div className='flex items-center gap-3'>
-                    <MdOutlineEventNote className="w-[40px] h-[40px] text-blue-500" />
-                    <h3 className={`font-bold text-2xl ${darkLight ? 'text-white' : 'text-gray-900'}`}>LEAVE TYPE MANAGEMENT</h3>
+            <div className="flex items-center justify-between gap-2 my-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <MdOutlineEventNote className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0
+            ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
+                    <h3 className={`font-bold text-base sm:text-2xl truncate ${darkLight ? 'text-white' : 'text-gray-900'}`}>
+                        LEAVE TYPE MANAGEMENT
+                    </h3>
                 </div>
                 <button onClick={() => { setSelectedId(undefined); setShowModal(true); }}
-                    className='bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition-all'>
+                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
                     + Add Leave Type
                 </button>
             </div>

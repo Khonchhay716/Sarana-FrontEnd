@@ -419,8 +419,7 @@ const StaffList = () => {
             title: 'Position',
             key: 'position',
             render: (_, record) => (
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    dl ? "bg-indigo-900/30 text-indigo-300" : "bg-indigo-100 text-indigo-700"}`}>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${dl ? "bg-indigo-900/30 text-indigo-300" : "bg-indigo-100 text-indigo-700"}`}>
                     {record.position || "—"}
                 </span>
             ),
@@ -469,11 +468,10 @@ const StaffList = () => {
             key: 'status',
             align: 'center',
             render: (_, record) => (
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    record.status
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${record.status
                         ? dl ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
                         : dl ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-600"
-                }`}>
+                    }`}>
                     {record.status ? "Active" : "Inactive"}
                 </span>
             ),
@@ -540,45 +538,42 @@ const StaffList = () => {
     return (
         <>
             {/* Page Header */}
-            <div className="flex justify-between items-center my-2">
-                <div className="flex items-center gap-3">
-                    <HiUserGroup className="w-[40px] h-[35px] drop-shadow-lg" />
-                    <h3 className={`font-bold text-xl ${dl ? "text-white" : "text-gray-900"}`}>
+            <div className="flex items-center justify-between gap-2 my-2 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0">
+                    <HiUserGroup className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg flex-shrink-0 ${dl ? "text-indigo-400" : "text-indigo-600"}`} />
+                    <h3 className={`font-bold text-sm sm:text-xl whitespace-nowrap ${dl ? "text-white" : "text-gray-900"}`}>
                         STAFF MANAGEMENT
                     </h3>
                 </div>
 
-                {/* ✅ Buttons near Add Staff */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                     {/* List / Tree toggle */}
                     <div className={`flex gap-1 p-1 rounded-xl ${dl ? "bg-gray-700" : "bg-gray-100"}`}>
                         <button
                             onClick={() => setActiveTab("list")}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                activeTab === "list"
+                            className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "list"
                                     ? "bg-indigo-500 text-white shadow"
                                     : dl ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
-                            }`}>
+                                }`}>
                             <MdTableRows className="w-3.5 h-3.5" />
-                            List View
+                            <span className="hidden sm:inline">List View</span>
                         </button>
                         <button
                             onClick={() => setActiveTab("tree")}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                activeTab === "tree"
+                            className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "tree"
                                     ? "bg-indigo-500 text-white shadow"
                                     : dl ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
-                            }`}>
+                                }`}>
                             <MdAccountTree className="w-3.5 h-3.5" />
-                            Tree View
+                            <span className="hidden sm:inline">Tree View</span>
                         </button>
                     </div>
 
                     {/* Add Staff */}
                     <button
                         onClick={() => setActiveModal({ type: "staffForm" })}
-                        className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow">
-                        + Add Staff
+                        className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow whitespace-nowrap">
+                        + <span className="hidden sm:inline">Add</span> Staff
                     </button>
                 </div>
             </div>
@@ -605,7 +600,7 @@ const StaffList = () => {
 
             {/* Staff Add / Edit Modal */}
             {activeModal?.type === "staffForm" && (
-                <StaffForm staffId={activeModal.staffId} onClose={handleFormClose}/>
+                <StaffForm staffId={activeModal.staffId} onClose={handleFormClose} />
             )}
 
             {/* Staff Person Modal */}
@@ -622,15 +617,12 @@ const StaffList = () => {
             {activeModal?.type === "deleteConfirm" && (
                 <>
                     <div
-                        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${
-                            isDeleteAnimating ? "opacity-100" : "opacity-0"}`}
+                        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${isDeleteAnimating ? "opacity-100" : "opacity-0"}`}
                         onClick={closeModal}
                     />
-                    <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none transition-all duration-300 ${
-                        isDeleteAnimating ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+                    <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none transition-all duration-300 ${isDeleteAnimating ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
                         <div
-                            className={`rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto transform transition-all duration-300 ${
-                                dl ? "bg-gray-800" : "bg-white"} ${isDeleteAnimating ? "translate-y-0" : "translate-y-4"}`}
+                            className={`rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto transform transition-all duration-300 ${dl ? "bg-gray-800" : "bg-white"} ${isDeleteAnimating ? "translate-y-0" : "translate-y-4"}`}
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="p-6 text-center">
@@ -647,8 +639,7 @@ const StaffList = () => {
                                 </p>
                                 <div className="flex justify-center gap-3">
                                     <button onClick={closeModal}
-                                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                                            dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
+                                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                         Cancel
                                     </button>
                                     <button onClick={handleDeleteConfirm}

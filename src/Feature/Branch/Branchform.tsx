@@ -120,18 +120,19 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                     style={{ maxHeight: "calc(100vh - 80px)" }}>
 
                     {/* Header */}
-                    <div className={`px-6 py-4 border-b flex-shrink-0 ${dl ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h2 className={`text-2xl font-bold ${dl ? "text-white" : "text-gray-900"}`}>
+                    <div className={`px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0 ${dl ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+                        <div className="flex justify-between items-start gap-3">
+                            <div className="min-w-0">
+                                <h2 className={`text-base sm:text-2xl font-bold truncate ${dl ? "text-white" : "text-gray-900"}`}>
                                     {branchId ? "Edit Branch" : "Add New Branch"}
                                 </h2>
-                                <p className={`text-sm mt-1 ${dl ? "text-gray-400" : "text-gray-500"}`}>
+                                <p className={`text-xs sm:text-sm mt-0.5 truncate ${dl ? "text-gray-400" : "text-gray-500"}`}>
                                     {branchId ? "Update branch information" : "Fill in the details to create a new branch"}
                                 </p>
                             </div>
                             <button onClick={handleClose}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xl transition-all ${dl ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}>
+                                className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xl transition-all
+                ${dl ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}>
                                 ×
                             </button>
                         </div>
@@ -188,15 +189,13 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                 {/* Status toggle */}
                                 <div>
                                     <label className={labelClass}>Status</label>
-                                    <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${
-                                        isActive
-                                            ? dl ? "border-teal-600 bg-teal-900/20" : "border-teal-400 bg-teal-50"
-                                            : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"
-                                    }`}>
+                                    <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${isActive
+                                        ? dl ? "border-teal-600 bg-teal-900/20" : "border-teal-400 bg-teal-50"
+                                        : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"
+                                        }`}>
                                         <div>
-                                            <p className={`text-sm font-semibold transition-colors ${
-                                                isActive ? dl ? "text-teal-300" : "text-teal-700" : dl ? "text-gray-400" : "text-gray-500"
-                                            }`}>
+                                            <p className={`text-sm font-semibold transition-colors ${isActive ? dl ? "text-teal-300" : "text-teal-700" : dl ? "text-gray-400" : "text-gray-500"
+                                                }`}>
                                                 {isActive ? "Active" : "Inactive"}
                                             </p>
                                             <p className={`text-xs ${dl ? "text-gray-500" : "text-gray-400"}`}>
@@ -206,12 +205,10 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                         <button
                                             type="button"
                                             onClick={() => setFormData(prev => ({ ...prev, status: isActive ? "Inactive" : "Active" }))}
-                                            className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 focus:outline-none shadow-inner ${
-                                                isActive ? "bg-teal-500" : dl ? "bg-gray-600" : "bg-gray-300"
-                                            }`}>
-                                            <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ${
-                                                isActive ? "left-4" : "left-0.5"
-                                            }`} />
+                                            className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 focus:outline-none shadow-inner ${isActive ? "bg-teal-500" : dl ? "bg-gray-600" : "bg-gray-300"
+                                                }`}>
+                                            <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ${isActive ? "left-4" : "left-0.5"
+                                                }`} />
                                         </button>
                                     </div>
                                 </div>
@@ -227,26 +224,34 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                         </div>
 
                         {/* Footer */}
-                        <div className={`px-6 py-3 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
-                            <div className="flex justify-end gap-3">
+                        <div className={`px-4 sm:px-6 py-3 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
+                            <div className="flex justify-end gap-2 sm:gap-3">
                                 <button type="button" onClick={handleClose}
-                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
+                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all
+                                        ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                     Cancel
                                 </button>
                                 <button type="submit" disabled={loading || uploadingLogo}
-                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${loading || uploadingLogo
-                                        ? "bg-blue-400 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                                    } text-white disabled:opacity-50`}>
+                                    className={`px-5 sm:px-8 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all shadow-lg
+                                        ${loading || uploadingLogo
+                                            ? "bg-blue-400 cursor-not-allowed"
+                                            : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                                        } text-white disabled:opacity-50`}>
                                     {loading ? (
                                         <span className="flex items-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            Saving...
+                                            <span className="hidden sm:inline">Saving...</span>
+                                            <span className="sm:hidden">...</span>
                                         </span>
-                                    ) : (branchId ? "Update Branch" : "Create Branch")}
+                                    ) : (
+                                        <>
+                                            <span className="hidden sm:inline">{branchId ? "Update Branch" : "Create Branch"}</span>
+                                            <span className="sm:hidden">{branchId ? "Update" : "Create"}</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

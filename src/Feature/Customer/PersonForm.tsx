@@ -165,7 +165,7 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
             <div className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isAnimating ? "opacity-100" : "opacity-0"}`} />
             <div className={`fixed inset-0 flex items-center justify-center z-[60] p-4 pointer-events-none transition-all duration-300 ${isAnimating ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
                 <div
-                    className={`rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden pointer-events-auto transform transition-all duration-300
+                    className={`rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden pointer-events-auto transform transition-all duration-300 mt-13
                     ${dl ? "bg-gray-800" : "bg-white"} ${isAnimating ? "translate-y-0" : "translate-y-4"}`}
                     style={{ maxHeight: "calc(100vh - 80px)" }}
                 >
@@ -365,7 +365,7 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                         </div>
 
                         {/* Footer */}
-                        <div className={`px-6 py-3 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
+                        <div className={`px-6 py-1.5 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
                             <div className="flex justify-end gap-3">
                                 <button
                                     type="button"
@@ -389,7 +389,7 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                             </svg>
                                             Saving...
                                         </span>
-                                    ) : isEditMode ? "Update User" : "Create User Account"}
+                                    ) : isEditMode ? "Update" : "Create"}
                                 </button>
                             </div>
                         </div>

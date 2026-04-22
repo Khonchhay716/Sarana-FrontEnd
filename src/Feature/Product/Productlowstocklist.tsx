@@ -5,7 +5,7 @@ import { BiError } from 'react-icons/bi';
 import { useGlobleContextDarklight } from '../../AllContext/context';
 
 interface Category { id: number; name: string; }
-interface Branch   { id: number; name: string; }
+interface Branch { id: number; name: string; }
 
 interface Product {
     id: number;
@@ -106,17 +106,15 @@ const ProductLowStockList = () => {
 
     return (
         <>
-            <div className='flex justify-between my-2'>
-                <div className='flex items-center gap-3'>
-                    <BiError className="w-[50px] h-[40px] text-red-500 drop-shadow-lg animate-bounce" />
-                    <div>
-                        <h3 className={`font-bold text-2xl ${darkLight ? 'text-white' : 'text-gray-900'}`}>
-                            LOW STOCK ALERT
-                        </h3>
-                        <p className={`text-xs ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
-                            Products that have reached or fallen below minimum stock threshold
-                        </p>
-                    </div>
+            <div className="flex items-center gap-2 my-2 min-w-0">
+                <BiError className="w-7 h-7 sm:w-9 sm:h-9 text-red-500 drop-shadow-lg animate-bounce flex-shrink-0" />
+                <div className="min-w-0">
+                    <h3 className={`font-bold text-base sm:text-2xl truncate ${darkLight ? 'text-white' : 'text-gray-900'}`}>
+                        LOW STOCK ALERT
+                    </h3>
+                    <p className={`text-xs truncate ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
+                        Products that have reached or fallen below minimum stock threshold
+                    </p>
                 </div>
             </div>
 

@@ -249,13 +249,12 @@ const LeaveRequestAll = () => {
     return (
         <>
             {/* Header */}
-            <div className='flex justify-between my-2'>
-                <div className='flex items-center gap-3'>
-                    <MdOutlineAssignmentTurnedIn className="w-[50px] h-[40px] drop-shadow-lg animate-bounce" />
-                    <h3 className={`font-bold text-2xl ${dl ? 'text-white' : 'text-gray-900'}`}>
-                        LEAVE APPROVAL
-                    </h3>
-                </div>
+            <div className="flex items-center gap-2 my-2 min-w-0">
+                <MdOutlineAssignmentTurnedIn className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0
+        ${dl ? "text-purple-400" : "text-purple-600"}`} />
+                <h3 className={`font-bold text-base sm:text-2xl truncate ${dl ? 'text-white' : 'text-gray-900'}`}>
+                    LEAVE APPROVAL
+                </h3>
             </div>
 
             {/* Table */}
@@ -374,7 +373,7 @@ const LeaveRequestAll = () => {
                                                 </div>
                                                 <div className="pt-2 mt-2 border-t border-black/5">
                                                     <p className={`text-sm italic ${dl ? "text-gray-300" : "text-gray-600"}`}>
-                                                       <strong>Note : </strong> {viewRecord.approvalNote || "no note provided"}
+                                                        <strong>Note : </strong> {viewRecord.approvalNote || "no note provided"}
                                                     </p>
                                                 </div>
                                             </div>

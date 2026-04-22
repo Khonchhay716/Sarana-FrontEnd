@@ -52,7 +52,7 @@ const menuItems = [
     ],
   },
   {
-    label: "Leave Request",
+    label: "Leave",
     icon: <FaUserClock />, // better meaning (time + user)
     children: [
       {

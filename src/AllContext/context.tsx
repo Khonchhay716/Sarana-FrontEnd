@@ -32,15 +32,6 @@ export const ContextProviderHeart = ({ children }: ContextProviderProps) => {
 const GlobleContextDarklight = createContext<any>(null);
 export const useGlobleContextDarklight = () => useContext(GlobleContextDarklight);
 
-// export const ContextProviderDarklight = ({ children }: ContextProviderProps) => {
-//   const [darkLight, setDarkLight] = useState(true);
-//   return (
-//     <GlobleContextDarklight.Provider value={{ darkLight, setDarkLight }}>
-//       {children}
-//     </GlobleContextDarklight.Provider>
-//   );
-// };
-
 export const ContextProviderDarklight = ({ children }: ContextProviderProps) => {
   const [darkLight, setDarkLight] = useState<boolean>(() => {
     const savedTheme = localStorage.getItem('darkLight');
@@ -72,5 +63,45 @@ export const RefreshTableProvider = ({ children }: { children: React.ReactNode }
     <RefreshTableContext.Provider value={{ refreshTables, setRefreshTables }}>
       {children}
     </RefreshTableContext.Provider>
+  );
+};
+
+
+
+// const SidebarContext = createContext<any>(null);
+// export const useSidebar = () => useContext(SidebarContext);
+
+// export const SidebarProvider = ({ children }: ContextProviderProps) => {
+//   const [menuOpen, setMenuOpen] = useState(false);
+//   const [sidebarVisible, setSidebarVisible] = useState(true);
+//   return (
+//     <SidebarContext.Provider value={{ menuOpen, setMenuOpen, sidebarVisible, setSidebarVisible }}>
+//       {children}
+//     </SidebarContext.Provider>
+//   );
+// };
+
+const SidebarContext = createContext<any>(null);
+export const useSidebar = () => useContext(SidebarContext);
+
+export const SidebarProvider = ({ children }: ContextProviderProps) => {
+  const [sidebarVisible, setSidebarVisible] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarVisible(true);
+      } else {
+        setSidebarVisible(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return (
+    <SidebarContext.Provider value={{ sidebarVisible, setSidebarVisible }}>
+      {children}
+    </SidebarContext.Provider>
   );
 };

@@ -117,20 +117,18 @@ const RoleList = () => {
 
     return (
         <>
-            <div className='flex justify-between my-2'>
-                <div className='flex items-center gap-3'>
-                    <div className="relative">
-                        <MdAdminPanelSettings className="w-[50px] h-[40px] drop-shadow-lg animate-bounce" />
-                    </div>
-                    <h3 className={`font-bold text-2xl ${darkLight ? 'text-white' : 'text-gray-900'}`}>
+            <div className="flex items-center justify-between gap-2 my-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <MdAdminPanelSettings className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0
+            ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
+                    <h3 className={`font-bold text-base sm:text-2xl truncate ${darkLight ? 'text-white' : 'text-gray-900'}`}>
                         ROLE MANAGEMENT
                     </h3>
                 </div>
                 <ComponentPermission scopes={["role:create"]}>
                     <button
                         onClick={handleAddRole}
-                        className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'
-                    >
+                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
                         Add Role
                     </button>
                 </ComponentPermission>

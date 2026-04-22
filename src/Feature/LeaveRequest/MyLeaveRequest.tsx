@@ -319,15 +319,16 @@ const MyLeaveRequest = () => {
     return (
         <>
             {/* Header */}
-            <div className='flex justify-between my-2'>
-                <div className='flex items-center gap-3'>
-                    <MdOutlineEventNote className="w-[50px] h-[40px] drop-shadow-lg animate-bounce" />
-                    <h3 className={`font-bold text-2xl ${dl ? 'text-white' : 'text-gray-900'}`}>
+            <div className="flex items-center justify-between gap-2 my-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <MdOutlineEventNote className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0
+            ${dl ? "text-purple-400" : "text-purple-600"}`} />
+                    <h3 className={`font-bold text-base sm:text-2xl truncate ${dl ? 'text-white' : 'text-gray-900'}`}>
                         MY LEAVE REQUESTS
                     </h3>
                 </div>
                 <button onClick={handleOpenForm}
-                    className='bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-md transition-colors'>
+                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
                     + Request Leave
                 </button>
             </div>
@@ -432,7 +433,7 @@ const MyLeaveRequest = () => {
                                                 </div>
                                                 <div className="pt-2 mt-2 border-t border-black/5">
                                                     <p className={`text-sm italic ${dl ? "text-gray-300" : "text-gray-600"}`}>
-                                                       <strong>Note : </strong>  {viewRecord.approvalNote || "No note provided."}
+                                                        <strong>Note : </strong>  {viewRecord.approvalNote || "No note provided."}
                                                     </p>
                                                 </div>
                                             </div>
@@ -533,7 +534,7 @@ const MyLeaveRequest = () => {
                                                         type="button"
                                                         onClick={() => setFormData(prev => ({ ...prev, session: opt.value }))}
                                                         /* Added flex-1 so they have equal widths, adjusted padding to fit horizontal layout */
-                                                        className={`flex flex-1 items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all cursor-pointer text-left ${formData.session === opt.value
+                                                        className={`flex flex-1 items-center gap-1 px-1.5 py-2.5 rounded-xl border-2 transition-all cursor-pointer text-left ${formData.session === opt.value
                                                             ? dl
                                                                 ? "border-blue-500 bg-blue-900/20"
                                                                 : "border-blue-500 bg-blue-50"
@@ -542,7 +543,7 @@ const MyLeaveRequest = () => {
                                                                 : "border-gray-200 bg-white hover:border-gray-300"
                                                             }`}
                                                     >
-                                                        {/* ✅ Checkbox circle (slightly smaller to save horizontal space) */}
+                                                        {/* Checkbox circle (slightly smaller to save horizontal space) */}
                                                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.session === opt.value
                                                             ? "border-blue-500 bg-blue-500"
                                                             : dl ? "border-gray-500" : "border-gray-300"
