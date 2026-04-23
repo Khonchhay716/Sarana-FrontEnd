@@ -25,42 +25,36 @@ export function HookIntergrateAPI<T>() {
   const [loading, setLoading] = useState(false);
   const { setRefreshTables } = useRefreshTable();
 
-  const createData = async (url: string, data: T, onSuccess?: (responseData?: T) => void, hodeAlertSuccess?: boolean) => {
+  const createData = async (url: string, data: T, onSuccess?: (responseData?: T) => void, hodeAlertSuccess?: boolean, onError?: () => void) => {
     setLoading(true);
     try {
       const res = await AxiosApi.post<ApiResponse<T>>(url, data);
       if (res.data.success) {
         onSuccess?.(res.data.data);
-        setTimeout(() => {
-          setRefreshTables(new Date());
-        }, 500);
+        setTimeout(() => { setRefreshTables(new Date()); }, 500);
         if (!hodeAlertSuccess) {
           setTimeout(() => alertify.success("Success"), 500);
         }
         return res.data.data;
       } else {
         const allErrors = Object.values(res.data.errors || {})
-          .flat()
-          .filter(Boolean)
-          .join(" | ");
+          .flat().filter(Boolean).join(" | ");
         alertError("Failed to create item: " + allErrors);
+        onError?.();
       }
     } catch (error: any) {
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } {
-        console.error(error);
-        alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
+      onError?.(); // ✅ Call ពេល Exception
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
+      setTimeout(() => { setLoading(false); }, 500);
     }
   };
 
-  /// Create FormData (for file upload)
   const createFormData = async (url: string, formData: FormData, onSuccess?: () => void) => {
     setLoading(true);
     try {
@@ -71,53 +65,43 @@ export function HookIntergrateAPI<T>() {
         setTimeout(() => alertify.success("Create Successfully"), 500);
       } else {
         const allErrors = Object.values(res.data.errors || {})
-          .flat()
-          .filter(Boolean)
-          .join(" | ");
+          .flat().filter(Boolean).join(" | ");
         alertError("Failed to create item: " + allErrors);
       }
     } catch (error: any) {
-
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } else {
-        console.error(error);
-        alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
-  /// Delete data
   const DeleteData = async (url: string, id: number) => {
     try {
       const res = await AxiosApi.delete<ApiResponse<T>>(`${url}/${id}`);
       if (res.data.success) {
-        // setRefreshTables(new Date());
         setTimeout(() => alertify.success("Delete Successfully!!"), 500);
       } else {
         const message = res.data.message || "Unknown error";
         alertError("Failed to delete data: " + message);
       }
     } catch (error: any) {
-      console.log("in catch is ===>>", error);
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } {
-        console.error(error);
-        alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
     }
   };
 
-  /// Get data by ID
   const GetDatabyID = async (url: string, id: number, subUrl?: string) => {
     try {
       const finalUrl = subUrl ? `${url}/${id}/${subUrl}` : `${url}/${id}`;
-
       const res = await AxiosApi.get<ApiResponse<T>>(finalUrl);
       if (res.data.success) {
         return res.data.data;
@@ -126,15 +110,13 @@ export function HookIntergrateAPI<T>() {
         return null;
       }
     } catch (error: any) {
-      console.log("status is ==>> ", error?.response?.status);
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } else {
-        console.error(error);
-        alertError(error?.response?.data?.message || "API error: 404 Not Found");
-        return null;
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || "API error: 404 Not Found");
+      return null;
     }
   };
 
@@ -148,20 +130,16 @@ export function HookIntergrateAPI<T>() {
         return null;
       }
     } catch (error: any) {
-      console.log("status is ==>> ", error?.response?.status);
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } else {
-        console.error(error);
-        alertError(error?.response?.data?.message || "API error: 404 Not Found");
-        return null;
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || "API error: 404 Not Found");
+      return null;
     }
   };
 
-
-  /// Get all data
   const GetDataAll = async (url: string) => {
     try {
       const res = await AxiosApi.get<T>(url);
@@ -170,50 +148,40 @@ export function HookIntergrateAPI<T>() {
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } {
-        console.error(error);
-        alertError(error?.response?.data?.message || "Something went wrong.");
-        return null;
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || "Something went wrong.");
+      return null;
     }
   };
 
-  /// Update JSON data
-  const updateData = async (url: string, id: number, data: T, onSuccess?: () => void, subUrl?: string) => {
+  const updateData = async (url: string, id: number, data: T, onSuccess?: () => void, subUrl?: string, onError?: () => void) => {
     setLoading(true);
     try {
       const res = await AxiosApi.put<ApiResponse<T>>(`${url}/${id}${subUrl ? `/${subUrl}` : ''}`, data);
       if (res.data.success) {
         onSuccess?.();
-        setTimeout(() => {
-          setRefreshTables(new Date());
-        }, 500);
+        setTimeout(() => { setRefreshTables(new Date()); }, 500);
         setTimeout(() => alertify.success("Updated successfully"), 500);
       } else {
         const allErrors = Object.values(res.data.errors || {})
-          .flat()
-          .filter(Boolean)
-          .join(" | ") || res.data.message || "Unknown error";
+          .flat().filter(Boolean).join(" | ") || res.data.message || "Unknown error";
         alertError("Failed to update item: " + allErrors);
+        onError?.();
       }
     } catch (error: any) {
-      console.log("error in catch ===>>> ", error);
       if (error?.response?.status == 401) {
         console.log("Unauthorized - 401");
         return;
-      } {
-        console.error(error);
-        alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
+      onError?.(); // Call when Exception
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
-
+      setTimeout(() => { setLoading(false); }, 500);
     }
   };
 
-  /// Update FormData (for file upload)
   const updateFormData = async (url: string, id: number, formData: FormData, onSuccess?: () => void, subUrl?: string) => {
     setLoading(true);
     try {
@@ -224,25 +192,21 @@ export function HookIntergrateAPI<T>() {
         setTimeout(() => alertify.success("Updated successfully"), 500);
       } else {
         const allErrors = Object.values(res.data.errors || {})
-          .flat()
-          .filter(Boolean)
-          .join(" | ") || res.data.message || "Unknown error";
+          .flat().filter(Boolean).join(" | ") || res.data.message || "Unknown error";
         alertError("Failed to update item: " + allErrors);
       }
     } catch (error: any) {
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } {
-        console.error(error);
-        alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
-  /// Update FormData (for file upload)
   const updateFormData2 = async (url: string, id: number, formData: FormData, onSuccess?: () => void, subUrl?: string) => {
     setLoading(true);
     try {
@@ -253,19 +217,16 @@ export function HookIntergrateAPI<T>() {
         setTimeout(() => alertify.success("Updated successfully"), 500);
       } else {
         const allErrors = Object.values(res.data.errors || {})
-          .flat()
-          .filter(Boolean)
-          .join(" | ") || res.data.message || "Unknown error";
+          .flat().filter(Boolean).join(" | ") || res.data.message || "Unknown error";
         alertError("Failed to update item: " + allErrors);
       }
     } catch (error: any) {
       if (error?.response?.status === 401) {
         console.log("Unauthorized - 401");
         return;
-      } {
-        console.error(error);
-        alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
       }
+      console.error(error);
+      alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -284,4 +245,3 @@ export function HookIntergrateAPI<T>() {
     updateData,
   };
 }
-

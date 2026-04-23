@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGlobleContextDarklight } from "../../AllContext/context";
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
 import { alertError } from "../../HtmlHelper/Alert";
-import { useFileUpload } from "../../component/FileUpload/Usefileupload"; // ✅ Import Hook
+import { useFileUpload } from "../../component/FileUpload/Usefileupload";
 
 interface CategoryFormData {
     id?: number;
@@ -95,11 +95,17 @@ const CategoryForm = ({ categoryId, onClose }: CategoryFormProps) => {
         };
 
         if (categoryId) {
-            await updateData("Category", categoryId, payload as any, () => {
-                setTimeout(() => handleClose(), 500);
-            });
+            await updateData("Category",categoryId, payload as any, () => setTimeout(() => handleClose(), 500),undefined,
+                async () => {
+                    if (hasNewFile && imageUrl) await deleteImage(imageUrl);
+                }
+            );
         } else {
-            await createData("Category", payload as any, () => setTimeout(() => handleClose(), 500));
+            await createData("Category", payload as any, () => setTimeout(() => handleClose(), 500), false,
+                async () => {
+                    if (imageUrl) await deleteImage(imageUrl);
+                }
+            );
         }
     };
 

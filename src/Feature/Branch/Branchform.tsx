@@ -370,12 +370,16 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
         };
 
         if (branchId) {
-            await updateData("Branch", branchId, payload as any, () =>
-                setTimeout(() => handleClose(), 500)
+            await updateData("Branch", branchId, payload as any,() => setTimeout(() => handleClose(), 500), undefined,
+                async () => {
+                    if (hasNewFile && logoUrl) await deleteImage(logoUrl);
+                }
             );
         } else {
-            await createData("Branch", payload as any, () =>
-                setTimeout(() => handleClose(), 500)
+            await createData("Branch",  payload as any, () => setTimeout(() => handleClose(), 500), false,
+                async () => {
+                    if (logoUrl) await deleteImage(logoUrl);
+                }
             );
         }
     };
