@@ -200,8 +200,6 @@
 // export default BranchList;
 
 
-
-
 import type { TableColumnsType } from 'antd';
 import XDataTable from '../../component/XDataTable/XDataTable';
 import "../../component/XDataTable/XdataTable.css";
@@ -209,7 +207,7 @@ import { BiGitBranch } from 'react-icons/bi';
 import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
-import { AxiosApi } from '../../component/Axios/Axios';
+import { useFileUpload } from '../../component/FileUpload/Usefileupload'; // ✅ Import Hook
 // import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import BranchForm from './Branchform';
 
@@ -229,11 +227,12 @@ const BranchList = () => {
     const { darkLight } = useGlobleContextDarklight();
     const [showModal, setShowModal] = useState(false);
     const [selectedBranchId, setSelectedBranchId] = useState<number | undefined>(undefined);
-    const [recordToDelete, setRecordToDelete] = useState<Branch | null>(null); // ✅ Store ទាំង Record (មាន logo)
+    const [recordToDelete, setRecordToDelete] = useState<Branch | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
+    const { deleteImage } = useFileUpload();
 
     const columns: TableColumnsType<Branch> = [
         {
@@ -314,7 +313,7 @@ const BranchList = () => {
     const handleCloseModal = () => { setShowModal(false); setSelectedBranchId(undefined); };
 
     const handleOpenDeleteModal = (record: Branch) => {
-        setRecordToDelete(record); // ✅ Store ទាំង Record (ដើម្បីយក logo)
+        setRecordToDelete(record);
         setShowDeleteModal(true);
         setTimeout(() => setIsDeleteAnimating(true), 10);
     };
@@ -327,17 +326,7 @@ const BranchList = () => {
     const handleDeleteConfirm = async () => {
         if (!recordToDelete) return;
         try {
-            // 1️⃣ Delete រូបភាព ដំបូង (បើ Branch មានរូបភាព)
-            if (recordToDelete.logo) {
-                try {
-                    await AxiosApi.delete(`FileStorage/delete?fileUrl=${encodeURIComponent(recordToDelete.logo)}`);
-                } catch (error) {
-                    console.error("Image delete failed (non-blocking):", error);
-                    // ✅ មិន Stop ទេ — Delete Record ដដែល
-                }
-            }
-
-            // 2️⃣ Delete Record
+            await deleteImage(recordToDelete.logo);
             await DeleteData("Branch", recordToDelete.id);
             handleCloseDeleteModal();
             setRefreshTables(new Date());

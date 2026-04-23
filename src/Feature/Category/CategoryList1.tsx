@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
+import { useFileUpload } from '../../component/FileUpload/Usefileupload'; // ✅ Import Hook
 import CategoryForm from './CategoryForm1';
 
 interface Category {
@@ -23,11 +24,12 @@ const CategoryList = () => {
     const { darkLight } = useGlobleContextDarklight();
     const [showModal, setShowModal] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
-    const [idDelete, setIdDelete] = useState<number | null>(null);
+    const [recordToDelete, setRecordToDelete] = useState<Category | null>(null); // ✅ Store ទាំង Record
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
+    const { deleteImage } = useFileUpload(); // ✅ ប្រើ deleteImage ពី Hook
 
     const columns: TableColumnsType<Category> = [
         {
@@ -62,8 +64,7 @@ const CategoryList = () => {
             render: (_, record) => (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${record.isActive
                     ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-600"
-                    }`}>
+                    : "bg-red-100 text-red-600"}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${record.isActive ? "bg-teal-500" : "bg-red-400"}`} />
                     {record.isActive ? "Active" : "Inactive"}
                 </span>
@@ -109,23 +110,28 @@ const CategoryList = () => {
     const handleCloseModal = () => { setShowModal(false); setSelectedCategoryId(undefined); };
 
     const handleOpenDeleteModal = (record: Category) => {
-        setIdDelete(record.id);
+        setRecordToDelete(record); //Store ទាំង Record
         setShowDeleteModal(true);
         setTimeout(() => setIsDeleteAnimating(true), 10);
     };
+
     const handleCloseDeleteModal = () => {
         setIsDeleteAnimating(false);
-        setTimeout(() => { setShowDeleteModal(false); setIdDelete(null); }, 300);
+        setTimeout(() => { setShowDeleteModal(false); setRecordToDelete(null); }, 300);
     };
+
     const handleDeleteConfirm = async () => {
-        if (idDelete !== null) {
-            try {
-                await DeleteData("Category", idDelete);
-                handleCloseDeleteModal();
-                setRefreshTables(new Date());
-            } catch (error) {
-                console.error("Error deleting category:", error);
-            }
+        if (!recordToDelete) return;
+        try {
+            // Delete រូបភាព ដំបូង — ប្រើ deleteImage ពី Hook
+            await deleteImage(recordToDelete.image);
+
+            // Delete Record
+            await DeleteData("Category", recordToDelete.id);
+            handleCloseDeleteModal();
+            setRefreshTables(new Date());
+        } catch (error) {
+            console.error("Error deleting category:", error);
         }
     };
 

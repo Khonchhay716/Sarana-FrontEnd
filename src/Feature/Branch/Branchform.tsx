@@ -269,7 +269,6 @@ import { useGlobleContextDarklight } from "../../AllContext/context";
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
 import { alertError } from "../../HtmlHelper/Alert";
 import { useFileUpload } from "../../component/FileUpload/Usefileupload";
-import { AxiosApi } from "../../component/Axios/Axios";
 
 interface BranchFormData {
     id?: number;
@@ -293,12 +292,13 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
     const {
         preview: logoPreview,
         uploading: uploadingLogo,
+        hasNewFile,
+        isRemoved,
         handleFileChange: handleLogoUpload,
         handleRemove: handleRemoveLogo,
+        deleteImage,
         uploadFile,
         setExistingUrl,
-        hasNewFile,
-        isRemoved, // ✅ User ចុច ✕ លុបរូបភាព
     } = useFileUpload();
 
     const [formData, setFormData] = useState<BranchFormData>({
@@ -340,15 +340,6 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
         setTimeout(() => onClose(), 300);
     };
 
-    // ✅ Helper: Delete រូបភាពចាស់ (non-blocking)
-    const deleteOldImage = async (imageUrl: string) => {
-        try {
-            await AxiosApi.delete(`FileStorage/delete?fileUrl=${encodeURIComponent(imageUrl)}`);
-        } catch (error) {
-            console.error("Old image delete failed (non-blocking):", error);
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.branchName.trim()) {
@@ -356,28 +347,20 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
             return;
         }
 
-        let logoUrl = formData.logo; // Default: URL ចាស់
+        let logoUrl = formData.logo;
 
         if (isRemoved) {
-            // ✅ Case 1: User ចុច ✕ លុបរូបភាព
-            // → Delete រូបចាស់ ហើយ ផ្ញើ logo: ""
-            if (formData.logo) {
-                await deleteOldImage(formData.logo);
-            }
-            logoUrl = ""; // ✅ ផ្ញើ "" ទៅ API
+            // delete image when user click cancel image 
+            await deleteImage(formData.logo);
+            logoUrl = "";
 
         } else if (hasNewFile) {
-            // ✅ Case 2: User ជ្រើស File ថ្មី
-            // → Delete រូបចាស់ ហើយ Upload រូបថ្មី
-            if (branchId && formData.logo) {
-                await deleteOldImage(formData.logo);
-            }
+            // if user is select file new it will to delete file old and create file new in both (server cloudinary or local folder)
+            await deleteImage(formData.logo);
             const uploadedUrl = await uploadFile();
-            if (!uploadedUrl) return; // Upload Failed → Stop
+            if (!uploadedUrl) return;
             logoUrl = uploadedUrl;
-
         }
-        // ✅ Case 3: User មិនផ្លាស់ប្ដូររូបភាព → logoUrl = formData.logo (URL ចាស់)
 
         const payload = {
             branchName: formData.branchName,
@@ -448,7 +431,6 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                                 alt="Logo preview"
                                                 className="w-20 h-20 object-cover rounded-xl border"
                                             />
-                                            {/* ✅ បង្ហាញ ✕ button តែពេល មានរូបភាព ហើយ មិនទាន់លុប */}
                                             {logoPreview && !isRemoved && (
                                                 <button type="button" onClick={handleRemoveLogo}
                                                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg text-xs">
