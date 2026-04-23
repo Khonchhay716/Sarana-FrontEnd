@@ -7,6 +7,7 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import CustomerForm from './CustomerForm';
 import PersonForm from './PersonForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
+import { useFileUpload } from '../../component/FileUpload/Usefileupload';
 import { FaUserCheck, FaUserPlus } from 'react-icons/fa';
 
 interface UserInfo {
@@ -34,7 +35,7 @@ interface Customer {
 type ActiveModal =
     | { type: "customerForm"; customerId?: number }
     | { type: "personForm"; customerId: number; customerName: string; userId?: number }
-    | { type: "deleteConfirm"; customerId: number }
+    | { type: "deleteConfirm"; customer: Customer }
     | null;
 
 const CustomerList = () => {
@@ -43,11 +44,12 @@ const CustomerList = () => {
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
+    const { deleteImage } = useFileUpload();
 
     const dl = darkLight;
 
-    const openDeleteModal = (customerId: number) => {
-        setActiveModal({ type: "deleteConfirm", customerId });
+    const openDeleteModal = (customer: Customer) => {
+        setActiveModal({ type: "deleteConfirm", customer });
         setTimeout(() => setIsDeleteAnimating(true), 10);
     };
 
@@ -67,7 +69,8 @@ const CustomerList = () => {
     const handleDeleteConfirm = async () => {
         if (activeModal?.type !== "deleteConfirm") return;
         try {
-            await DeleteData("Customer", activeModal.customerId);
+            await deleteImage(activeModal.customer.imageProfile);
+            await DeleteData("Customer", activeModal.customer.id);
             setIsDeleteAnimating(false);
             setTimeout(() => { setActiveModal(null); setRefreshTables(new Date()); }, 300);
         } catch (error) {
@@ -118,8 +121,7 @@ const CustomerList = () => {
             render: (_, record) => (
                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${record.status
                     ? dl ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
-                    : dl ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-600"
-                    }`}>
+                    : dl ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-600"}`}>
                     {record.status ? "Active" : "Inactive"}
                 </span>
             ),
@@ -131,11 +133,8 @@ const CustomerList = () => {
             render: (_, record) => {
                 const customerName = `${record.firstName} ${record.lastName}`;
                 const hasUser = !!record.user;
-
                 return (
                     <div className="flex items-center gap-2">
-
-                        {/* Single icon button — create if no user, edit if user exists */}
                         <button
                             title={hasUser ? "Edit User Account" : "Add User Account"}
                             onClick={() => setActiveModal({
@@ -144,8 +143,7 @@ const CustomerList = () => {
                                 customerName,
                                 userId: record.user?.id,
                             })}
-                            className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer`}
-                        >
+                            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer">
                             {hasUser ? (
                                 <FaUserCheck size={18} className={dl ? "text-green-400" : "text-green-600"} />
                             ) : (
@@ -160,7 +158,7 @@ const CustomerList = () => {
             title: 'Phone Number',
             key: 'phoneNumber',
             render: (_, record) => (
-                <p className={` mt-0.5 ${dl ? "text-gray-400" : "text-gray-500"}`}>
+                <p className={`mt-0.5 ${dl ? "text-gray-400" : "text-gray-500"}`}>
                     {record.phoneNumber || "—"}
                 </p>
             ),
@@ -186,16 +184,14 @@ const CustomerList = () => {
                     {/* <ComponentPermission scopes={["customer:update"]}> */}
                     <button
                         onClick={() => setActiveModal({ type: "customerForm", customerId: record.id })}
-                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                    >
+                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
                         Edit
                     </button>
                     {/* </ComponentPermission> */}
                     {/* <ComponentPermission scopes={["customer:delete"]}> */}
                     <button
-                        onClick={() => openDeleteModal(record.id)}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                    >
+                        onClick={() => openDeleteModal(record)}
+                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
                         Delete
                     </button>
                     {/* </ComponentPermission> */}
@@ -206,7 +202,6 @@ const CustomerList = () => {
 
     return (
         <>
-            {/* Page Header */}
             <div className='flex items-center justify-between gap-2 my-2'>
                 <div className="flex items-center gap-1 min-w-0">
                     <BiGroup className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0 ${dl ? "text-blue-400" : "text-blue-600"}`} />
@@ -217,14 +212,12 @@ const CustomerList = () => {
                 {/* <ComponentPermission scopes={["customer:create"]}> */}
                 <button
                     onClick={() => setActiveModal({ type: "customerForm" })}
-                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap"
-                >
+                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
                     Add Customer
                 </button>
                 {/* </ComponentPermission> */}
             </div>
 
-            {/* Table */}
             <XDataTable
                 TableName='Customer list'
                 columns={columns}
@@ -235,10 +228,7 @@ const CustomerList = () => {
             />
 
             {activeModal?.type === "customerForm" && (
-                <CustomerForm
-                    customerId={activeModal.customerId}
-                    onClose={handleFormClose}
-                />
+                <CustomerForm customerId={activeModal.customerId} onClose={handleFormClose} />
             )}
 
             {activeModal?.type === "personForm" && (
@@ -259,8 +249,7 @@ const CustomerList = () => {
                     <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none transition-all duration-300 ${isDeleteAnimating ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
                         <div
                             className={`rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto transform transition-all duration-300 ${dl ? "bg-gray-800" : "bg-white"} ${isDeleteAnimating ? "translate-y-0" : "translate-y-4"}`}
-                            onClick={e => e.stopPropagation()}
-                        >
+                            onClick={e => e.stopPropagation()}>
                             <div className="p-6 text-center">
                                 <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
                                     <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -272,16 +261,12 @@ const CustomerList = () => {
                                     This action cannot be undone. Do you want to delete this customer?
                                 </p>
                                 <div className="flex justify-center gap-3">
-                                    <button
-                                        onClick={closeModal}
-                                        className={`px-6 py-2.5 rounded-lg font-medium transition-all ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                                    >
+                                    <button onClick={closeModal}
+                                        className={`px-6 py-2.5 rounded-lg font-medium transition-all ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                         Cancel
                                     </button>
-                                    <button
-                                        onClick={handleDeleteConfirm}
-                                        className="px-6 py-2.5 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-all"
-                                    >
+                                    <button onClick={handleDeleteConfirm}
+                                        className="px-6 py-2.5 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-all">
                                         Yes, Delete
                                     </button>
                                 </div>

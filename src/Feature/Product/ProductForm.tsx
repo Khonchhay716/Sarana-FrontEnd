@@ -3,7 +3,7 @@ import { useGlobleContextDarklight } from "../../AllContext/context";
 import XSelectSearch, { SingleValue } from "../../component/XSelectSearch/Xselectsearch";
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
 import { alertError } from "../../HtmlHelper/Alert";
-import { AxiosApi } from "../../component/Axios/Axios";
+import { useFileUpload } from "../../component/FileUpload/Usefileupload";
 
 interface ProductFormData {
     id?: number;
@@ -33,11 +33,22 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
     const { createData, updateData, GetDatabyID, loading } = HookIntergrateAPI<ProductFormData>();
     const [isAnimating, setIsAnimating] = useState(false);
     const hasInitialized = useRef(false);
-    const [imagePreview, setImagePreview] = useState<string>("");
-    const [uploadingImage, setUploadingImage] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<SingleValue | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<SingleValue | null>(null);
     const [alertEnabled, setAlertEnabled] = useState(false);
+
+    const {
+        preview: imagePreview,
+        uploading: uploadingImage,
+        selecting,
+        hasNewFile,
+        isRemoved,
+        handleFileChange: handleInputChangeImage,
+        handleRemove: handleRemoveImage,
+        deleteImage,
+        uploadFile,
+        setExistingUrl,
+    } = useFileUpload();
 
     const [formData, setFormData] = useState<ProductFormData>({
         name: "",
@@ -87,11 +98,11 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                 imageProduct: data.imageProduct || "",
                 isSerialNumber: data.isSerialNumber ?? false,
                 minStock: data.minStock ?? 0,
-                ram: data.ram || "",           // ✅
-                storage: data.storage || "",   // ✅
+                ram: data.ram || "",
+                storage: data.storage || "",
             });
             if ((data.minStock ?? 0) > 0) setAlertEnabled(true);
-            if (data.imageProduct) setImagePreview(data.imageProduct);
+            if (data.imageProduct) setExistingUrl(data.imageProduct);
             if (data.category)
                 setSelectedCategory({ id: data.categoryId, name: data.category.name, value: data.categoryId, data: data.category });
             if (data.branch)
@@ -114,31 +125,6 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
         setFormData(prev => ({ ...prev, branchId: value ? Number(value.id) : null }));
     };
 
-    const handleInputChangeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        try {
-            setUploadingImage(true);
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const fd = new FormData();
-            fd.append("file", file);
-            const res = await AxiosApi.post("FileStorage/upload", fd, {
-                headers: { "Content-Type": "multipart/form-data" }
-            });
-            const url = res?.data?.url;
-            setImagePreview(url);
-            setFormData(prev => ({ ...prev, imageProduct: url }));
-        } catch (error) {
-            console.error("Upload error:", error);
-        } finally {
-            setTimeout(() => setUploadingImage(false), 500);
-        }
-    };
-
-    const handleRemoveImage = () => {
-        setImagePreview("");
-        setFormData(prev => ({ ...prev, imageProduct: "" }));
-    };
-
     const handleClose = () => { setIsAnimating(false); setTimeout(() => onClose(), 300); };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -151,6 +137,19 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
             alertError("Low stock threshold must be greater than 0 when alert is enabled!"); return;
         }
 
+        let imageUrl = formData.imageProduct;
+
+        if (isRemoved) {
+            await deleteImage(formData.imageProduct);
+            imageUrl = "";
+
+        } else if (hasNewFile) {
+            await deleteImage(formData.imageProduct);
+            const uploadedUrl = await uploadFile();
+            if (!uploadedUrl) return;
+            imageUrl = uploadedUrl;
+        }
+
         const payload = {
             name: formData.name,
             description: formData.description,
@@ -161,7 +160,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
             taxRate: formData.taxRate,
             categoryId: formData.categoryId,
             branchId: formData.branchId,
-            imageProduct: imagePreview,
+            imageProduct: imageUrl,
             isSerialNumber: formData.isSerialNumber,
             minStock: alertEnabled ? formData.minStock : 0,
             ram: formData.isSerialNumber ? (formData.ram || null) : null,
@@ -169,9 +168,17 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
         };
 
         if (productId) {
-            await updateData("Product", productId, payload as any, () => setTimeout(() => handleClose(), 500));
+            await updateData("Product", productId, payload as any, () => setTimeout(() => handleClose(), 500), undefined,
+                async () => {
+                    if (hasNewFile && imageUrl) await deleteImage(imageUrl);
+                }
+            );
         } else {
-            await createData("Product", payload as any, () => setTimeout(() => handleClose(), 500));
+            await createData("Product", payload as any, () => setTimeout(() => handleClose(), 500), false,
+                async () => {
+                    if (imageUrl) await deleteImage(imageUrl);
+                }
+            );
         }
     };
 
@@ -196,7 +203,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                             </div>
                             <button onClick={handleClose}
                                 className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xl transition-all
-                ${dl ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}>
+                                ${dl ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}>
                                 ×
                             </button>
                         </div>
@@ -216,11 +223,11 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                         <div className="relative mt-2 flex-shrink-0">
                                             <img src={imagePreview || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8MmaS1S0FTclHTMMLicf-O0tOGth44cBGt03HQ4jh3phLijQ_k17nFf4eyrqyxHHkgQwLSzwIViOoi81phleVJoBLZbanBf5QRODj9g&s=10"}
                                                 alt="Preview" className="w-24 h-24 object-cover rounded-lg border" />
-                                            {imagePreview && (
+                                            {imagePreview && !isRemoved && (
                                                 <button type="button" onClick={handleRemoveImage}
                                                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg text-xs">✕</button>
                                             )}
-                                            {uploadingImage && (
+                                            {selecting && (
                                                 <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
                                                     <svg className="animate-spin h-8 w-8 text-white" viewBox="0 0 24 24">
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -231,9 +238,9 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                         </div>
                                         <div className="flex flex-col gap-2 mt-2 flex-1">
                                             <span className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>JPEG, PNG, GIF, WEBP • Max 12 MB</span>
-                                            <input type="file" name="imageProduct" onChange={handleInputChangeImage}
+                                            <input type="file" onChange={handleInputChangeImage}
                                                 className={inputClass} accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                                                disabled={uploadingImage} />
+                                                disabled={selecting} />
                                         </div>
                                     </div>
                                 </div>
@@ -335,44 +342,28 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                     )}
                                 </div>
 
-                                {/* RAM + Storage — only show when Serialized */}
+                                {/* RAM + Storage */}
                                 {formData.isSerialNumber && (
                                     <div className="md:col-span-2">
                                         <div className={`rounded-xl border-2 p-4 transition-all ${dl ? "border-blue-700 bg-blue-900/10" : "border-blue-200 bg-blue-50/50"}`}>
                                             <div className="grid grid-cols-2 gap-4">
-                                                {/* RAM */}
                                                 <div>
                                                     <label className={`block mb-1.5 text-sm font-semibold ${dl ? "text-blue-300" : "text-blue-700"}`}>
                                                         RAM
                                                         <span className={`ml-1 text-xs font-normal ${dl ? "text-gray-500" : "text-gray-400"}`}>(optional)</span>
                                                     </label>
-                                                    <input
-                                                        type="text"
-                                                        name="ram"
-                                                        value={formData.ram}
-                                                        onChange={handleInputChange}
-                                                        className={inputClass}
-                                                        placeholder="e.g. 8GB, 12GB, 16GB"
-                                                    />
+                                                    <input type="text" name="ram" value={formData.ram} onChange={handleInputChange}
+                                                        className={inputClass} placeholder="e.g. 8GB, 12GB, 16GB" />
                                                 </div>
-
-                                                {/* Storage */}
                                                 <div>
                                                     <label className={`block mb-1.5 text-sm font-semibold ${dl ? "text-blue-300" : "text-blue-700"}`}>
                                                         Storage
                                                         <span className={`ml-1 text-xs font-normal ${dl ? "text-gray-500" : "text-gray-400"}`}>(optional)</span>
                                                     </label>
-                                                    <input
-                                                        type="text"
-                                                        name="storage"
-                                                        value={formData.storage}
-                                                        onChange={handleInputChange}
-                                                        className={inputClass}
-                                                        placeholder="e.g. 128GB, 256GB, 1TB"
-                                                    />
+                                                    <input type="text" name="storage" value={formData.storage} onChange={handleInputChange}
+                                                        className={inputClass} placeholder="e.g. 128GB, 256GB, 1TB" />
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                 )}
@@ -413,7 +404,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                                             : "bg-white border-amber-400 text-gray-900 focus:border-amber-500 focus:bg-amber-50/30"}`} />
                                                 </div>
                                                 <div className={`flex-1 text-xs rounded-lg p-3 ${dl ? "bg-amber-900/20 text-amber-300" : "bg-amber-50 text-amber-700"}`}>
-                                                    ⚠️ Warning badge appears when stock reaches <strong>{formData.minStock || "?"}</strong> units or below.
+                                                    Warning badge appears when stock reaches <strong>{formData.minStock || "?"}</strong> units or below.
                                                 </div>
                                             </div>
                                         )}
@@ -429,21 +420,22 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
 
                             </div>
                         </div>
+
                         {/* Footer */}
                         <div className={`px-4 sm:px-6 py-3 border-t flex-shrink-0 ${dl ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}>
                             <div className="flex justify-end gap-2 sm:gap-3">
                                 <button type="button" onClick={handleClose}
                                     className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all
-                ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
+                                        ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                     Cancel
                                 </button>
                                 <button type="submit" disabled={loading || uploadingImage}
                                     className={`px-5 sm:px-8 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all shadow-lg
-                ${loading || uploadingImage
+                                        ${loading || uploadingImage
                                             ? "bg-blue-400 cursor-not-allowed"
                                             : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                                         } text-white disabled:opacity-50`}>
-                                    {loading ? (
+                                    {loading || uploadingImage ? (
                                         <span className="flex items-center gap-2">
                                             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

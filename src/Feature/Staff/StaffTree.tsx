@@ -26,7 +26,7 @@ interface OrgNodeProps {
     node: StaffTreeNode;
     darkLight: boolean;
     onEdit: (id: number) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: number, imageProfile: string) => void;
 }
 
 const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
@@ -65,7 +65,7 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
                                 <FaEdit className="text-blue-500 w-3 h-3" /> Edit
                             </button>
                             <button type="button"
-                                onClick={() => { onDelete(node.id); setShowMenu(false); }}
+                                onClick={() => { onDelete(node.id, node.imageProfile); setShowMenu(false); }}
                                 className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-all ${dl ? "text-gray-200 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-50"}`}>
                                 <FaTrash className="text-red-500 w-3 h-3" /> Delete
                             </button>
@@ -98,8 +98,7 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
                     )}
                     <div className={`mt-2 text-[9px] px-2 py-0.5 rounded-full font-semibold inline-block ${node.status
                         ? dl ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
-                        : dl ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-600"
-                        }`}>
+                        : dl ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-600"}`}>
                         {node.status ? "Active" : "Inactive"}
                     </div>
                 </div>
@@ -146,7 +145,7 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
 
 interface StaffTreeProps {
     onEdit: (staffId: number) => void;
-    onDelete: (staffId: number) => void;
+    onDelete: (staffId: number, imageProfile: string) => void;
 }
 
 const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
@@ -183,9 +182,8 @@ const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
     return (
         <div
             className={`rounded-2xl mb-15 ${dl ? "bg-gray-800" : "bg-white"}`}
-            style={{ boxShadow: "0 0 5px 1px rgba(0,0,0,0.3)", minHeight: "75vh", position: "relative" }}
-        >
-            {/* Zoom controls */}
+            style={{ boxShadow: "0 0 5px 1px rgba(0,0,0,0.3)", minHeight: "75vh", position: "relative" }}>
+
             <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${dl ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>
                     {Math.round(scale * 100)}%
@@ -207,7 +205,6 @@ const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
                 </span>
             </div>
 
-            {/* ✅ Scroll container — auto = scroll only when needed */}
             <div style={{ overflow: "auto", minHeight: "75vh", width: "100%" }}>
                 {loading ? (
                     <div className="flex items-center justify-center" style={{ minHeight: "75vh" }}>
@@ -225,14 +222,7 @@ const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
                     </div>
                 ) : (
                     <div style={{ padding: "10px 0px", boxSizing: "border-box" }}>
-                        <div
-                            style={{
-                                zoom: scale,
-                                userSelect: "none",
-                                margin: "0 auto",
-                                width: "fit-content",
-                            }}
-                        >
+                        <div style={{ zoom: scale, userSelect: "none", margin: "0 auto", width: "fit-content" }}>
                             <div style={{ display: "flex", gap: "32px" }}>
                                 {treeData.map(root => (
                                     <OrgNode
@@ -249,7 +239,6 @@ const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
                 )}
             </div>
 
-            {/* Hint */}
             <div className={`absolute bottom-3 left-3 text-[10px] ${dl ? "text-gray-600" : "text-gray-400"}`}>
                 🖱 Scroll to navigate
             </div>

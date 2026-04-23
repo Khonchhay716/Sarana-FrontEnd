@@ -7,6 +7,7 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import ProductForm from './ProductForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
+import { useFileUpload } from '../../component/FileUpload/Usefileupload';
 
 interface Category { id: number; name: string; }
 
@@ -34,11 +35,12 @@ const ProductList = () => {
     const { darkLight } = useGlobleContextDarklight();
     const [showModal, setShowModal] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<number | undefined>(undefined);
-    const [idDelete, setIdDelete] = useState<number | null>(null);
+    const [recordToDelete, setRecordToDelete] = useState<Product | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
+    const { deleteImage } = useFileUpload();
 
     const columns: TableColumnsType<Product> = [
         {
@@ -94,9 +96,8 @@ const ProductList = () => {
             render: (_, record) => (
                 <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${record.isSerialNumber
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                    : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                    }`}>
-                    {record.isSerialNumber ? "Serialized" : " Non-Serialized"}
+                    : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"}`}>
+                    {record.isSerialNumber ? "Serialized" : "Non-Serialized"}
                 </span>
             ),
         },
@@ -167,29 +168,28 @@ const ProductList = () => {
 
     const handleAddProduct = () => { setSelectedProductId(undefined); setShowModal(true); };
     const handleEdit = (record: Product) => { setSelectedProductId(record.id); setShowModal(true); };
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setSelectedProductId(undefined);
-    };
+    const handleCloseModal = () => { setShowModal(false); setSelectedProductId(undefined); };
 
     const handleOpenDeleteModal = (record: Product) => {
-        setIdDelete(record.id);
+        setRecordToDelete(record);
         setShowDeleteModal(true);
         setTimeout(() => setIsDeleteAnimating(true), 10);
     };
+
     const handleCloseDeleteModal = () => {
         setIsDeleteAnimating(false);
-        setTimeout(() => { setShowDeleteModal(false); setIdDelete(null); }, 300);
+        setTimeout(() => { setShowDeleteModal(false); setRecordToDelete(null); }, 300);
     };
+
     const handleDeleteConfirm = async () => {
-        if (idDelete !== null) {
-            try {
-                await DeleteData("Product", idDelete);
-                handleCloseDeleteModal();
-                setRefreshTables(new Date());
-            } catch (error) {
-                console.error("Error deleting product:", error);
-            }
+        if (!recordToDelete) return;
+        try {
+            await deleteImage(recordToDelete.imageProduct);
+            await DeleteData("Product", recordToDelete.id);
+            handleCloseDeleteModal();
+            setRefreshTables(new Date());
+        } catch (error) {
+            console.error("Error deleting product:", error);
         }
     };
 
@@ -198,7 +198,7 @@ const ProductList = () => {
             <div className="flex items-center justify-between gap-2 my-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <BiPackage className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0
-            ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
+                        ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
                     <h3 className={`font-bold text-base sm:text-2xl truncate ${darkLight ? 'text-white' : 'text-gray-900'}`}>
                         PRODUCT MANAGEMENT
                     </h3>
