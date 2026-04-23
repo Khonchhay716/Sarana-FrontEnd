@@ -264,7 +264,6 @@
 
 // export default BranchForm;
 
-
 import { useEffect, useRef, useState } from "react";
 import { useGlobleContextDarklight } from "../../AllContext/context";
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
@@ -298,7 +297,8 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
         handleRemove: handleRemoveLogo,
         uploadFile,
         setExistingUrl,
-        hasNewFile, // ✅ ដឹងថា User ជ្រើស File ថ្មីឬអត់
+        hasNewFile,
+        isRemoved, // ✅ User ចុច ✕ លុបរូបភាព
     } = useFileUpload();
 
     const [formData, setFormData] = useState<BranchFormData>({
@@ -356,19 +356,28 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
             return;
         }
 
-        let logoUrl = formData.logo;
+        let logoUrl = formData.logo; // Default: URL ចាស់
 
-        // ✅ បើ User ជ្រើស File ថ្មី
-        if (hasNewFile) {
-            // 1️⃣ Delete រូបភាពចាស់ ដំបូង (តែពេល Edit ហើយ មានរូបភាពចាស់)
+        if (isRemoved) {
+            // ✅ Case 1: User ចុច ✕ លុបរូបភាព
+            // → Delete រូបចាស់ ហើយ ផ្ញើ logo: ""
+            if (formData.logo) {
+                await deleteOldImage(formData.logo);
+            }
+            logoUrl = ""; // ✅ ផ្ញើ "" ទៅ API
+
+        } else if (hasNewFile) {
+            // ✅ Case 2: User ជ្រើស File ថ្មី
+            // → Delete រូបចាស់ ហើយ Upload រូបថ្មី
             if (branchId && formData.logo) {
                 await deleteOldImage(formData.logo);
             }
-            // 2️⃣ Upload រូបភាពថ្មី
             const uploadedUrl = await uploadFile();
             if (!uploadedUrl) return; // Upload Failed → Stop
             logoUrl = uploadedUrl;
+
         }
+        // ✅ Case 3: User មិនផ្លាស់ប្ដូររូបភាព → logoUrl = formData.logo (URL ចាស់)
 
         const payload = {
             branchName: formData.branchName,
@@ -439,7 +448,8 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                                 alt="Logo preview"
                                                 className="w-20 h-20 object-cover rounded-xl border"
                                             />
-                                            {logoPreview && (
+                                            {/* ✅ បង្ហាញ ✕ button តែពេល មានរូបភាព ហើយ មិនទាន់លុប */}
+                                            {logoPreview && !isRemoved && (
                                                 <button type="button" onClick={handleRemoveLogo}
                                                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg text-xs">
                                                     ✕

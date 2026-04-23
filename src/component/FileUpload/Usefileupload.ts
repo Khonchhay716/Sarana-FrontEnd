@@ -6,6 +6,7 @@ export const useFileUpload = () => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string>("");
     const [uploading, setUploading] = useState(false);
+    const [isRemoved, setIsRemoved] = useState(false); // ✅ Track ថា User លុបរូបភាពឬអត់
 
     // ✅ Preview តែប៉ុណ្ណោះ — មិន Upload ទៅ Server
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -13,12 +14,14 @@ export const useFileUpload = () => {
         if (!selected) return;
         setFile(selected);
         setPreview(URL.createObjectURL(selected));
+        setIsRemoved(false); // ✅ Reset — ជ្រើស File ថ្មីវិញ
     };
 
-    // ✅ Clear file និង preview
+    // ✅ Clear file, preview និង Mark ថា User លុបរូបភាព
     const handleRemove = () => {
         setFile(null);
         setPreview("");
+        setIsRemoved(true); // ✅ Mark ថា User បានចុច ✕ លុបរូបភាព
     };
 
     // ✅ Upload ពិតប្រាកដ — Call តែពេល Submit
@@ -40,17 +43,18 @@ export const useFileUpload = () => {
         }
     };
 
-    // ✅ Set URL ចាស់ (ប្រើពេល Edit)
+    // ✅ Set URL ចាស់ (ប្រើពេល Edit — Load Data មកពី API)
     const setExistingUrl = (url: string) => {
         setPreview(url);
-        // ✅ file នៅ null — hasNewFile នៅ false
+        setIsRemoved(false); // ✅ Reset
     };
 
     return {
         file,
         preview,
         uploading,
-        hasNewFile: file !== null, // ✅ true = User ជ្រើស File ថ្មី, false = URL ចាស់
+        hasNewFile: file !== null,  // ✅ User ជ្រើស File ថ្មី
+        isRemoved,                  // ✅ User ចុច ✕ លុបរូបភាព
         handleFileChange,
         handleRemove,
         uploadFile,
