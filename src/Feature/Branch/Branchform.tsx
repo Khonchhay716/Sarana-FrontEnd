@@ -292,6 +292,7 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
     const {
         preview: logoPreview,
         uploading: uploadingLogo,
+        selecting,
         hasNewFile,
         isRemoved,
         handleFileChange: handleLogoUpload,
@@ -370,13 +371,13 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
         };
 
         if (branchId) {
-            await updateData("Branch", branchId, payload as any,() => setTimeout(() => handleClose(), 500), undefined,
+            await updateData("Branch", branchId, payload as any, () => setTimeout(() => handleClose(), 500), undefined,
                 async () => {
                     if (hasNewFile && logoUrl) await deleteImage(logoUrl);
                 }
             );
         } else {
-            await createData("Branch",  payload as any, () => setTimeout(() => handleClose(), 500), false,
+            await createData("Branch", payload as any, () => setTimeout(() => handleClose(), 500), false,
                 async () => {
                     if (logoUrl) await deleteImage(logoUrl);
                 }
@@ -441,7 +442,7 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                                     ✕
                                                 </button>
                                             )}
-                                            {uploadingLogo && (
+                                            {selecting && (
                                                 <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
                                                     <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24">
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -457,7 +458,7 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                             <input type="file" onChange={handleLogoUpload}
                                                 className={inputClass}
                                                 accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                                                disabled={uploadingLogo} />
+                                                disabled={selecting} />
                                         </div>
                                     </div>
                                 </div>
@@ -523,7 +524,7 @@ const BranchForm = ({ branchId, onClose }: BranchFormProps) => {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            <span className="hidden sm:inline">{uploadingLogo ? "Uploading..." : "Saving..."}</span>
+                                            <span className="hidden sm:inline">Saving...</span>
                                             <span className="sm:hidden">...</span>
                                         </span>
                                     ) : (

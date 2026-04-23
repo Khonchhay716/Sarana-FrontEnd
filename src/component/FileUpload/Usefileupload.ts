@@ -6,15 +6,18 @@ export const useFileUpload = () => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string>("");
     const [uploading, setUploading] = useState(false);
+    const [selecting, setSelecting] = useState(false);
     const [isRemoved, setIsRemoved] = useState(false);
 
     // Preview តែប៉ុណ្ណោះ — មិន Upload ទៅ Server
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selected = e.target.files?.[0];
         if (!selected) return;
+        setSelecting(true);
         setFile(selected);
         setPreview(URL.createObjectURL(selected));
         setIsRemoved(false);
+        setTimeout(() => setSelecting(false), 500);
     };
 
     // Clear file + Mark ថា User លុបរូបភាព
@@ -63,6 +66,7 @@ export const useFileUpload = () => {
         file,
         preview,
         uploading,
+        selecting,
         hasNewFile: file !== null,
         isRemoved,
         handleFileChange,
