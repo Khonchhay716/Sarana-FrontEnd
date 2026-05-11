@@ -977,7 +977,7 @@ const FilterModal = ({ darkLight, onClose, filters, onApply }: {
             />
 
             {/* Drawer — slides up from bottom on mobile, centered modal on desktop */}
-            <div className={`fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 p-0 md:p-4 pointer-events-none transition-all duration-250 ${animating ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 p-0 md:p-4 pointer-events-none transition-all duration-250 mt-15 ${animating ? 'opacity-100' : 'opacity-0'}`}>
                 <div
                     className={`w-full md:max-w-lg pointer-events-auto rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-250
                         ${animating ? 'translate-y-0' : 'translate-y-full md:translate-y-4'}

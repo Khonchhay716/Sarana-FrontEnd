@@ -335,7 +335,9 @@ const Permissions: FC = () => {
       console.error(error);
       alertError(error.response?.data?.message || "Error updating permissions");
     } finally {
-      setSubmitting(false);
+      setTimeout(() => {
+        setSubmitting(false);
+      }, 500);
     }
   };
 

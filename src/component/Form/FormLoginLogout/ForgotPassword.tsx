@@ -101,10 +101,10 @@ const ForgotPassword: React.FC = () => {
 
   return (
     <div
-      className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
+      className="relative min-h-screen flex items-center justify-center bg-cover bg-center px-2"
       style={{
         backgroundImage:
-          "url('https://t4.ftcdn.net/jpg/14/95/48/49/360_F_1495484999_QMEAoIWLdpFnSeK9dDQv7FOBR080IY63.jpg')",
+          "url('https://images.openai.com/static-rsc-4/i0LLhdUpEi3RMQw-nCiYvpaVVBAP2mY2zDl1iSabMTcYVqZzRNr3TNELC2qcMZkWyrXu0COn9aJu3G8XxuN9n7RvWaSNUDfdidB8iUuLQQlYpxjGN3hTEBZIk_9JRgjMQPXzSsZRrh0klaQiTtnE1h8TTm6oiTP3A4XB1UEaoJO4iGGLG5N9_yNBf0k6xRKK?purpose=fullsize')",
       }}
     >
       <div className="absolute inset-0 z-0"></div>

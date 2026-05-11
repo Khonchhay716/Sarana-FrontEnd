@@ -1,2471 +1,3 @@
-// import { useState, useEffect, useCallback, useRef } from "react";
-// import { useGlobleContextDarklight } from "../../AllContext/context";
-// import { AxiosApi } from "../../component/Axios/Axios";
-// import XSelectSearch, { MultiValue } from "../../component/XSelectSearch/Xselectsearch";
-// import { alertError } from "../../HtmlHelper/Alert";
-// import alertify from "alertifyjs";
-
-// // ─── Types ────────────────────────────────────────────────────────────────────
-// interface TypeNamebase { id: number; name: string; }
-// interface Category { id: number; name: string; image?: string; }
-// interface Product {
-//   id: number; name: string; sku?: string; price: number;
-//   taxRate?: number; taxAmount?: number; stock?: number;
-//   imageProduct?: string; isSerialNumber?: boolean;
-//   category?: TypeNamebase; branch?: TypeNamebase;
-// }
-// interface SerialNumberItem {
-//   id: number; productId: number; serialNo: string; status: string;
-// }
-// interface SelectedSerial { id: number | string; serialNo: string; data?: SerialNumberItem | null; }
-// interface CartItem extends Product {
-//   qty: number; serialNumbers?: SelectedSerial[];
-//   warrantyMonths?: number; warrantyStart?: string; warrantyEnd?: string;
-// }
-// interface NearDiscountHint {
-//   message: string; amountNeeded: number;
-//   discountName: string; applicableProducts: string[];
-// }
-// interface OrderSummaryResponse {
-//   subTotal: number; totalTax: number;
-//   totalDiscount: number; totalPayable: number;
-//   nearDiscountHints: NearDiscountHint[];
-// }
-// interface CustomerInfo { id: number; name: string; totalPoint: number; }
-
-// // ✅ PointSetup
-// interface PointSetupInfo {
-//   pointsPerRedemption: number;
-//   isActive: boolean;
-// }
-
-// interface PaginatedResponse<T> {
-//   data: T[]; totalCount: number; page: number;
-//   pageSize: number; totalPages: number;
-//   hasPrevious: boolean; hasNext: boolean;
-// }
-// interface PlaceOrderItemPayload {
-//   productId: number; serialNumberIds?: number[];
-//   quantity?: number; unitPrice: number;
-//   warrantyMonths?: number;
-// }
-// interface PlaceOrderPayload {
-//   customerId?: number; status?: number;
-//   paymentStatus?: number; discountAmount?: number;
-//   saleType: number; paymentMethod?: number;
-//   notes?: string; pointsUsed?: number;   // ✅
-//   items: PlaceOrderItemPayload[];
-// }
-// interface SerialNumberModalProps {
-//   product: Product; dark: boolean;
-//   existingSerials?: SelectedSerial[];
-//   existingWarrantyMonths?: number; existingWarrantyStart?: string;
-//   onConfirm: (p: Product, s: SelectedSerial[], wm: number, ws: string, we: string) => void;
-//   onClose: () => void;
-// }
-// interface CartRowProps {
-//   item: CartItem; onInc: () => void; onDec: () => void; onRemove: () => void;
-//   dark: boolean; rowBg: string; textPrimary: string; textMuted: string;
-// }
-// interface ProductRowProps {
-//   product: Product; cartItem: CartItem | undefined; onAdd: (p: Product) => void;
-//   dark: boolean; productBg: string; borderColor: string;
-//   textPrimary: string; textSub: string; textMuted: string; imgFallback: string;
-// }
-
-// // ✅ 3 payment methods
-// const PAYMENT_METHODS = [
-//   { value: 1, label: "Cash",    icon: "💵" },
-//   { value: 2, label: "Bank QR", icon: "📲" },
-//   { value: 3, label: "Point",   icon: "⭐" },
-// ];
-
-// // ─── Payment Modal ────────────────────────────────────────────────────────────
-// interface PaymentModalProps {
-//   dark: boolean; cart: CartItem[];
-//   subtotal: number; totalTax: number; autoDiscount: number;
-//   customer: CustomerInfo | null;
-//   pointSetup: PointSetupInfo | null;              // ✅
-//   onConfirm: (paymentMethod: number, discount: number, notes: string, pointsUsed: number) => void;
-//   onClose: () => void; placing: boolean; orderError: string | null;
-// }
-
-// function PaymentModal({
-//   dark, cart, subtotal, totalTax, autoDiscount,
-//   customer, pointSetup, onConfirm, onClose, placing, orderError,
-// }: PaymentModalProps) {
-//   const [paymentMethod, setPaymentMethod] = useState<number>(1);
-//   const [manualDiscount, setManualDiscount] = useState<string>("");
-//   const [notes, setNotes]                   = useState<string>("");
-//   const [cashGiven, setCashGiven]           = useState<string>("");
-
-//   const manualDiscountAmt = Math.min(parseFloat(manualDiscount) || 0, subtotal + totalTax);
-//   const totalDiscountAmt  = Math.min(autoDiscount + manualDiscountAmt, subtotal + totalTax);
-//   const baseTotal         = subtotal + totalTax - totalDiscountAmt;
-
-//   // ✅ Auto-calculate points needed
-//   const redemptionRate    = pointSetup?.pointsPerRedemption ?? 0;
-//   const pointsNeeded      = redemptionRate > 0 ? Math.ceil(baseTotal * redemptionRate) : 0;
-//   const customerPoints    = customer?.totalPoint ?? 0;
-//   const canPayByPoint     = customer != null && redemptionRate > 0 && customerPoints >= pointsNeeded && pointsNeeded > 0;
-
-//   // ✅ When Pay by Point: auto-use exact points needed
-//   const pointsUsed        = paymentMethod === 3 ? pointsNeeded : 0;
-//   const pointDiscount     = paymentMethod === 3 && redemptionRate > 0
-//     ? pointsUsed / redemptionRate
-//     : 0;
-//   const total             = Math.max(0, baseTotal - pointDiscount);
-
-//   const cashGivenNum      = parseFloat(cashGiven) || 0;
-//   const change            = paymentMethod === 1 ? Math.max(0, cashGivenNum - total) : 0;
-//   const totalQty          = cart.reduce((s, i) => s + i.qty, 0);
-
-//   // Reset to Cash if Point no longer available
-//   useEffect(() => {
-//     if (paymentMethod === 3 && !canPayByPoint) setPaymentMethod(1);
-//   }, [canPayByPoint, paymentMethod]);
-
-//   const dl       = dark;
-//   const border   = dl ? "border-slate-700"  : "border-slate-200";
-//   const txt      = dl ? "text-slate-100"    : "text-slate-900";
-//   const txtSub   = dl ? "text-slate-400"    : "text-slate-500";
-//   const txtMuted = dl ? "text-slate-500"    : "text-slate-400";
-//   const modal    = dl ? "bg-[#1e293b]"      : "bg-white";
-//   const overlay  = dl ? "bg-black/75"       : "bg-black/55";
-//   const sectionBg = dl ? "bg-slate-800/60" : "bg-slate-50";
-//   const divider  = dl ? "border-slate-700"  : "border-slate-200";
-//   const inputCls = `w-full px-3 py-2 rounded-xl border text-sm outline-none transition-colors ${
-//     dl  ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500 placeholder-slate-500"
-//         : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400 placeholder-slate-400"
-//   }`;
-
-//   return (
-//     <div
-//       className={`fixed inset-0 z-50 flex mt-16 items-center justify-center ${overlay} backdrop-blur-sm p-4`}
-//       onClick={e => { if (e.target === e.currentTarget && !placing) onClose(); }}
-//     >
-//       <div
-//         className={`${modal} rounded-2xl border ${border} w-full shadow-2xl flex flex-col overflow-hidden`}
-//         style={{ maxWidth: "860px", height: "calc(100vh - 74px)", maxHeight: "760px" }}
-//       >
-//         {/* Header */}
-//         <div className={`flex items-center gap-3 px-5 py-2 border-b ${border} shrink-0`}>
-//           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0">
-//             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                 d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-//             </svg>
-//           </div>
-//           <div className="flex-1">
-//             <h2 className={`font-bold text-base ${txt}`}>Confirm Payment</h2>
-//             <p className={`text-xs ${txtMuted}`}>
-//               {totalQty} item{totalQty !== 1 ? "s" : ""} · {cart.length} product{cart.length !== 1 ? "s" : ""}
-//               {customer && <span className="ml-2 text-amber-400 font-semibold">· ⭐ {customer.totalPoint} pts</span>}
-//             </p>
-//           </div>
-//           <button onClick={onClose} disabled={placing}
-//             className={`w-8 h-8 rounded-lg flex items-center justify-center ${dl ? "hover:bg-slate-700 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}>
-//             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-//             </svg>
-//           </button>
-//         </div>
-
-//         {/* Body */}
-//         <div className="flex flex-1 overflow-hidden">
-
-//           {/* LEFT: Summary */}
-//           <div className={`flex flex-col w-[340px] shrink-0 border-r ${border}`}>
-//             <div className={`px-4 py-1.5 border-b ${border}`}>
-//               <p className={`text-[11px] font-bold uppercase tracking-wide ${txtMuted}`}>Order Summary</p>
-//             </div>
-//             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2" style={{ scrollbarWidth: "thin" }}>
-//               {cart.map(item => (
-//                 <div key={item.id} className={`rounded-xl px-3 py-2.5 border ${border} ${sectionBg}`}>
-//                   <div className="flex items-start justify-between gap-2">
-//                     <div className="flex-1 min-w-0">
-//                       <p className={`text-sm font-semibold ${txt} truncate`}>{item.name}</p>
-//                       {item.isSerialNumber && item.serialNumbers && item.serialNumbers.length > 0 && (
-//                         <p className={`text-[10px] font-mono ${txtMuted} truncate mt-0.5`}>
-//                           {item.serialNumbers.map(s => s.serialNo).join(", ")}
-//                         </p>
-//                       )}
-//                       {(item.taxRate ?? 0) > 0 && (
-//                         <p className="text-[10px] text-amber-400 font-semibold mt-0.5">
-//                           Tax {item.taxRate}% · +${((item.taxAmount ?? 0) * item.qty).toFixed(2)}
-//                         </p>
-//                       )}
-//                     </div>
-//                     <div className="flex items-center gap-2 shrink-0">
-//                       <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-bold ${dl ? "bg-slate-700 text-slate-300" : "bg-slate-200 text-slate-600"}`}>
-//                         ×{item.qty}
-//                       </span>
-//                       <span className="text-sm font-bold text-sky-500 w-16 text-right">
-//                         ${(item.price * item.qty).toFixed(2)}
-//                       </span>
-//                     </div>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-
-//             {/* Totals */}
-//             <div className={`border-t ${border} px-4 py-4 space-y-2.5 shrink-0`}>
-//               <div className="flex justify-between text-sm">
-//                 <span className={txtSub}>Subtotal</span>
-//                 <span className={dl ? "text-slate-300" : "text-slate-700"}>${subtotal.toFixed(2)}</span>
-//               </div>
-//               <div className="flex justify-between text-sm">
-//                 <span className={txtSub}>Tax</span>
-//                 <span className={dl ? "text-slate-300" : "text-slate-700"}>${totalTax.toFixed(2)}</span>
-//               </div>
-//               {autoDiscount > 0 && (
-//                 <div className="flex justify-between text-sm">
-//                   <span className="text-emerald-400 flex items-center gap-1">
-//                     Auto Discount
-//                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15">Applied</span>
-//                   </span>
-//                   <span className="text-emerald-400 font-medium">-${autoDiscount.toFixed(2)}</span>
-//                 </div>
-//               )}
-//               {manualDiscountAmt > 0 && (
-//                 <div className="flex justify-between text-sm">
-//                   <span className={txtSub}>Manual Discount</span>
-//                   <span className="text-red-400">-${manualDiscountAmt.toFixed(2)}</span>
-//                 </div>
-//               )}
-//               {/* ✅ Point discount row */}
-//               {paymentMethod === 3 && pointDiscount > 0 && (
-//                 <div className="flex justify-between text-sm">
-//                   <span className="text-amber-400 flex items-center gap-1.5">
-//                     ⭐ Point Payment
-//                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">
-//                       {pointsUsed} pts
-//                     </span>
-//                   </span>
-//                   <span className="text-amber-400 font-medium">-${pointDiscount.toFixed(2)}</span>
-//                 </div>
-//               )}
-//               <div className={`flex justify-between items-center pt-3 border-t border-dashed ${dl ? "border-slate-600" : "border-slate-300"}`}>
-//                 <span className={`font-bold text-sm ${txt}`}>Total Payable</span>
-//                 <span className="font-extrabold text-2xl text-blue-500">${total.toFixed(2)}</span>
-//               </div>
-//               {paymentMethod === 1 && cashGivenNum > 0 && (
-//                 <div className={`flex justify-between items-center pt-2 border-t ${divider}`}>
-//                   <span className={`text-sm font-semibold ${txtSub}`}>Change</span>
-//                   <span className={`font-bold text-lg ${change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-//                     ${change.toFixed(2)}
-//                   </span>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-
-//           {/* RIGHT: Inputs */}
-//           <div className="flex-1 flex flex-col overflow-hidden">
-//             <div className="flex-1 px-5 py-4 space-y-4 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-
-//               {/* Payment Method */}
-//               <div>
-//                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-2`}>
-//                   Payment Method
-//                 </label>
-//                 <div className="grid grid-cols-3 gap-2">
-//                   {PAYMENT_METHODS.map(pm => {
-//                     const active   = paymentMethod === pm.value;
-//                     // ✅ Point disabled if customer has no enough points or no customer
-//                     const disabled = pm.value === 3 && !canPayByPoint;
-//                     return (
-//                       <button
-//                         key={pm.value}
-//                         onClick={() => !disabled && setPaymentMethod(pm.value)}
-//                         disabled={disabled}
-//                         className={`flex flex-col items-center gap-1 px-3 py-3 rounded-xl border-2 transition-all ${
-//                           disabled
-//                             ? dl  ? "border-slate-700 bg-slate-800/30 opacity-40 cursor-not-allowed"
-//                                   : "border-slate-200 bg-slate-50 opacity-40 cursor-not-allowed"
-//                             : active
-//                               ? "border-blue-500 bg-blue-500/10 shadow-sm"
-//                               : dl
-//                                 ? "border-slate-700 bg-slate-800/60 hover:border-slate-600"
-//                                 : "border-slate-200 bg-slate-50 hover:border-slate-300"
-//                         }`}
-//                       >
-//                         <span className="text-2xl leading-none">{pm.icon}</span>
-//                         <span className={`text-xs font-semibold ${active ? (dl ? "text-blue-400" : "text-blue-600") : txt}`}>
-//                           {pm.label}
-//                         </span>
-//                         {/* ✅ Show points needed info */}
-//                         {pm.value === 3 && (
-//                           <span className={`text-[10px] text-center leading-tight ${
-//                             canPayByPoint ? "text-amber-400" : txtMuted
-//                           }`}>
-//                             {canPayByPoint
-//                               ? `${pointsNeeded} pts`
-//                               : customer ? "Not enough pts" : "No customer"}
-//                           </span>
-//                         )}
-//                         {active && (
-//                           <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-//                             <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-//                             </svg>
-//                           </span>
-//                         )}
-//                       </button>
-//                     );
-//                   })}
-//                 </div>
-//               </div>
-
-//               {/* Cash */}
-//               {paymentMethod === 1 && (
-//                 <div>
-//                   <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Cash Given</label>
-//                   <div className="relative mb-2.5">
-//                     <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${txtMuted}`}>$</span>
-//                     <input type="number" min="0" step="0.01" placeholder="0.00"
-//                       value={cashGiven} onChange={e => setCashGiven(e.target.value)}
-//                       className={`${inputCls} pl-7`} />
-//                   </div>
-//                   <div className="grid grid-cols-3 gap-2">
-//                     {[50, 100, 500, 1000, 2000, 5000].map(amount => (
-//                       <button key={amount} onClick={() => setCashGiven(String(amount))}
-//                         className={`py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 border-2 ${
-//                           cashGiven === String(amount)
-//                             ? "border-blue-500 bg-blue-500/15 text-blue-400"
-//                             : dl
-//                               ? "border-slate-600 bg-slate-700 text-slate-200 hover:border-blue-500/50"
-//                               : "border-slate-200 bg-slate-100 text-slate-700 hover:border-blue-400/50"
-//                         }`}>
-//                         ${amount}
-//                       </button>
-//                     ))}
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Bank QR */}
-//               {paymentMethod === 2 && (
-//                 <div className="flex flex-col items-center gap-3">
-//                   <label className={`self-start block text-xs font-bold uppercase tracking-wide ${txtSub}`}>Scan to Pay</label>
-//                   <div className={`w-full rounded-2xl border-2 ${dl ? "border-slate-600 bg-slate-800/60" : "border-slate-200 bg-slate-50"} flex flex-col items-center py-4 gap-3`}>
-//                     <img
-//                       src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
-//                       alt="QR" className="w-36 h-36 rounded-xl"
-//                       style={{ background: "white", padding: "8px" }}
-//                     />
-//                     <p className={`text-xs ${txtMuted}`}>Scan with your banking app to pay</p>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* ✅ Pay by Point — auto info, no input needed */}
-//               {paymentMethod === 3 && canPayByPoint && (
-//                 <div className={`rounded-xl px-4 py-4 border ${dl ? "bg-amber-500/10 border-amber-500/30" : "bg-amber-50 border-amber-200"}`}>
-//                   <div className="flex items-center gap-3 mb-3">
-//                     <span className="text-3xl">⭐</span>
-//                     <div>
-//                       <p className={`text-sm font-bold ${dl ? "text-amber-300" : "text-amber-700"}`}>
-//                         {customer!.name}
-//                       </p>
-//                       <p className={`text-xs ${dl ? "text-amber-400/70" : "text-amber-600/70"}`}>
-//                         Available: {customer!.totalPoint} points
-//                       </p>
-//                     </div>
-//                   </div>
-//                   <div className={`rounded-lg px-3 py-2.5 space-y-1.5 ${dl ? "bg-slate-900/40" : "bg-white/70"}`}>
-//                     <div className="flex justify-between text-sm">
-//                       <span className={txtSub}>Points to deduct</span>
-//                       <span className={`font-bold ${dl ? "text-amber-300" : "text-amber-700"}`}>
-//                         {pointsNeeded} pts
-//                       </span>
-//                     </div>
-//                     <div className="flex justify-between text-sm">
-//                       <span className={txtSub}>Discount value</span>
-//                       <span className="font-bold text-emerald-400">${pointDiscount.toFixed(2)}</span>
-//                     </div>
-//                     <div className="flex justify-between text-sm">
-//                       <span className={txtSub}>Remaining points after</span>
-//                       <span className={`font-bold ${dl ? "text-slate-300" : "text-slate-700"}`}>
-//                         {customer!.totalPoint - pointsNeeded} pts
-//                       </span>
-//                     </div>
-//                     <div className={`pt-2 mt-1 border-t ${dl ? "border-slate-700" : "border-amber-200"} flex justify-between text-sm`}>
-//                       <span className={`font-bold ${txt}`}>Total to pay</span>
-//                       <span className="font-extrabold text-blue-500">${total.toFixed(2)}</span>
-//                     </div>
-//                   </div>
-//                   <p className={`text-[11px] mt-2 text-center ${dl ? "text-amber-500" : "text-amber-600"}`}>
-//                     Points will be deducted automatically on confirm
-//                   </p>
-//                 </div>
-//               )}
-
-//               {/* Manual Discount */}
-//               <div>
-//                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>
-//                   Additional Discount ($)
-//                 </label>
-//                 <div className="relative">
-//                   <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${txtMuted}`}>$</span>
-//                   <input type="number" min="0" step="0.01" placeholder="0.00"
-//                     value={manualDiscount} onChange={e => setManualDiscount(e.target.value)}
-//                     className={`${inputCls} pl-7`} />
-//                 </div>
-//               </div>
-
-//               {/* Notes */}
-//               <div>
-//                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Notes (optional)</label>
-//                 <textarea rows={3} placeholder="Add a note for this order…"
-//                   value={notes} onChange={e => setNotes(e.target.value)}
-//                   className={`${inputCls} resize-none`} />
-//               </div>
-
-//               {orderError && (
-//                 <div className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-//                   ⚠️ {orderError}
-//                 </div>
-//               )}
-//             </div>
-
-//             {/* Footer */}
-//             <div className={`flex items-center gap-3 px-5 py-3 border-t ${border} shrink-0`}>
-//               <button onClick={onClose} disabled={placing}
-//                 className={`flex-1 py-3 rounded-xl text-sm font-semibold border ${dl ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-//                 Cancel
-//               </button>
-//               <button
-//                 onClick={() => onConfirm(paymentMethod, manualDiscountAmt, notes, pointsUsed)}
-//                 disabled={placing}
-//                 className={`flex-[2] py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-//                   placing
-//                     ? dl ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-//                     : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"
-//                 }`}>
-//                 {placing
-//                   ? <><Spinner size="sm" /><span>Processing…</span></>
-//                   : <>
-//                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-//                       </svg>
-//                       <span>Confirm · ${total.toFixed(2)}</span>
-//                     </>
-//                 }
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// // ─── Near Discount Hint ───────────────────────────────────────────────────────
-// function NearDiscountHintBanner({ hint, dark }: { hint: NearDiscountHint; dark: boolean }) {
-//   return (
-//     <div className={`rounded-xl border px-3 py-2.5 flex items-start gap-2.5 ${dark ? "bg-amber-500/8 border-amber-500/25" : "bg-amber-50 border-amber-200"}`}>
-//       <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${dark ? "bg-amber-500/20" : "bg-amber-100"}`}>
-//         <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M17 17h.01M7 17l10-10M9.5 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5zm5 5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z" />
-//         </svg>
-//       </div>
-//       <div className="flex-1 min-w-0">
-//         <div className="flex items-center gap-1.5 mb-0.5">
-//           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${dark ? "bg-amber-500/20 text-amber-300" : "bg-amber-200 text-amber-700"}`}>
-//             {hint.discountName}
-//           </span>
-//         </div>
-//         <p className={`text-xs font-semibold ${dark ? "text-amber-200" : "text-amber-800"}`}>{hint.message}</p>
-//       </div>
-//       <div className="shrink-0 text-right">
-//         <p className={`text-xs font-extrabold ${dark ? "text-amber-300" : "text-amber-700"}`}>+${hint.amountNeeded.toFixed(2)}</p>
-//         <p className="text-[10px] text-amber-500">needed</p>
-//       </div>
-//     </div>
-//   );
-// }
-
-// // ─── API ──────────────────────────────────────────────────────────────────────
-// const fetchCategories = async (): Promise<PaginatedResponse<Category>> => {
-//   const res = await AxiosApi.get("Category", { params: { Page: 1, PageSize: 100 } });
-//   return res.data;
-// };
-// const fetchProducts = async (params: { page: number; pageSize: number; search: string; categoryId: string }): Promise<PaginatedResponse<Product>> => {
-//   const p: any = { Page: params.page, PageSize: params.pageSize };
-//   if (params.search) p.Search = params.search;
-//   if (params.categoryId !== "0") p.CategoryId = params.categoryId;
-//   const res = await AxiosApi.get("Product/Sale-POS", { params: p });
-//   return res.data;
-// };
-// const fetchOrderSummary = async (cart: CartItem[]): Promise<OrderSummaryResponse | null> => {
-//   if (cart.length === 0) return null;
-//   const payload = {
-//     items: cart.flatMap(item =>
-//       item.isSerialNumber && item.serialNumbers?.length
-//         ? item.serialNumbers.map(() => ({ productId: item.id, quantity: 1, unitPrice: item.price }))
-//         : [{ productId: item.id, quantity: item.qty, unitPrice: item.price }]
-//     ),
-//   };
-//   const res = await AxiosApi.post("Order/summary", payload);
-//   return res.data?.data ?? null;
-// };
-
-// // ✅ Fetch PointSetup
-// const fetchPointSetup = async (): Promise<PointSetupInfo | null> => {
-//   try {
-//     const res = await AxiosApi.get("PointSetup");
-//     const d   = res.data?.data;
-//     return d ? { pointsPerRedemption: d.pointsPerRedemption ?? 0, isActive: d.isActive ?? false } : null;
-//   } catch { return null; }
-// };
-
-// // ─── Constants ────────────────────────────────────────────────────────────────
-// const PLACEHOLDER_LIGHT = "https://placehold.co/300x300/e2e8f0/94a3b8?text=No+Image";
-// const PLACEHOLDER_DARK  = "https://placehold.co/300x300/1e293b/475569?text=No+Image";
-// const PAGE_SIZE = 20;
-// const WARRANTY_OPTIONS = [
-//   { label: "No warranty", months: 0 }, { label: "1 month", months: 1 },
-//   { label: "3 months",    months: 3 }, { label: "6 months", months: 6 },
-//   { label: "1 year",     months: 12 }, { label: "2 years",  months: 24 },
-// ];
-// const todayISO = () => new Date().toISOString().split("T")[0];
-// const addMonths = (dateStr: string, months: number) => {
-//   if (!months || !dateStr) return "";
-//   const d = new Date(dateStr);
-//   d.setMonth(d.getMonth() + months);
-//   return d.toISOString().split("T")[0];
-// };
-// const formatDate = (iso: string) =>
-//   iso ? new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
-
-// // ─── Main ─────────────────────────────────────────────────────────────────────
-// export default function PosShop() {
-//   const { darkLight } = useGlobleContextDarklight();
-//   const dark = darkLight;
-
-//   const [categories, setCategories]           = useState<Category[]>([]);
-//   const [activeTab, setActiveTab]             = useState("0");
-//   const [search, setSearch]                   = useState("");
-//   const [debouncedSearch, setDebouncedSearch] = useState("");
-//   const [products, setProducts]               = useState<Product[]>([]);
-//   const [page, setPage]                       = useState(1);
-//   const [hasMore, setHasMore]                 = useState(true);
-//   const [loadingProducts, setLoadingProducts] = useState(false);
-//   const [loadingMore, setLoadingMore]         = useState(false);
-//   const [callListProduct, setCallListProduct] = useState(false);
-//   const [cart, setCart]                       = useState<CartItem[]>([]);
-//   const [serialModal, setSerialModal]         = useState<{ open: boolean; product: Product | null }>({ open: false, product: null });
-//   const [paymentModal, setPaymentModal]       = useState(false);
-//   const [placingOrder, setPlacingOrder]       = useState(false);
-//   const [orderError, setOrderError]           = useState<string | null>(null);
-//   const [summaryData, setSummaryData]         = useState<OrderSummaryResponse | null>(null);
-//   const [summaryLoading, setSummaryLoading]   = useState(false);
-//   const summaryDebounceRef                    = useRef<ReturnType<typeof setTimeout> | null>(null);
-//   const [selectedCustomer, setSelectedCustomer] = useState<CustomerInfo | null>(null);
-
-//   // ✅ PointSetup state
-//   const [pointSetup, setPointSetup] = useState<PointSetupInfo | null>(null);
-
-//   useEffect(() => {
-//     fetchCategories().then(res => setCategories(res?.data ?? [])).catch(console.error);
-//     // ✅ Fetch point setup once
-//     fetchPointSetup().then(d => setPointSetup(d));
-//   }, []);
-
-//   useEffect(() => {
-//     const t = setTimeout(() => setDebouncedSearch(search), 400);
-//     return () => clearTimeout(t);
-//   }, [search]);
-
-//   useEffect(() => { setProducts([]); setPage(1); setHasMore(true); }, [activeTab, debouncedSearch]);
-
-//   useEffect(() => {
-//     let cancelled = false;
-//     const load = async () => {
-//       if (page === 1) setLoadingProducts(true); else setLoadingMore(true);
-//       try {
-//         const res = await fetchProducts({ page, pageSize: PAGE_SIZE, search: debouncedSearch, categoryId: activeTab });
-//         if (!cancelled) {
-//           setProducts(prev => page === 1 ? res.data ?? [] : [...prev, ...(res.data ?? [])]);
-//           setHasMore(res.hasNext ?? false);
-//         }
-//       } catch (e) { console.error(e); }
-//       finally { if (!cancelled) { setLoadingProducts(false); setLoadingMore(false); } }
-//     };
-//     load();
-//     return () => { cancelled = true; };
-//   }, [page, activeTab, debouncedSearch, callListProduct]);
-
-//   useEffect(() => {
-//     if (summaryDebounceRef.current) clearTimeout(summaryDebounceRef.current);
-//     if (cart.length === 0) { setSummaryData(null); return; }
-//     summaryDebounceRef.current = setTimeout(async () => {
-//       setSummaryLoading(true);
-//       try { setSummaryData(await fetchOrderSummary(cart)); }
-//       catch { setSummaryData(null); }
-//       finally { setSummaryLoading(false); }
-//     }, 500);
-//     return () => { if (summaryDebounceRef.current) clearTimeout(summaryDebounceRef.current); };
-//   }, [cart]);
-
-//   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-//     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-//     if (scrollHeight - scrollTop - clientHeight < 150 && hasMore && !loadingMore && !loadingProducts)
-//       setPage(p => p + 1);
-//   }, [hasMore, loadingMore, loadingProducts]);
-
-//   const addToCart = useCallback((product: Product) => {
-//     if (product.isSerialNumber) { setSerialModal({ open: true, product }); return; }
-//     setCart(prev => {
-//       const ex = prev.find(i => i.id === product.id);
-//       if (ex) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
-//       return [...prev, { ...product, qty: 1 }];
-//     });
-//   }, []);
-
-//   const handleSerialConfirm = useCallback((
-//     product: Product, serials: SelectedSerial[],
-//     warrantyMonths: number, warrantyStart: string, warrantyEnd: string
-//   ) => {
-//     if (serials.length === 0) return;
-//     setCart(prev => {
-//       const ex = prev.find(i => i.id === product.id);
-//       if (ex) {
-//         const existingIds = new Set((ex.serialNumbers ?? []).map(s => s.id));
-//         const merged = [...(ex.serialNumbers ?? []), ...serials.filter(s => !existingIds.has(s.id))];
-//         return prev.map(i => i.id === product.id
-//           ? { ...i, qty: merged.length, serialNumbers: merged, warrantyMonths, warrantyStart, warrantyEnd } : i);
-//       }
-//       return [...prev, { ...product, qty: serials.length, serialNumbers: serials, warrantyMonths, warrantyStart, warrantyEnd }];
-//     });
-//     setSerialModal({ open: false, product: null });
-//   }, []);
-
-//   const changeQty  = useCallback((id: number, delta: number) =>
-//     setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)), []);
-//   const removeItem = useCallback((id: number) => setCart(prev => prev.filter(i => i.id !== id)), []);
-//   const clearCart  = () => { setCart([]); setSummaryData(null); };
-
-//   const subtotal     = summaryData?.subTotal     ?? cart.reduce((s, i) => s + i.price * i.qty, 0);
-//   const totalTax     = summaryData?.totalTax     ?? cart.reduce((s, i) => s + (i.taxAmount ?? 0) * i.qty, 0);
-//   const autoDiscount = summaryData?.totalDiscount ?? 0;
-//   const totalPayable = summaryData?.totalPayable  ?? (subtotal + totalTax - autoDiscount);
-//   const totalQty     = cart.reduce((s, i) => s + i.qty, 0);
-//   const nearHints    = summaryData?.nearDiscountHints ?? [];
-
-//   // ✅ handlePlaceOrder with pointsUsed
-//   const handlePlaceOrder = async (
-//     paymentMethod: number, manualDiscountAmount: number,
-//     notes: string, pointsUsed: number
-//   ) => {
-//     if (cart.length === 0 || placingOrder) return;
-//     setOrderError(null);
-//     setPlacingOrder(true);
-
-//     const payload: PlaceOrderPayload = {
-//       customerId:     selectedCustomer?.id,
-//       saleType:       1,
-//       paymentStatus:  2,
-//       status:         3,
-//       paymentMethod,
-//       discountAmount: Number(manualDiscountAmount.toFixed(2)),
-//       notes:          notes || "",
-//       pointsUsed:     pointsUsed > 0 ? pointsUsed : undefined,   // ✅
-//       items: cart.map(item =>
-//         item.isSerialNumber && item.serialNumbers?.length
-//           ? {
-//               productId:       item.id,
-//               serialNumberIds: item.serialNumbers.map(s => Number(s.id)),
-//               unitPrice:       item.price,
-//               warrantyMonths:  item.warrantyMonths && item.warrantyMonths > 0 ? item.warrantyMonths : undefined,
-//             } satisfies PlaceOrderItemPayload
-//           : { productId: item.id, quantity: item.qty, unitPrice: item.price } satisfies PlaceOrderItemPayload
-//       ),
-//     };
-
-//     try {
-//       const res = await AxiosApi.post("Order", payload);
-//       if (res?.data?.data) {
-//         alertify.success("Payment success");
-//         clearCart();
-//         setPaymentModal(false);
-//         setSelectedCustomer(null);
-//         setCallListProduct(p => !p);
-//       }
-//     } catch (err: any) {
-//       const msg = err?.response?.data?.message || "Failed to place order.";
-//       setOrderError(msg);
-//       alertError(msg);
-//     } finally { setPlacingOrder(false); }
-//   };
-
-//   const allTabs = [
-//     { id: "0", name: "All", image: null as string | null },
-//     ...categories.map(c => ({ id: String(c.id), name: c.name, image: c.image ?? null })),
-//   ];
-
-//   // ─── Theme ────────────────────────────────────────────────────────────────
-//   const bg          = dark ? "bg-[#0f172a]"        : "bg-[#f1f5f9]";
-//   const sidebarBg   = dark ? "bg-[#1e293b]"        : "bg-white";
-//   const panelBg     = dark ? "bg-[#1e293b]"        : "bg-white";
-//   const productBg   = dark ? "bg-[#1e293b]"        : "bg-white";
-//   const borderColor = dark ? "border-slate-700/60" : "border-slate-200";
-//   const textPrimary = dark ? "text-slate-100"      : "text-slate-900";
-//   const textSub     = dark ? "text-slate-400"      : "text-slate-500";
-//   const textMuted   = dark ? "text-slate-500"      : "text-slate-400";
-//   const inputBg     = dark ? "bg-slate-800/80"     : "bg-slate-100";
-//   const rowBg       = dark ? "bg-slate-800"        : "bg-slate-50 border border-slate-200";
-//   const scrollStyle = dark ? "#334155 transparent" : "#cbd5e0 transparent";
-//   const imgFallback = dark ? PLACEHOLDER_DARK      : PLACEHOLDER_LIGHT;
-
-//   return (
-//     <>
-//       {serialModal.open && serialModal.product && (
-//         <SerialNumberModal
-//           product={serialModal.product} dark={dark}
-//           existingSerials={cart.find(i => i.id === serialModal.product!.id)?.serialNumbers}
-//           existingWarrantyMonths={cart.find(i => i.id === serialModal.product!.id)?.warrantyMonths ?? 0}
-//           existingWarrantyStart={cart.find(i => i.id === serialModal.product!.id)?.warrantyStart}
-//           onConfirm={handleSerialConfirm}
-//           onClose={() => setSerialModal({ open: false, product: null })}
-//         />
-//       )}
-
-//       {paymentModal && (
-//         <PaymentModal
-//           dark={dark} cart={cart} subtotal={subtotal}
-//           totalTax={totalTax} autoDiscount={autoDiscount}
-//           customer={selectedCustomer}
-//           pointSetup={pointSetup}                           // ✅
-//           onConfirm={handlePlaceOrder}
-//           onClose={() => { if (!placingOrder) { setPaymentModal(false); setOrderError(null); } }}
-//           placing={placingOrder} orderError={orderError}
-//         />
-//       )}
-
-//       <div className={`flex ${bg} ${textPrimary} overflow-hidden`} style={{ height: "calc(100vh - 80px)" }}>
-
-//         {/* Category Sidebar */}
-//         <div className={`w-[104px] shrink-0 flex flex-col overflow-hidden ${sidebarBg} border-r ${borderColor}`}>
-//           <div className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1.5" style={{ scrollbarWidth: "none" }}>
-//             {allTabs.map(cat => {
-//               const isActive = activeTab === cat.id;
-//               return (
-//                 <button key={cat.id} onClick={() => setActiveTab(cat.id)}
-//                   className={`w-full flex flex-col items-center gap-1.5 p-1.5 rounded-xl transition-all ${
-//                     isActive
-//                       ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
-//                       : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"
-//                   }`}>
-//                   <div className={`w-[68px] h-[68px] rounded-xl overflow-hidden flex items-center justify-center ${
-//                     isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"
-//                   }`}>
-//                     {cat.id === "0"
-//                       ? <svg className={`w-8 h-8 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-//                             d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-//                         </svg>
-//                       : cat.image
-//                         ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover"
-//                             onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
-//                         : <svg className={`w-7 h-7 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3}
-//                               d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-//                           </svg>
-//                     }
-//                   </div>
-//                   <span className={`text-[11px] font-semibold text-center leading-tight w-full truncate ${
-//                     isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub
-//                   }`}>{cat.name}</span>
-//                 </button>
-//               );
-//             })}
-//           </div>
-//         </div>
-
-//         {/* Product List */}
-//         <div className={`flex flex-col flex-1 overflow-hidden border-r ${borderColor}`}>
-//           <div className={`flex items-center gap-3 px-4 py-2 ${panelBg} border-b ${borderColor}`}>
-//             <span className={`text-2xl font-black tracking-wider ${dark ? "text-white" : "text-blue-900"}`}>
-//               WELCOME SOKHA <span className="text-yellow-500">SK</span>
-//             </span>
-//             <div className={`ml-auto flex items-center gap-2 w-[250px] px-3 py-2 rounded-xl ${inputBg}`}>
-//               <svg className={`w-4 h-4 ${textMuted} shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-//               </svg>
-//               <input
-//                 className={`flex-1 bg-transparent text-sm ${textPrimary} placeholder-slate-400 outline-none`}
-//                 placeholder="Search Product..." value={search}
-//                 onChange={e => setSearch(e.target.value)} />
-//               {search && <button className={`${textMuted} hover:text-red-400 text-sm`} onClick={() => setSearch("")}>✕</button>}
-//             </div>
-//           </div>
-
-//           <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5"
-//             style={{ scrollbarWidth: "thin", scrollbarColor: scrollStyle }}
-//             onScroll={handleScroll}>
-//             {loadingProducts ? (
-//               <div className="flex flex-col items-center justify-center h-full gap-3">
-//                 <Spinner size="lg" /><p className={`${textMuted} text-sm`}>Loading products…</p>
-//               </div>
-//             ) : products.length === 0 ? (
-//               <div className="flex flex-col items-center justify-center h-full gap-2">
-//                 <span className="text-5xl">📦</span>
-//                 <p className={`${textMuted} text-sm font-medium`}>No products found</p>
-//               </div>
-//             ) : (
-//               <>
-//                 {products.map(p => (
-//                   <ProductRow key={p.id} product={p} cartItem={cart.find(i => i.id === p.id)}
-//                     onAdd={addToCart} dark={dark} productBg={productBg} borderColor={borderColor}
-//                     textPrimary={textPrimary} textSub={textSub} textMuted={textMuted} imgFallback={imgFallback} />
-//                 ))}
-//                 {loadingMore && (
-//                   <div className={`flex items-center justify-center gap-3 py-5 rounded-2xl ${dark ? "bg-slate-800/60" : "bg-slate-100/80"}`}>
-//                     <Spinner size="sm" />
-//                     <span className={`${textMuted} text-sm`}>Loading more…</span>
-//                   </div>
-//                 )}
-//                 {!hasMore && !loadingMore && products.length > 0 && (
-//                   <div className="flex items-center justify-center gap-3 py-4">
-//                     <div className={`h-px flex-1 ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
-//                     <span className={`${textMuted} text-xs px-2`}>No more products</span>
-//                     <div className={`h-px flex-1 ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
-//                   </div>
-//                 )}
-//               </>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* Order Panel */}
-//         <div className={`w-80 xl:w-96 flex flex-col overflow-hidden ${panelBg} shrink-0`}>
-
-//           {/* Header */}
-//           <div className={`flex items-center gap-2.5 px-4 py-3.5 border-b ${borderColor} shrink-0`}>
-//             <svg className="w-5 h-5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-//             </svg>
-//             <h2 className={`font-bold text-base flex-1 ${textPrimary}`}>Order Details</h2>
-//             {totalQty > 0 && <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">{totalQty}</span>}
-//             {summaryLoading && <Spinner size="sm" />}
-//             {cart.length > 0 && (
-//               <button onClick={clearCart} className={`${textMuted} hover:text-red-400 ml-1`}>
-//                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-//                 </svg>
-//               </button>
-//             )}
-//           </div>
-
-//           {/* ✅ Customer Select */}
-//           <div className={`px-3 py-2.5 border-b ${borderColor} shrink-0`}>
-//             <p className={`text-[11px] font-bold uppercase tracking-wide ${textMuted} mb-1.5`}>Customer (optional)</p>
-//             <XSelectSearch
-//               multiple={false}
-//               value={selectedCustomer
-//                 ? { id: selectedCustomer.id, name: selectedCustomer.name, value: selectedCustomer.id, data: null }
-//                 : null}
-//               onChange={val => {
-//                 if (!val) { setSelectedCustomer(null); return; }
-//                 setSelectedCustomer({
-//                   id:         val.id as number,
-//                   name:       val.name,
-//                   totalPoint: (val.data as any)?.totalPoint ?? 0,
-//                 });
-//               }}
-//               placeholder="Search customer..."
-//               selectOption={{ id: "id", name: "fullName", value: "id", apiEndpoint: "Customer/lookup", pageSize: 20, searchParam: "Search" }}
-//               isSearchable clearable
-//             />
-//             {selectedCustomer && (
-//               <div className={`mt-1.5 flex items-center gap-1.5 px-2 py-1 rounded-lg ${dark ? "bg-amber-500/10" : "bg-amber-50"}`}>
-//                 <span className="text-amber-400">⭐</span>
-//                 <span className={`text-xs font-semibold ${dark ? "text-amber-300" : "text-amber-700"}`}>
-//                   {selectedCustomer.totalPoint} points available
-//                 </span>
-//               </div>
-//             )}
-//           </div>
-
-//           {/* Cart */}
-//           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2" style={{ scrollbarWidth: "thin", scrollbarColor: scrollStyle }}>
-//             {cart.length === 0 ? (
-//               <div className="flex flex-col items-center justify-center h-full gap-3 pb-10">
-//                 <div className={`w-16 h-16 rounded-full ${dark ? "bg-slate-800" : "bg-slate-100"} flex items-center justify-center`}>
-//                   <svg className={`w-8 h-8 ${textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-//                       d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-//                   </svg>
-//                 </div>
-//                 <p className={`${textMuted} text-sm font-medium`}>No items selected</p>
-//                 <p className={`${textMuted} text-xs text-center px-6`}>Click on a product to add it to the order</p>
-//               </div>
-//             ) : (
-//               <>
-//                 {cart.map(item => (
-//                   <CartRow key={item.id} item={item}
-//                     onInc={() => changeQty(item.id, 1)} onDec={() => changeQty(item.id, -1)}
-//                     onRemove={() => removeItem(item.id)}
-//                     dark={dark} rowBg={rowBg} textPrimary={textPrimary} textMuted={textMuted} />
-//                 ))}
-//                 {nearHints.length > 0 && (
-//                   <div className="pt-1 space-y-2">
-//                     <div className="flex items-center gap-2 px-1">
-//                       <div className={`h-px flex-1 ${dark ? "bg-amber-500/20" : "bg-amber-200"}`} />
-//                       <span className={`text-[10px] font-bold uppercase ${dark ? "text-amber-400" : "text-amber-600"}`}>💡 Unlock Discounts</span>
-//                       <div className={`h-px flex-1 ${dark ? "bg-amber-500/20" : "bg-amber-200"}`} />
-//                     </div>
-//                     {nearHints.map((hint, idx) => <NearDiscountHintBanner key={idx} hint={hint} dark={dark} />)}
-//                   </div>
-//                 )}
-//               </>
-//             )}
-//           </div>
-
-//           {/* Totals */}
-//           <div className={`border-t ${borderColor} px-4 py-3 space-y-2 shrink-0`}>
-//             <div className="flex justify-between text-sm">
-//               <span className={textSub}>Subtotal</span>
-//               <span className={dark ? "text-slate-300" : "text-slate-600"}>${subtotal.toFixed(2)}</span>
-//             </div>
-//             <div className="flex justify-between text-sm">
-//               <span className={textSub}>Tax</span>
-//               <span className={dark ? "text-slate-300" : "text-slate-600"}>${totalTax.toFixed(2)}</span>
-//             </div>
-//             {autoDiscount > 0
-//               ? <div className="flex justify-between text-sm">
-//                   <span className="text-emerald-400 flex items-center gap-1">
-//                     Discount <span className="text-[10px] font-bold px-1 rounded bg-emerald-500/15">Auto</span>
-//                   </span>
-//                   <span className="text-emerald-400">-${autoDiscount.toFixed(2)}</span>
-//                 </div>
-//               : <div className="flex justify-between text-sm">
-//                   <span className={textSub}>Discount</span>
-//                   <span className={dark ? "text-slate-300" : "text-slate-600"}>$0.00</span>
-//                 </div>
-//             }
-//             <div className={`flex justify-between items-center pt-2 border-t border-dashed ${dark ? "border-slate-700" : "border-slate-300"}`}>
-//               <span className={`font-bold ${textPrimary}`}>Total Payable</span>
-//               <span className="font-bold text-lg text-blue-500">${totalPayable.toFixed(2)}</span>
-//             </div>
-//           </div>
-
-//           {/* Place Order */}
-//           <div className="px-4 pb-5 shrink-0">
-//             <button
-//               disabled={cart.length === 0}
-//               onClick={() => { if (cart.length > 0) { setOrderError(null); setPaymentModal(true); } }}
-//               className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2 ${
-//                 cart.length === 0
-//                   ? dark ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-//                   : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"
-//               }`}>
-//               {cart.length === 0 ? "No Items Selected" : (
-//                 <>
-//                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                       d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-//                   </svg>
-//                   {`Place Order · $${totalPayable.toFixed(2)}`}
-//                 </>
-//               )}
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </>
-//   );
-// }
-
-// // ─── Serial Number Modal ──────────────────────────────────────────────────────
-// function SerialNumberModal({ product, dark, existingSerials = [], existingWarrantyMonths = 0, existingWarrantyStart, onConfirm, onClose }: SerialNumberModalProps) {
-//   const [selectedSerials, setSelectedSerials] = useState<MultiValue>(
-//     existingSerials.map(s => ({ id: s.id, name: s.serialNo, value: s.id, data: s.data ?? null }))
-//   );
-//   const [warrantyMonths, setWarrantyMonths] = useState(existingWarrantyMonths);
-//   const [warrantyInput, setWarrantyInput]   = useState(existingWarrantyMonths > 0 ? String(existingWarrantyMonths) : "");
-//   const [warrantyStart, setWarrantyStart]   = useState(existingWarrantyStart ?? todayISO());
-//   const warrantyEnd = warrantyMonths > 0 ? addMonths(warrantyStart, warrantyMonths) : "";
-
-//   const dl = dark;
-//   const border   = dl ? "border-slate-700" : "border-slate-200";
-//   const txt      = dl ? "text-slate-100"   : "text-slate-900";
-//   const txtSub   = dl ? "text-slate-400"   : "text-slate-500";
-//   const txtMuted = dl ? "text-slate-500"   : "text-slate-400";
-//   const inputCls = `w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${
-//     dl ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500"
-//        : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"
-//   }`;
-
-//   return (
-//     <div className={`fixed inset-0 z-50 flex items-center justify-center mt-15 ${dl ? "bg-black/70" : "bg-black/50"} backdrop-blur-sm`}
-//       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-//       <div className={`${dl ? "bg-[#1e293b]" : "bg-white"} rounded-2xl border ${border} w-full max-w-xl mx-4 shadow-2xl flex flex-col overflow-hidden`}
-//         style={{ maxHeight: "90vh" }}>
-//         <div className={`flex items-start gap-3 px-5 py-4 border-b ${border} shrink-0`}>
-//           <div className="flex-1 min-w-0">
-//             <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400">Serial Number</span>
-//             <h3 className={`font-bold text-base ${txt} truncate mt-1`}>{product.name}</h3>
-//             {product.sku && <p className={`text-xs font-mono ${txtMuted} mt-0.5`}>SKU: {product.sku}</p>}
-//           </div>
-//           <button onClick={onClose} className={`w-8 h-8 rounded-lg flex items-center justify-center ${dl ? "hover:bg-slate-700 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}>
-//             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-//             </svg>
-//           </button>
-//         </div>
-//         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-//           <div>
-//             <label className={`block text-xs font-semibold ${txtSub} mb-2 uppercase tracking-wide`}>
-//               Select Serial Numbers <span className="text-blue-400 normal-case font-normal">(multiple)</span>
-//             </label>
-//             <XSelectSearch multiple value={selectedSerials}
-//               onChange={val => setSelectedSerials(val as MultiValue)}
-//               placeholder="Search serial numbers…"
-//               selectOption={{ id: "id", name: "serialNo", value: "id", apiEndpoint: `SerialNumber?ProductId=${product.id}&Status=Available`, pageSize: 50, searchParam: "Search" }}
-//               isSearchable clearable noOptionsMessage="No available serial numbers" />
-//           </div>
-//           <div>
-//             <label className={`block text-xs font-semibold ${txtSub} mb-2 uppercase tracking-wide`}>Warranty Period</label>
-//             <div className="grid grid-cols-6 gap-2 mb-3">
-//               {WARRANTY_OPTIONS.map(opt => {
-//                 const active = warrantyMonths === opt.months;
-//                 return (
-//                   <button key={opt.months}
-//                     onClick={() => { setWarrantyMonths(opt.months); setWarrantyInput(opt.months === 0 ? "" : String(opt.months)); }}
-//                     className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-//                       active
-//                         ? "bg-blue-600 border-blue-600 text-white"
-//                         : dl ? "bg-slate-800 border-slate-600 text-slate-300 hover:border-blue-500/60"
-//                              : "bg-slate-50 border-slate-200 text-slate-600 hover:border-blue-400/60"
-//                     }`}>{opt.label}</button>
-//                 );
-//               })}
-//             </div>
-//             <div className="relative">
-//               <input type="number" min={0} value={warrantyInput}
-//                 onChange={e => {
-//                   setWarrantyInput(e.target.value);
-//                   const p = parseInt(e.target.value, 10);
-//                   setWarrantyMonths(!isNaN(p) && p >= 0 ? p : 0);
-//                 }}
-//                 placeholder="Or type months (e.g. 18)" className={inputCls} />
-//               <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none ${txtMuted}`}>months</span>
-//             </div>
-//           </div>
-//           <div>
-//             <label className={`block text-xs font-semibold ${txtSub} mb-2 uppercase tracking-wide`}>Warranty Dates</label>
-//             <div className="grid grid-cols-2 gap-3">
-//               <div>
-//                 <p className={`text-[11px] ${txtMuted} mb-1`}>Start date</p>
-//                 <input type="date" value={warrantyStart} onChange={e => setWarrantyStart(e.target.value)} className={inputCls} />
-//               </div>
-//               <div>
-//                 <p className={`text-[11px] ${txtMuted} mb-1`}>End date <span className="text-blue-400">(auto)</span></p>
-//                 <div className={`w-full px-3 py-2 rounded-lg border text-sm font-medium ${
-//                   warrantyMonths > 0
-//                     ? dl ? "bg-slate-900/60 border-slate-700 text-blue-400" : "bg-blue-50 border-blue-100 text-blue-600"
-//                     : dl ? "bg-slate-900/40 border-slate-700 text-slate-600" : "bg-slate-50 border-slate-200 text-slate-400"
-//                 }`}>{warrantyMonths > 0 ? formatDate(warrantyEnd) : "—"}</div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//         <div className={`flex items-center gap-3 px-5 py-4 border-t ${border} shrink-0`}>
-//           <button onClick={onClose}
-//             className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border ${dl ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-//             Cancel
-//           </button>
-//           <button
-//             onClick={() => onConfirm(product, selectedSerials.map(s => ({ id: s.id, serialNo: s.name, data: s.data as SerialNumberItem | null })), warrantyMonths, warrantyStart, warrantyEnd)}
-//             disabled={selectedSerials.length === 0}
-//             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-//               selectedSerials.length === 0
-//                 ? dl ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-100 text-slate-400 cursor-not-allowed"
-//                 : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md active:scale-95"
-//             }`}>
-//             {selectedSerials.length === 0
-//               ? "Select serials"
-//               : `Add ${selectedSerials.length} item${selectedSerials.length > 1 ? "s" : ""} · $${(product.price * selectedSerials.length).toFixed(2)}`}
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// // ─── Product Row ──────────────────────────────────────────────────────────────
-// function ProductRow({ product, cartItem, onAdd, dark, productBg, borderColor, textPrimary, textMuted, imgFallback }: ProductRowProps) {
-//   const outOfStock   = (product.stock ?? 0) <= 0;
-//   const productPrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
-
-//   return (
-//     <div onClick={() => !outOfStock && onAdd(product)} style={{ minHeight: "110px" }}
-//       className={`flex items-stretch rounded-2xl overflow-hidden border transition-all select-none
-//         ${outOfStock ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${productBg} ${borderColor}
-//         ${cartItem ? "ring-2 ring-blue-500 shadow-md shadow-blue-500/10" : dark ? "hover:border-slate-600 hover:shadow-lg" : "hover:border-slate-300 hover:shadow-md"}`}>
-//       <div className={`relative w-[130px] shrink-0 ${dark ? "bg-slate-800" : "bg-slate-100"}`} style={{ minHeight: "110px" }}>
-//         <img src={product.imageProduct || imgFallback} alt={product.name}
-//           className="w-full h-full object-cover" style={{ minHeight: "110px", maxHeight: "130px" }}
-//           onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
-//         {cartItem && <span className="absolute top-2 left-2 bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">×{cartItem.qty}</span>}
-//         {product.isSerialNumber && (
-//           <span className={`absolute bottom-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${dark ? "bg-violet-900/80 text-violet-300" : "bg-violet-100 text-violet-700"}`}>S/N</span>
-//         )}
-//         {outOfStock && (
-//           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-//             <span className="text-[11px] font-bold text-white bg-red-500/90 px-2 py-1 rounded-lg">Out of Stock</span>
-//           </div>
-//         )}
-//       </div>
-//       <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-//         <div>
-//           {product.category?.name && <p className={`text-[11px] font-medium ${textMuted} mb-0.5`}>{product.category.name}</p>}
-//           <p className={`text-sm font-bold ${textPrimary} leading-snug line-clamp-2`}>{product.name}</p>
-//           {product.sku && <p className={`text-[11px] ${textMuted} mt-0.5 font-mono`}>{product.sku}</p>}
-//         </div>
-//         <div className="flex items-center justify-between mt-2 gap-2">
-//           <div className="flex items-center gap-1.5">
-//             <span className="text-base font-extrabold text-sky-500">${productPrice.toFixed(2)}</span>
-//             {(product.taxRate ?? 0) > 0 && (
-//               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400">+{product.taxRate}% tax</span>
-//             )}
-//           </div>
-//           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${
-//             (product.stock ?? 0) > 0
-//               ? dark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 text-emerald-700"
-//               : dark ? "bg-red-900/50 text-red-400"         : "bg-red-100 text-red-600"
-//           }`}>{product.stock ?? 0}</span>
-//         </div>
-//       </div>
-//       <div className={`w-8 shrink-0 flex items-center justify-center ${cartItem ? "text-blue-400" : dark ? "text-slate-700" : "text-slate-200"}`}>
-//         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-//         </svg>
-//       </div>
-//     </div>
-//   );
-// }
-
-// // ─── Cart Row ─────────────────────────────────────────────────────────────────
-// function CartRow({ item, onInc, onDec, onRemove, dark, rowBg, textPrimary, textMuted }: CartRowProps) {
-//   const btnBase = dark ? "bg-slate-700 hover:bg-slate-600 text-slate-200" : "bg-slate-200 hover:bg-slate-300 text-slate-700";
-//   return (
-//     <div className={`${rowBg} rounded-xl px-3 py-2.5`}>
-//       <div className="flex items-center gap-3">
-//         <div className="flex-1 min-w-0">
-//           <p className={`text-sm font-semibold ${textPrimary} truncate`}>{item.name}</p>
-//           <p className="text-xs font-bold text-sky-500 mt-0.5">
-//             ${(item.price * item.qty).toFixed(2)}
-//             <span className={`${textMuted} font-normal ml-1 text-[11px]`}>(${Number(item.price).toFixed(2)} × {item.qty})</span>
-//           </p>
-//         </div>
-//         <div className="flex items-center gap-1 shrink-0">
-//           {!item.isSerialNumber && (
-//             <>
-//               <button onClick={onDec} className={`w-7 h-7 rounded-lg ${btnBase} font-bold text-lg flex items-center justify-center`}>−</button>
-//               <span className={`w-7 text-center text-sm font-bold ${textPrimary} select-none`}>{item.qty}</span>
-//               <button onClick={onInc} className={`w-7 h-7 rounded-lg ${dark ? "bg-slate-700 hover:bg-blue-600 text-slate-200" : "bg-slate-200 hover:bg-blue-500 hover:text-white text-slate-700"} font-bold text-lg flex items-center justify-center`}>+</button>
-//             </>
-//           )}
-//           {item.isSerialNumber && (
-//             <span className={`text-xs font-bold px-2 py-1 rounded-lg ${dark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>×{item.qty}</span>
-//           )}
-//           <button onClick={onRemove}
-//             className={`w-7 h-7 rounded-lg flex items-center justify-center ml-0.5 ${dark ? "bg-slate-700 hover:bg-red-600 text-slate-400 hover:text-white" : "bg-slate-200 hover:bg-red-500 text-slate-500 hover:text-white"}`}>
-//             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-//             </svg>
-//           </button>
-//         </div>
-//       </div>
-//       {item.isSerialNumber && item.serialNumbers && item.serialNumbers.length > 0 && (
-//         <div className={`mt-2 pt-2 border-t ${dark ? "border-slate-700" : "border-slate-200"}`}>
-//           <div className="flex flex-wrap gap-1">
-//             {item.serialNumbers.map(s => (
-//               <span key={s.id} className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded ${dark ? "bg-violet-900/50 text-violet-300" : "bg-violet-50 text-violet-700"}`}>
-//                 {s.serialNo}
-//               </span>
-//             ))}
-//           </div>
-//           <p className={`text-[10px] ${dark ? "text-slate-500" : "text-slate-400"} mt-1`}>
-//             {item.warrantyMonths && item.warrantyMonths > 0
-//               ? `Warranty: ${item.warrantyMonths}mo · ${formatDate(item.warrantyStart!)} → ${formatDate(item.warrantyEnd!)}`
-//               : "Warranty: 0 Month"}
-//           </p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// // ─── Spinner ──────────────────────────────────────────────────────────────────
-// function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-//   const cls = size === "sm" ? "w-5 h-5 border-2" : size === "lg" ? "w-9 h-9 border-[3px]" : "w-7 h-7 border-2";
-//   return <div className={`${cls} rounded-full border-slate-300 border-t-blue-500 animate-spin`} />;
-// }
-
-
-
-
-
-
-
-
-
-
-
-// import { useState, useEffect, useCallback, useRef } from "react";
-// import { useGlobleContextDarklight } from "../../AllContext/context";
-// import { AxiosApi } from "../../component/Axios/Axios";
-// import XSelectSearch, { MultiValue } from "../../component/XSelectSearch/Xselectsearch";
-// import { alertError } from "../../HtmlHelper/Alert";
-// import alertify from "alertifyjs";
-
-// // ─── Types ────────────────────────────────────────────────────────────────────
-// interface TypeNamebase { id: number; name: string; }
-// interface Category { id: number; name: string; image?: string; }
-// interface Product {
-//     id: number; name: string; sku?: string; price: number;
-//     taxRate?: number; taxAmount?: number; stock?: number;
-//     imageProduct?: string; isSerialNumber?: boolean;
-//     category?: TypeNamebase; branch?: TypeNamebase;
-// }
-// interface SerialNumberItem { id: number; productId: number; serialNo: string; status: string; }
-// interface SelectedSerial { id: number | string; serialNo: string; data?: SerialNumberItem | null; }
-// interface CartItem extends Product {
-//     qty: number; serialNumbers?: SelectedSerial[];
-//     warrantyMonths?: number; warrantyStart?: string; warrantyEnd?: string;
-// }
-// interface NearDiscountHint {
-//     message: string; amountNeeded: number;
-//     discountName: string; applicableProducts: string[];
-// }
-// interface OrderSummaryResponse {
-//     subTotal: number; totalTax: number;
-//     totalDiscount: number; totalPayable: number;
-//     nearDiscountHints: NearDiscountHint[];
-// }
-// interface CustomerInfo { id: number; name: string; totalPoint: number; }
-// interface PointSetupInfo { pointsPerRedemption: number; isActive: boolean; }
-// interface PaginatedResponse<T> {
-//     data: T[]; totalCount: number; page: number;
-//     pageSize: number; totalPages: number;
-//     hasPrevious: boolean; hasNext: boolean;
-// }
-// interface PlaceOrderItemPayload {
-//     productId: number; serialNumberIds?: number[];
-//     quantity?: number; unitPrice: number; warrantyMonths?: number;
-// }
-// interface PlaceOrderPayload {
-//     customerId?: number; status?: number; paymentStatus?: number;
-//     discountAmount?: number; saleType: number; paymentMethod?: number;
-//     notes?: string; pointsUsed?: number; items: PlaceOrderItemPayload[];
-// }
-// interface SerialNumberModalProps {
-//     product: Product; dark: boolean;
-//     existingSerials?: SelectedSerial[];
-//     existingWarrantyMonths?: number; existingWarrantyStart?: string;
-//     onConfirm: (p: Product, s: SelectedSerial[], wm: number, ws: string, we: string) => void;
-//     onClose: () => void;
-// }
-// interface CartRowProps {
-//     item: CartItem; onInc: () => void; onDec: () => void; onRemove: () => void;
-//     dark: boolean; rowBg: string; textPrimary: string; textMuted: string;
-// }
-// interface ProductRowProps {
-//     product: Product; cartItem: CartItem | undefined; onAdd: (p: Product) => void;
-//     dark: boolean; productBg: string; borderColor: string;
-//     textPrimary: string; textSub: string; textMuted: string; imgFallback: string;
-// }
-
-// const PAYMENT_METHODS = [
-//     { value: 1, label: "Cash",    icon: "💵" },
-//     { value: 2, label: "Bank QR", icon: "📲" },
-//     { value: 3, label: "Point",   icon: "⭐" },
-// ];
-
-// // ─── Payment Modal ────────────────────────────────────────────────────────────
-// interface PaymentModalProps {
-//     dark: boolean; cart: CartItem[];
-//     subtotal: number; totalTax: number; autoDiscount: number;
-//     customer: CustomerInfo | null; pointSetup: PointSetupInfo | null;
-//     onConfirm: (paymentMethod: number, discount: number, notes: string, pointsUsed: number) => void;
-//     onClose: () => void; placing: boolean; orderError: string | null;
-// }
-
-// function PaymentModal({
-//     dark, cart, subtotal, totalTax, autoDiscount,
-//     customer, pointSetup, onConfirm, onClose, placing, orderError,
-// }: PaymentModalProps) {
-//     const [paymentMethod, setPaymentMethod] = useState<number>(1);
-//     const [manualDiscount, setManualDiscount] = useState<string>("");
-//     const [notes, setNotes]                   = useState<string>("");
-//     const [cashGiven, setCashGiven]           = useState<string>("");
-//     const [showSummary, setShowSummary]       = useState(false); // mobile toggle
-
-//     const manualDiscountAmt = Math.min(parseFloat(manualDiscount) || 0, subtotal + totalTax);
-//     const totalDiscountAmt  = Math.min(autoDiscount + manualDiscountAmt, subtotal + totalTax);
-//     const baseTotal         = subtotal + totalTax - totalDiscountAmt;
-//     const redemptionRate    = pointSetup?.pointsPerRedemption ?? 0;
-//     const pointsNeeded      = redemptionRate > 0 ? Math.ceil(baseTotal * redemptionRate) : 0;
-//     const customerPoints    = customer?.totalPoint ?? 0;
-//     const canPayByPoint     = customer != null && redemptionRate > 0 && customerPoints >= pointsNeeded && pointsNeeded > 0;
-//     const pointsUsed        = paymentMethod === 3 ? pointsNeeded : 0;
-//     const pointDiscount     = paymentMethod === 3 && redemptionRate > 0 ? pointsUsed / redemptionRate : 0;
-//     const total             = Math.max(0, baseTotal - pointDiscount);
-//     const cashGivenNum      = parseFloat(cashGiven) || 0;
-//     const change            = paymentMethod === 1 ? Math.max(0, cashGivenNum - total) : 0;
-//     const totalQty          = cart.reduce((s, i) => s + i.qty, 0);
-
-//     useEffect(() => {
-//         if (paymentMethod === 3 && !canPayByPoint) setPaymentMethod(1);
-//     }, [canPayByPoint, paymentMethod]);
-
-//     const dl        = dark;
-//     const border    = dl ? "border-slate-700"  : "border-slate-200";
-//     const txt       = dl ? "text-slate-100"    : "text-slate-900";
-//     const txtSub    = dl ? "text-slate-400"    : "text-slate-500";
-//     const txtMuted  = dl ? "text-slate-500"    : "text-slate-400";
-//     const modal     = dl ? "bg-[#1e293b]"      : "bg-white";
-//     const overlay   = dl ? "bg-black/75"       : "bg-black/55";
-//     const sectionBg = dl ? "bg-slate-800/60"   : "bg-slate-50";
-//     const divider   = dl ? "border-slate-700"  : "border-slate-200";
-//     const inputCls  = `w-full px-3 py-2 rounded-xl border text-sm outline-none transition-colors ${
-//         dl ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500 placeholder-slate-500"
-//            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400 placeholder-slate-400"
-//     }`;
-
-//     const SummaryContent = () => (
-//         <>
-//             <div className={`px-4 py-1.5 border-b ${border}`}>
-//                 <p className={`text-[11px] font-bold uppercase tracking-wide ${txtMuted}`}>Order Summary</p>
-//             </div>
-//             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2" style={{ scrollbarWidth: "thin" }}>
-//                 {cart.map(item => (
-//                     <div key={item.id} className={`rounded-xl px-3 py-2.5 border ${border} ${sectionBg}`}>
-//                         <div className="flex items-start justify-between gap-2">
-//                             <div className="flex-1 min-w-0">
-//                                 <p className={`text-sm font-semibold ${txt} truncate`}>{item.name}</p>
-//                                 {item.isSerialNumber && item.serialNumbers && item.serialNumbers.length > 0 && (
-//                                     <p className={`text-[10px] font-mono ${txtMuted} truncate mt-0.5`}>
-//                                         {item.serialNumbers.map(s => s.serialNo).join(", ")}
-//                                     </p>
-//                                 )}
-//                                 {(item.taxRate ?? 0) > 0 && (
-//                                     <p className="text-[10px] text-amber-400 font-semibold mt-0.5">
-//                                         Tax {item.taxRate}% · +${((item.taxAmount ?? 0) * item.qty).toFixed(2)}
-//                                     </p>
-//                                 )}
-//                             </div>
-//                             <div className="flex items-center gap-2 shrink-0">
-//                                 <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-bold ${dl ? "bg-slate-700 text-slate-300" : "bg-slate-200 text-slate-600"}`}>
-//                                     ×{item.qty}
-//                                 </span>
-//                                 <span className="text-sm font-bold text-sky-500 w-16 text-right">
-//                                     ${(item.price * item.qty).toFixed(2)}
-//                                 </span>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 ))}
-//             </div>
-
-//             {/* Totals */}
-//             <div className={`border-t ${border} px-4 py-4 space-y-2.5 shrink-0`}>
-//                 <div className="flex justify-between text-sm">
-//                     <span className={txtSub}>Subtotal</span>
-//                     <span className={dl ? "text-slate-300" : "text-slate-700"}>${subtotal.toFixed(2)}</span>
-//                 </div>
-//                 <div className="flex justify-between text-sm">
-//                     <span className={txtSub}>Tax</span>
-//                     <span className={dl ? "text-slate-300" : "text-slate-700"}>${totalTax.toFixed(2)}</span>
-//                 </div>
-//                 {autoDiscount > 0 && (
-//                     <div className="flex justify-between text-sm">
-//                         <span className="text-emerald-400 flex items-center gap-1">
-//                             Auto Discount
-//                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15">Applied</span>
-//                         </span>
-//                         <span className="text-emerald-400 font-medium">-${autoDiscount.toFixed(2)}</span>
-//                     </div>
-//                 )}
-//                 {manualDiscountAmt > 0 && (
-//                     <div className="flex justify-between text-sm">
-//                         <span className={txtSub}>Manual Discount</span>
-//                         <span className="text-red-400">-${manualDiscountAmt.toFixed(2)}</span>
-//                     </div>
-//                 )}
-//                 {paymentMethod === 3 && pointDiscount > 0 && (
-//                     <div className="flex justify-between text-sm">
-//                         <span className="text-amber-400 flex items-center gap-1.5">
-//                             ⭐ Point Payment
-//                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">
-//                                 {pointsUsed} pts
-//                             </span>
-//                         </span>
-//                         <span className="text-amber-400 font-medium">-${pointDiscount.toFixed(2)}</span>
-//                     </div>
-//                 )}
-//                 <div className={`flex justify-between items-center pt-3 border-t border-dashed ${dl ? "border-slate-600" : "border-slate-300"}`}>
-//                     <span className={`font-bold text-sm ${txt}`}>Total Payable</span>
-//                     <span className="font-extrabold text-2xl text-blue-500">${total.toFixed(2)}</span>
-//                 </div>
-//                 {paymentMethod === 1 && cashGivenNum > 0 && (
-//                     <div className={`flex justify-between items-center pt-2 border-t ${divider}`}>
-//                         <span className={`text-sm font-semibold ${txtSub}`}>Change</span>
-//                         <span className={`font-bold text-lg ${change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-//                             ${change.toFixed(2)}
-//                         </span>
-//                     </div>
-//                 )}
-//             </div>
-//         </>
-//     );
-
-//     return (
-//         <div
-//             className={`fixed inset-0 z-50 flex mt-16 items-center justify-center ${overlay} backdrop-blur-sm p-2 sm:p-4`}
-//             onClick={e => { if (e.target === e.currentTarget && !placing) onClose(); }}>
-//             <div
-//                 className={`${modal} rounded-2xl border ${border} w-full shadow-2xl flex flex-col overflow-hidden`}
-//                 style={{ maxWidth: "860px", height: "calc(100vh - 74px)", maxHeight: "760px" }}>
-
-//                 {/* Header */}
-//                 <div className={`flex items-center gap-3 px-4 sm:px-5 py-2 border-b ${border} shrink-0`}>
-//                     <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0">
-//                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                                 d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-//                         </svg>
-//                     </div>
-//                     <div className="flex-1 min-w-0">
-//                         <h2 className={`font-bold text-sm sm:text-base ${txt}`}>Confirm Payment</h2>
-//                         <p className={`text-xs ${txtMuted} truncate`}>
-//                             {totalQty} item{totalQty !== 1 ? "s" : ""} · {cart.length} product{cart.length !== 1 ? "s" : ""}
-//                             {customer && <span className="ml-2 text-amber-400 font-semibold">· ⭐ {customer.totalPoint} pts</span>}
-//                         </p>
-//                     </div>
-//                     {/* Mobile: toggle summary */}
-//                     <button
-//                         onClick={() => setShowSummary(v => !v)}
-//                         className={`sm:hidden px-2 py-1 rounded-lg text-xs font-semibold border ${dl ? "border-slate-600 text-slate-300" : "border-slate-200 text-slate-600"}`}>
-//                         {showSummary ? "Payment" : "Summary"}
-//                     </button>
-//                     <button onClick={onClose} disabled={placing}
-//                         className={`w-8 h-8 rounded-lg flex items-center justify-center ${dl ? "hover:bg-slate-700 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}>
-//                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-//                         </svg>
-//                     </button>
-//                 </div>
-
-//                 {/* Body */}
-//                 <div className="flex flex-1 overflow-hidden">
-
-//                     {/* LEFT: Summary — always on desktop, toggle on mobile */}
-//                     <div className={`flex-col border-r ${border}
-//                         sm:flex sm:w-[300px] md:w-[340px] sm:shrink-0
-//                         ${showSummary ? "flex w-full" : "hidden sm:flex"}`}>
-//                         <SummaryContent />
-//                     </div>
-
-//                     {/* RIGHT: Inputs — always on desktop, toggle on mobile */}
-//                     <div className={`flex-1 flex-col overflow-hidden
-//                         sm:flex
-//                         ${showSummary ? "hidden sm:flex" : "flex"}`}>
-//                         <div className="flex-1 px-4 sm:px-5 py-4 space-y-4 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-
-//                             {/* Payment Method */}
-//                             <div>
-//                                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-2`}>
-//                                     Payment Method
-//                                 </label>
-//                                 <div className="grid grid-cols-3 gap-2">
-//                                     {PAYMENT_METHODS.map(pm => {
-//                                         const active   = paymentMethod === pm.value;
-//                                         const disabled = pm.value === 3 && !canPayByPoint;
-//                                         return (
-//                                             <button key={pm.value}
-//                                                 onClick={() => !disabled && setPaymentMethod(pm.value)}
-//                                                 disabled={disabled}
-//                                                 className={`flex flex-col items-center gap-1 px-2 sm:px-3 py-3 rounded-xl border-2 transition-all ${
-//                                                     disabled
-//                                                         ? dl ? "border-slate-700 bg-slate-800/30 opacity-40 cursor-not-allowed"
-//                                                              : "border-slate-200 bg-slate-50 opacity-40 cursor-not-allowed"
-//                                                         : active
-//                                                             ? "border-blue-500 bg-blue-500/10 shadow-sm"
-//                                                             : dl
-//                                                                 ? "border-slate-700 bg-slate-800/60 hover:border-slate-600"
-//                                                                 : "border-slate-200 bg-slate-50 hover:border-slate-300"
-//                                                 }`}>
-//                                                 <span className="text-xl sm:text-2xl leading-none">{pm.icon}</span>
-//                                                 <span className={`text-xs font-semibold ${active ? (dl ? "text-blue-400" : "text-blue-600") : txt}`}>
-//                                                     {pm.label}
-//                                                 </span>
-//                                                 {pm.value === 3 && (
-//                                                     <span className={`text-[10px] text-center leading-tight ${canPayByPoint ? "text-amber-400" : txtMuted}`}>
-//                                                         {canPayByPoint ? `${pointsNeeded} pts` : customer ? "Not enough" : "No customer"}
-//                                                     </span>
-//                                                 )}
-//                                                 {active && (
-//                                                     <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-//                                                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-//                                                         </svg>
-//                                                     </span>
-//                                                 )}
-//                                             </button>
-//                                         );
-//                                     })}
-//                                 </div>
-//                             </div>
-
-//                             {/* Cash */}
-//                             {paymentMethod === 1 && (
-//                                 <div>
-//                                     <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Cash Given</label>
-//                                     <div className="relative mb-2.5">
-//                                         <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${txtMuted}`}>$</span>
-//                                         <input type="number" min="0" step="0.01" placeholder="0.00"
-//                                             value={cashGiven} onChange={e => setCashGiven(e.target.value)}
-//                                             className={`${inputCls} pl-7`} />
-//                                     </div>
-//                                     <div className="grid grid-cols-3 gap-2">
-//                                         {[50, 100, 500, 1000, 2000, 5000].map(amount => (
-//                                             <button key={amount} onClick={() => setCashGiven(String(amount))}
-//                                                 className={`py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 border-2 ${
-//                                                     cashGiven === String(amount)
-//                                                         ? "border-blue-500 bg-blue-500/15 text-blue-400"
-//                                                         : dl
-//                                                             ? "border-slate-600 bg-slate-700 text-slate-200 hover:border-blue-500/50"
-//                                                             : "border-slate-200 bg-slate-100 text-slate-700 hover:border-blue-400/50"
-//                                                 }`}>
-//                                                 ${amount}
-//                                             </button>
-//                                         ))}
-//                                     </div>
-//                                 </div>
-//                             )}
-
-//                             {/* Bank QR */}
-//                             {paymentMethod === 2 && (
-//                                 <div className="flex flex-col items-center gap-3">
-//                                     <label className={`self-start block text-xs font-bold uppercase tracking-wide ${txtSub}`}>Scan to Pay</label>
-//                                     <div className={`w-full rounded-2xl border-2 ${dl ? "border-slate-600 bg-slate-800/60" : "border-slate-200 bg-slate-50"} flex flex-col items-center py-4 gap-3`}>
-//                                         <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
-//                                             alt="QR" className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl"
-//                                             style={{ background: "white", padding: "8px" }} />
-//                                         <p className={`text-xs ${txtMuted}`}>Scan with your banking app to pay</p>
-//                                     </div>
-//                                 </div>
-//                             )}
-
-//                             {/* Pay by Point */}
-//                             {paymentMethod === 3 && canPayByPoint && (
-//                                 <div className={`rounded-xl px-4 py-4 border ${dl ? "bg-amber-500/10 border-amber-500/30" : "bg-amber-50 border-amber-200"}`}>
-//                                     <div className="flex items-center gap-3 mb-3">
-//                                         <span className="text-3xl">⭐</span>
-//                                         <div>
-//                                             <p className={`text-sm font-bold ${dl ? "text-amber-300" : "text-amber-700"}`}>{customer!.name}</p>
-//                                             <p className={`text-xs ${dl ? "text-amber-400/70" : "text-amber-600/70"}`}>Available: {customer!.totalPoint} points</p>
-//                                         </div>
-//                                     </div>
-//                                     <div className={`rounded-lg px-3 py-2.5 space-y-1.5 ${dl ? "bg-slate-900/40" : "bg-white/70"}`}>
-//                                         <div className="flex justify-between text-sm">
-//                                             <span className={txtSub}>Points to deduct</span>
-//                                             <span className={`font-bold ${dl ? "text-amber-300" : "text-amber-700"}`}>{pointsNeeded} pts</span>
-//                                         </div>
-//                                         <div className="flex justify-between text-sm">
-//                                             <span className={txtSub}>Discount value</span>
-//                                             <span className="font-bold text-emerald-400">${pointDiscount.toFixed(2)}</span>
-//                                         </div>
-//                                         <div className="flex justify-between text-sm">
-//                                             <span className={txtSub}>Remaining points after</span>
-//                                             <span className={`font-bold ${dl ? "text-slate-300" : "text-slate-700"}`}>{customer!.totalPoint - pointsNeeded} pts</span>
-//                                         </div>
-//                                         <div className={`pt-2 mt-1 border-t ${dl ? "border-slate-700" : "border-amber-200"} flex justify-between text-sm`}>
-//                                             <span className={`font-bold ${txt}`}>Total to pay</span>
-//                                             <span className="font-extrabold text-blue-500">${total.toFixed(2)}</span>
-//                                         </div>
-//                                     </div>
-//                                     <p className={`text-[11px] mt-2 text-center ${dl ? "text-amber-500" : "text-amber-600"}`}>
-//                                         Points will be deducted automatically on confirm
-//                                     </p>
-//                                 </div>
-//                             )}
-
-//                             {/* Manual Discount */}
-//                             <div>
-//                                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Additional Discount ($)</label>
-//                                 <div className="relative">
-//                                     <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${txtMuted}`}>$</span>
-//                                     <input type="number" min="0" step="0.01" placeholder="0.00"
-//                                         value={manualDiscount} onChange={e => setManualDiscount(e.target.value)}
-//                                         className={`${inputCls} pl-7`} />
-//                                 </div>
-//                             </div>
-
-//                             {/* Notes */}
-//                             <div>
-//                                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Notes (optional)</label>
-//                                 <textarea rows={3} placeholder="Add a note for this order…"
-//                                     value={notes} onChange={e => setNotes(e.target.value)}
-//                                     className={`${inputCls} resize-none`} />
-//                             </div>
-
-//                             {orderError && (
-//                                 <div className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-//                                     ⚠️ {orderError}
-//                                 </div>
-//                             )}
-//                         </div>
-
-//                         {/* Footer */}
-//                         <div className={`flex items-center gap-3 px-4 sm:px-5 py-3 border-t ${border} shrink-0`}>
-//                             <button onClick={onClose} disabled={placing}
-//                                 className={`flex-1 py-2.5 sm:py-3 rounded-xl text-sm font-semibold border ${dl ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-//                                 Cancel
-//                             </button>
-//                             <button
-//                                 onClick={() => onConfirm(paymentMethod, manualDiscountAmt, notes, pointsUsed)}
-//                                 disabled={placing}
-//                                 className={`flex-[2] py-2.5 sm:py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-//                                     placing
-//                                         ? dl ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-//                                         : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"
-//                                 }`}>
-//                                 {placing
-//                                     ? <><Spinner size="sm" /><span>Processing…</span></>
-//                                     : <>
-//                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-//                                         </svg>
-//                                         <span>Confirm · ${total.toFixed(2)}</span>
-//                                     </>
-//                                 }
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// }
-
-// // ─── Near Discount Hint ───────────────────────────────────────────────────────
-// function NearDiscountHintBanner({ hint, dark }: { hint: NearDiscountHint; dark: boolean }) {
-//     return (
-//         <div className={`rounded-xl border px-3 py-2.5 flex items-start gap-2.5 ${dark ? "bg-amber-500/8 border-amber-500/25" : "bg-amber-50 border-amber-200"}`}>
-//             <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${dark ? "bg-amber-500/20" : "bg-amber-100"}`}>
-//                 <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M17 17h.01M7 17l10-10M9.5 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5zm5 5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z" />
-//                 </svg>
-//             </div>
-//             <div className="flex-1 min-w-0">
-//                 <div className="flex items-center gap-1.5 mb-0.5">
-//                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${dark ? "bg-amber-500/20 text-amber-300" : "bg-amber-200 text-amber-700"}`}>
-//                         {hint.discountName}
-//                     </span>
-//                 </div>
-//                 <p className={`text-xs font-semibold ${dark ? "text-amber-200" : "text-amber-800"}`}>{hint.message}</p>
-//             </div>
-//             <div className="shrink-0 text-right">
-//                 <p className={`text-xs font-extrabold ${dark ? "text-amber-300" : "text-amber-700"}`}>+${hint.amountNeeded.toFixed(2)}</p>
-//                 <p className="text-[10px] text-amber-500">needed</p>
-//             </div>
-//         </div>
-//     );
-// }
-
-// // ─── API ──────────────────────────────────────────────────────────────────────
-// const fetchCategories = async (): Promise<PaginatedResponse<Category>> => {
-//     const res = await AxiosApi.get("Category", { params: { Page: 1, PageSize: 100 } });
-//     return res.data;
-// };
-// const fetchProducts = async (params: { page: number; pageSize: number; search: string; categoryId: string }): Promise<PaginatedResponse<Product>> => {
-//     const p: any = { Page: params.page, PageSize: params.pageSize };
-//     if (params.search) p.Search = params.search;
-//     if (params.categoryId !== "0") p.CategoryId = params.categoryId;
-//     const res = await AxiosApi.get("Product/Sale-POS", { params: p });
-//     return res.data;
-// };
-// const fetchOrderSummary = async (cart: CartItem[]): Promise<OrderSummaryResponse | null> => {
-//     if (cart.length === 0) return null;
-//     const payload = {
-//         items: cart.flatMap(item =>
-//             item.isSerialNumber && item.serialNumbers?.length
-//                 ? item.serialNumbers.map(() => ({ productId: item.id, quantity: 1, unitPrice: item.price }))
-//                 : [{ productId: item.id, quantity: item.qty, unitPrice: item.price }]
-//         ),
-//     };
-//     const res = await AxiosApi.post("Order/summary", payload);
-//     return res.data?.data ?? null;
-// };
-// const fetchPointSetup = async (): Promise<PointSetupInfo | null> => {
-//     try {
-//         const res = await AxiosApi.get("PointSetup");
-//         const d = res.data?.data;
-//         return d ? { pointsPerRedemption: d.pointsPerRedemption ?? 0, isActive: d.isActive ?? false } : null;
-//     } catch { return null; }
-// };
-
-// // ─── Constants ────────────────────────────────────────────────────────────────
-// const PLACEHOLDER_LIGHT = "https://placehold.co/300x300/e2e8f0/94a3b8?text=No+Image";
-// const PLACEHOLDER_DARK  = "https://placehold.co/300x300/1e293b/475569?text=No+Image";
-// const PAGE_SIZE = 20;
-// const WARRANTY_OPTIONS = [
-//     { label: "None",    months: 0  }, { label: "1 mo",   months: 1  },
-//     { label: "3 mo",   months: 3  }, { label: "6 mo",   months: 6  },
-//     { label: "1 yr",   months: 12 }, { label: "2 yr",   months: 24 },
-// ];
-// const todayISO  = () => new Date().toISOString().split("T")[0];
-// const addMonths = (dateStr: string, months: number) => {
-//     if (!months || !dateStr) return "";
-//     const d = new Date(dateStr); d.setMonth(d.getMonth() + months);
-//     return d.toISOString().split("T")[0];
-// };
-// const formatDate = (iso: string) =>
-//     iso ? new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
-
-// // ─── Main ─────────────────────────────────────────────────────────────────────
-// export default function PosShop() {
-//     const { darkLight } = useGlobleContextDarklight();
-//     const dark = darkLight;
-
-//     const [categories, setCategories]             = useState<Category[]>([]);
-//     const [activeTab, setActiveTab]               = useState("0");
-//     const [search, setSearch]                     = useState("");
-//     const [debouncedSearch, setDebouncedSearch]   = useState("");
-//     const [products, setProducts]                 = useState<Product[]>([]);
-//     const [page, setPage]                         = useState(1);
-//     const [hasMore, setHasMore]                   = useState(true);
-//     const [loadingProducts, setLoadingProducts]   = useState(false);
-//     const [loadingMore, setLoadingMore]           = useState(false);
-//     const [callListProduct, setCallListProduct]   = useState(false);
-//     const [cart, setCart]                         = useState<CartItem[]>([]);
-//     const [serialModal, setSerialModal]           = useState<{ open: boolean; product: Product | null }>({ open: false, product: null });
-//     const [paymentModal, setPaymentModal]         = useState(false);
-//     const [placingOrder, setPlacingOrder]         = useState(false);
-//     const [orderError, setOrderError]             = useState<string | null>(null);
-//     const [summaryData, setSummaryData]           = useState<OrderSummaryResponse | null>(null);
-//     const [summaryLoading, setSummaryLoading]     = useState(false);
-//     const summaryDebounceRef                      = useRef<ReturnType<typeof setTimeout> | null>(null);
-//     const [selectedCustomer, setSelectedCustomer] = useState<CustomerInfo | null>(null);
-//     const [pointSetup, setPointSetup]             = useState<PointSetupInfo | null>(null);
-
-//     // ── Mobile view state ──────────────────────────────────────────────────────
-//     const [mobileView, setMobileView] = useState<"products" | "cart">("products");
-
-//     useEffect(() => {
-//         fetchCategories().then(res => setCategories(res?.data ?? [])).catch(console.error);
-//         fetchPointSetup().then(d => setPointSetup(d));
-//     }, []);
-
-//     useEffect(() => {
-//         const t = setTimeout(() => setDebouncedSearch(search), 400);
-//         return () => clearTimeout(t);
-//     }, [search]);
-
-//     useEffect(() => { setProducts([]); setPage(1); setHasMore(true); }, [activeTab, debouncedSearch]);
-
-//     useEffect(() => {
-//         let cancelled = false;
-//         const load = async () => {
-//             if (page === 1) setLoadingProducts(true); else setLoadingMore(true);
-//             try {
-//                 const res = await fetchProducts({ page, pageSize: PAGE_SIZE, search: debouncedSearch, categoryId: activeTab });
-//                 if (!cancelled) {
-//                     setProducts(prev => page === 1 ? res.data ?? [] : [...prev, ...(res.data ?? [])]);
-//                     setHasMore(res.hasNext ?? false);
-//                 }
-//             } catch (e) { console.error(e); }
-//             finally { if (!cancelled) { setLoadingProducts(false); setLoadingMore(false); } }
-//         };
-//         load();
-//         return () => { cancelled = true; };
-//     }, [page, activeTab, debouncedSearch, callListProduct]);
-
-//     useEffect(() => {
-//         if (summaryDebounceRef.current) clearTimeout(summaryDebounceRef.current);
-//         if (cart.length === 0) { setSummaryData(null); return; }
-//         summaryDebounceRef.current = setTimeout(async () => {
-//             setSummaryLoading(true);
-//             try { setSummaryData(await fetchOrderSummary(cart)); }
-//             catch { setSummaryData(null); }
-//             finally { setSummaryLoading(false); }
-//         }, 500);
-//         return () => { if (summaryDebounceRef.current) clearTimeout(summaryDebounceRef.current); };
-//     }, [cart]);
-
-//     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-//         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-//         if (scrollHeight - scrollTop - clientHeight < 150 && hasMore && !loadingMore && !loadingProducts)
-//             setPage(p => p + 1);
-//     }, [hasMore, loadingMore, loadingProducts]);
-
-//     const addToCart = useCallback((product: Product) => {
-//         if (product.isSerialNumber) { setSerialModal({ open: true, product }); return; }
-//         setCart(prev => {
-//             const ex = prev.find(i => i.id === product.id);
-//             if (ex) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
-//             return [...prev, { ...product, qty: 1 }];
-//         });
-//     }, []);
-
-//     const handleSerialConfirm = useCallback((
-//         product: Product, serials: SelectedSerial[],
-//         warrantyMonths: number, warrantyStart: string, warrantyEnd: string
-//     ) => {
-//         if (serials.length === 0) return;
-//         setCart(prev => {
-//             const ex = prev.find(i => i.id === product.id);
-//             if (ex) {
-//                 const existingIds = new Set((ex.serialNumbers ?? []).map(s => s.id));
-//                 const merged = [...(ex.serialNumbers ?? []), ...serials.filter(s => !existingIds.has(s.id))];
-//                 return prev.map(i => i.id === product.id
-//                     ? { ...i, qty: merged.length, serialNumbers: merged, warrantyMonths, warrantyStart, warrantyEnd } : i);
-//             }
-//             return [...prev, { ...product, qty: serials.length, serialNumbers: serials, warrantyMonths, warrantyStart, warrantyEnd }];
-//         });
-//         setSerialModal({ open: false, product: null });
-//     }, []);
-
-//     const changeQty  = useCallback((id: number, delta: number) =>
-//         setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)), []);
-//     const removeItem = useCallback((id: number) => setCart(prev => prev.filter(i => i.id !== id)), []);
-//     const clearCart  = () => { setCart([]); setSummaryData(null); };
-
-//     const subtotal     = summaryData?.subTotal      ?? cart.reduce((s, i) => s + i.price * i.qty, 0);
-//     const totalTax     = summaryData?.totalTax      ?? cart.reduce((s, i) => s + (i.taxAmount ?? 0) * i.qty, 0);
-//     const autoDiscount = summaryData?.totalDiscount ?? 0;
-//     const totalPayable = summaryData?.totalPayable  ?? (subtotal + totalTax - autoDiscount);
-//     const totalQty     = cart.reduce((s, i) => s + i.qty, 0);
-//     const nearHints    = summaryData?.nearDiscountHints ?? [];
-
-//     const handlePlaceOrder = async (
-//         paymentMethod: number, manualDiscountAmount: number,
-//         notes: string, pointsUsed: number
-//     ) => {
-//         if (cart.length === 0 || placingOrder) return;
-//         setOrderError(null); setPlacingOrder(true);
-//         const payload: PlaceOrderPayload = {
-//             customerId: selectedCustomer?.id,
-//             saleType: 1, paymentStatus: 2, status: 3,
-//             paymentMethod,
-//             discountAmount: Number(manualDiscountAmount.toFixed(2)),
-//             notes: notes || "",
-//             pointsUsed: pointsUsed > 0 ? pointsUsed : undefined,
-//             items: cart.map(item =>
-//                 item.isSerialNumber && item.serialNumbers?.length
-//                     ? { productId: item.id, serialNumberIds: item.serialNumbers.map(s => Number(s.id)), unitPrice: item.price, warrantyMonths: item.warrantyMonths && item.warrantyMonths > 0 ? item.warrantyMonths : undefined } satisfies PlaceOrderItemPayload
-//                     : { productId: item.id, quantity: item.qty, unitPrice: item.price } satisfies PlaceOrderItemPayload
-//             ),
-//         };
-//         try {
-//             const res = await AxiosApi.post("Order", payload);
-//             if (res?.data?.data) {
-//                 alertify.success("Payment success");
-//                 clearCart(); setPaymentModal(false); setSelectedCustomer(null);
-//                 setCallListProduct(p => !p);
-//             }
-//         } catch (err: any) {
-//             const msg = err?.response?.data?.message || "Failed to place order.";
-//             setOrderError(msg); alertError(msg);
-//         } finally { setPlacingOrder(false); }
-//     };
-
-//     const allTabs = [
-//         { id: "0", name: "All", image: null as string | null },
-//         ...categories.map(c => ({ id: String(c.id), name: c.name, image: c.image ?? null })),
-//     ];
-
-//     // ─── Theme ────────────────────────────────────────────────────────────────
-//     const bg          = dark ? "bg-[#0f172a]"        : "bg-[#f1f5f9]";
-//     const sidebarBg   = dark ? "bg-[#1e293b]"        : "bg-white";
-//     const panelBg     = dark ? "bg-[#1e293b]"        : "bg-white";
-//     const productBg   = dark ? "bg-[#1e293b]"        : "bg-white";
-//     const borderColor = dark ? "border-slate-700/60" : "border-slate-200";
-//     const textPrimary = dark ? "text-slate-100"      : "text-slate-900";
-//     const textSub     = dark ? "text-slate-400"      : "text-slate-500";
-//     const textMuted   = dark ? "text-slate-500"      : "text-slate-400";
-//     const inputBg     = dark ? "bg-slate-800/80"     : "bg-slate-100";
-//     const rowBg       = dark ? "bg-slate-800"        : "bg-slate-50 border border-slate-200";
-//     const scrollStyle = dark ? "#334155 transparent" : "#cbd5e0 transparent";
-//     const imgFallback = dark ? PLACEHOLDER_DARK      : PLACEHOLDER_LIGHT;
-
-//     return (
-//         <>
-//             {serialModal.open && serialModal.product && (
-//                 <SerialNumberModal
-//                     product={serialModal.product} dark={dark}
-//                     existingSerials={cart.find(i => i.id === serialModal.product!.id)?.serialNumbers}
-//                     existingWarrantyMonths={cart.find(i => i.id === serialModal.product!.id)?.warrantyMonths ?? 0}
-//                     existingWarrantyStart={cart.find(i => i.id === serialModal.product!.id)?.warrantyStart}
-//                     onConfirm={handleSerialConfirm}
-//                     onClose={() => setSerialModal({ open: false, product: null })}
-//                 />
-//             )}
-
-//             {paymentModal && (
-//                 <PaymentModal
-//                     dark={dark} cart={cart} subtotal={subtotal}
-//                     totalTax={totalTax} autoDiscount={autoDiscount}
-//                     customer={selectedCustomer} pointSetup={pointSetup}
-//                     onConfirm={handlePlaceOrder}
-//                     onClose={() => { if (!placingOrder) { setPaymentModal(false); setOrderError(null); } }}
-//                     placing={placingOrder} orderError={orderError}
-//                 />
-//             )}
-
-//             <div className={`flex flex-col ${bg} ${textPrimary} overflow-hidden`} style={{ height: "calc(100vh - 80px)" }}>
-
-//                 {/* ── Mobile: horizontal category tabs ── */}
-//                 <div className={`md:hidden flex overflow-x-auto shrink-0 border-b ${borderColor} ${sidebarBg} py-2 px-2 gap-2`}
-//                     style={{ scrollbarWidth: "none" }}>
-//                     {allTabs.map(cat => {
-//                         const isActive = activeTab === cat.id;
-//                         return (
-//                             <button key={cat.id} onClick={() => setActiveTab(cat.id)}
-//                                 className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl shrink-0 transition-all ${
-//                                     isActive
-//                                         ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
-//                                         : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"
-//                                 }`}>
-//                                 <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center ${
-//                                     isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"
-//                                 }`}>
-//                                     {cat.id === "0"
-//                                         ? <svg className={`w-5 h-5 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-//                                         </svg>
-//                                         : cat.image
-//                                             ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover"
-//                                                 onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
-//                                             : <svg className={`w-5 h-5 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-//                                             </svg>
-//                                     }
-//                                 </div>
-//                                 <span className={`text-[10px] font-semibold truncate max-w-[56px] ${isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub}`}>
-//                                     {cat.name}
-//                                 </span>
-//                             </button>
-//                         );
-//                     })}
-//                 </div>
-
-//                 {/* ── Main row ── */}
-//                 <div className="flex flex-1 overflow-hidden">
-
-//                     {/* Desktop: vertical category sidebar */}
-//                     <div className={`hidden md:flex w-[104px] shrink-0 flex-col overflow-hidden ${sidebarBg} border-r ${borderColor}`}>
-//                         <div className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1.5" style={{ scrollbarWidth: "none" }}>
-//                             {allTabs.map(cat => {
-//                                 const isActive = activeTab === cat.id;
-//                                 return (
-//                                     <button key={cat.id} onClick={() => setActiveTab(cat.id)}
-//                                         className={`w-full flex flex-col items-center gap-1.5 p-1.5 rounded-xl transition-all ${
-//                                             isActive
-//                                                 ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
-//                                                 : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"
-//                                         }`}>
-//                                         <div className={`w-[68px] h-[68px] rounded-xl overflow-hidden flex items-center justify-center ${
-//                                             isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"
-//                                         }`}>
-//                                             {cat.id === "0"
-//                                                 ? <svg className={`w-8 h-8 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-//                                                 </svg>
-//                                                 : cat.image
-//                                                     ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover"
-//                                                         onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
-//                                                     : <svg className={`w-7 h-7 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-//                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-//                                                     </svg>
-//                                             }
-//                                         </div>
-//                                         <span className={`text-[11px] font-semibold text-center leading-tight w-full truncate ${
-//                                             isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub
-//                                         }`}>{cat.name}</span>
-//                                     </button>
-//                                 );
-//                             })}
-//                         </div>
-//                     </div>
-
-//                     {/* Product List — full width on mobile (products view), flex-1 on desktop */}
-//                     <div className={`flex-col flex-1 overflow-hidden border-r ${borderColor}
-//                         ${mobileView === "products" ? "flex" : "hidden md:flex"}`}>
-//                         <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 ${panelBg} border-b ${borderColor}`}>
-//                             <span className={`text-base sm:text-2xl font-black tracking-wider truncate ${dark ? "text-white" : "text-blue-900"}`}>
-//                                 WELCOME SOKHA <span className="text-yellow-500">SK</span>
-//                             </span>
-//                             <div className={`ml-auto flex items-center gap-2 w-[180px] sm:w-[250px] px-3 py-2 rounded-xl ${inputBg}`}>
-//                                 <svg className={`w-4 h-4 ${textMuted} shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-//                                 </svg>
-//                                 <input className={`flex-1 bg-transparent text-sm ${textPrimary} placeholder-slate-400 outline-none`}
-//                                     placeholder="Search..." value={search}
-//                                     onChange={e => setSearch(e.target.value)} />
-//                                 {search && <button className={`${textMuted} hover:text-red-400 text-sm`} onClick={() => setSearch("")}>✕</button>}
-//                             </div>
-//                         </div>
-
-//                         <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 flex flex-col gap-2.5"
-//                             style={{ scrollbarWidth: "thin", scrollbarColor: scrollStyle }}
-//                             onScroll={handleScroll}>
-//                             {loadingProducts ? (
-//                                 <div className="flex flex-col items-center justify-center h-full gap-3">
-//                                     <Spinner size="lg" /><p className={`${textMuted} text-sm`}>Loading products…</p>
-//                                 </div>
-//                             ) : products.length === 0 ? (
-//                                 <div className="flex flex-col items-center justify-center h-full gap-2">
-//                                     <span className="text-5xl">📦</span>
-//                                     <p className={`${textMuted} text-sm font-medium`}>No products found</p>
-//                                 </div>
-//                             ) : (
-//                                 <>
-//                                     {products.map(p => (
-//                                         <ProductRow key={p.id} product={p} cartItem={cart.find(i => i.id === p.id)}
-//                                             onAdd={addToCart} dark={dark} productBg={productBg} borderColor={borderColor}
-//                                             textPrimary={textPrimary} textSub={textSub} textMuted={textMuted} imgFallback={imgFallback} />
-//                                     ))}
-//                                     {loadingMore && (
-//                                         <div className={`flex items-center justify-center gap-3 py-5 rounded-2xl ${dark ? "bg-slate-800/60" : "bg-slate-100/80"}`}>
-//                                             <Spinner size="sm" />
-//                                             <span className={`${textMuted} text-sm`}>Loading more…</span>
-//                                         </div>
-//                                     )}
-//                                     {!hasMore && !loadingMore && products.length > 0 && (
-//                                         <div className="flex items-center justify-center gap-3 py-4">
-//                                             <div className={`h-px flex-1 ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
-//                                             <span className={`${textMuted} text-xs px-2`}>No more products</span>
-//                                             <div className={`h-px flex-1 ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
-//                                         </div>
-//                                     )}
-//                                 </>
-//                             )}
-//                         </div>
-//                     </div>
-
-//                     {/* Order Panel — hidden on mobile (products view), full screen on mobile (cart view) */}
-//                     <div className={`flex-col overflow-hidden ${panelBg} shrink-0
-//                         w-full md:w-80 xl:w-96
-//                         ${mobileView === "cart" ? "flex" : "hidden md:flex"}`}>
-
-//                         {/* Header */}
-//                         <div className={`flex items-center gap-2.5 px-4 py-3.5 border-b ${borderColor} shrink-0`}>
-//                             <svg className="w-5 h-5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-//                             </svg>
-//                             <h2 className={`font-bold text-base flex-1 ${textPrimary}`}>Order Details</h2>
-//                             {totalQty > 0 && <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">{totalQty}</span>}
-//                             {summaryLoading && <Spinner size="sm" />}
-//                             {cart.length > 0 && (
-//                                 <button onClick={clearCart} className={`${textMuted} hover:text-red-400 ml-1`}>
-//                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-//                                     </svg>
-//                                 </button>
-//                             )}
-//                         </div>
-
-//                         {/* Customer Select */}
-//                         <div className={`px-3 py-2.5 border-b ${borderColor} shrink-0`}>
-//                             <p className={`text-[11px] font-bold uppercase tracking-wide ${textMuted} mb-1.5`}>Customer (optional)</p>
-//                             <XSelectSearch
-//                                 multiple={false}
-//                                 value={selectedCustomer
-//                                     ? { id: selectedCustomer.id, name: selectedCustomer.name, value: selectedCustomer.id, data: null }
-//                                     : null}
-//                                 onChange={val => {
-//                                     if (!val) { setSelectedCustomer(null); return; }
-//                                     setSelectedCustomer({ id: val.id as number, name: val.name, totalPoint: (val.data as any)?.totalPoint ?? 0 });
-//                                 }}
-//                                 placeholder="Search customer..."
-//                                 selectOption={{ id: "id", name: "fullName", value: "id", apiEndpoint: "Customer/lookup", pageSize: 20, searchParam: "Search" }}
-//                                 isSearchable clearable
-//                             />
-//                             {selectedCustomer && (
-//                                 <div className={`mt-1.5 flex items-center gap-1.5 px-2 py-1 rounded-lg ${dark ? "bg-amber-500/10" : "bg-amber-50"}`}>
-//                                     <span className="text-amber-400">⭐</span>
-//                                     <span className={`text-xs font-semibold ${dark ? "text-amber-300" : "text-amber-700"}`}>
-//                                         {selectedCustomer.totalPoint} points available
-//                                     </span>
-//                                 </div>
-//                             )}
-//                         </div>
-
-//                         {/* Cart Items */}
-//                         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2" style={{ scrollbarWidth: "thin", scrollbarColor: scrollStyle }}>
-//                             {cart.length === 0 ? (
-//                                 <div className="flex flex-col items-center justify-center h-full gap-3 pb-10">
-//                                     <div className={`w-16 h-16 rounded-full ${dark ? "bg-slate-800" : "bg-slate-100"} flex items-center justify-center`}>
-//                                         <svg className={`w-8 h-8 ${textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-//                                                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-//                                         </svg>
-//                                     </div>
-//                                     <p className={`${textMuted} text-sm font-medium`}>No items selected</p>
-//                                     <p className={`${textMuted} text-xs text-center px-6`}>Click on a product to add it to the order</p>
-//                                 </div>
-//                             ) : (
-//                                 <>
-//                                     {cart.map(item => (
-//                                         <CartRow key={item.id} item={item}
-//                                             onInc={() => changeQty(item.id, 1)} onDec={() => changeQty(item.id, -1)}
-//                                             onRemove={() => removeItem(item.id)}
-//                                             dark={dark} rowBg={rowBg} textPrimary={textPrimary} textMuted={textMuted} />
-//                                     ))}
-//                                     {nearHints.length > 0 && (
-//                                         <div className="pt-1 space-y-2">
-//                                             <div className="flex items-center gap-2 px-1">
-//                                                 <div className={`h-px flex-1 ${dark ? "bg-amber-500/20" : "bg-amber-200"}`} />
-//                                                 <span className={`text-[10px] font-bold uppercase ${dark ? "text-amber-400" : "text-amber-600"}`}>💡 Unlock Discounts</span>
-//                                                 <div className={`h-px flex-1 ${dark ? "bg-amber-500/20" : "bg-amber-200"}`} />
-//                                             </div>
-//                                             {nearHints.map((hint, idx) => <NearDiscountHintBanner key={idx} hint={hint} dark={dark} />)}
-//                                         </div>
-//                                     )}
-//                                 </>
-//                             )}
-//                         </div>
-
-//                         {/* Totals */}
-//                         <div className={`border-t ${borderColor} px-4 py-3 space-y-2 shrink-0`}>
-//                             <div className="flex justify-between text-sm">
-//                                 <span className={textSub}>Subtotal</span>
-//                                 <span className={dark ? "text-slate-300" : "text-slate-600"}>${subtotal.toFixed(2)}</span>
-//                             </div>
-//                             <div className="flex justify-between text-sm">
-//                                 <span className={textSub}>Tax</span>
-//                                 <span className={dark ? "text-slate-300" : "text-slate-600"}>${totalTax.toFixed(2)}</span>
-//                             </div>
-//                             {autoDiscount > 0
-//                                 ? <div className="flex justify-between text-sm">
-//                                     <span className="text-emerald-400 flex items-center gap-1">
-//                                         Discount <span className="text-[10px] font-bold px-1 rounded bg-emerald-500/15">Auto</span>
-//                                     </span>
-//                                     <span className="text-emerald-400">-${autoDiscount.toFixed(2)}</span>
-//                                 </div>
-//                                 : <div className="flex justify-between text-sm">
-//                                     <span className={textSub}>Discount</span>
-//                                     <span className={dark ? "text-slate-300" : "text-slate-600"}>$0.00</span>
-//                                 </div>
-//                             }
-//                             <div className={`flex justify-between items-center pt-2 border-t border-dashed ${dark ? "border-slate-700" : "border-slate-300"}`}>
-//                                 <span className={`font-bold ${textPrimary}`}>Total Payable</span>
-//                                 <span className="font-bold text-lg text-blue-500">${totalPayable.toFixed(2)}</span>
-//                             </div>
-//                         </div>
-
-//                         {/* Place Order */}
-//                         <div className="px-4 pb-4 shrink-0">
-//                             <button
-//                                 disabled={cart.length === 0}
-//                                 onClick={() => { if (cart.length > 0) { setOrderError(null); setPaymentModal(true); } }}
-//                                 className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2 ${
-//                                     cart.length === 0
-//                                         ? dark ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-//                                         : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"
-//                                 }`}>
-//                                 {cart.length === 0 ? "No Items Selected" : (
-//                                     <>
-//                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                                                 d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-//                                         </svg>
-//                                         {`Place Order · $${totalPayable.toFixed(2)}`}
-//                                     </>
-//                                 )}
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </div>
-
-//                 {/* ── Mobile: bottom tab bar ── */}
-//                 <div className={`md:hidden flex items-stretch border-t ${borderColor} ${panelBg} shrink-0`}>
-//                     <button
-//                         onClick={() => setMobileView("products")}
-//                         className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all ${
-//                             mobileView === "products"
-//                                 ? dark ? "text-blue-400 border-t-2 border-blue-500" : "text-blue-600 border-t-2 border-blue-500"
-//                                 : textMuted
-//                         }`}>
-//                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                                 d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-//                         </svg>
-//                         Products
-//                     </button>
-//                     <button
-//                         onClick={() => setMobileView("cart")}
-//                         className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all relative ${
-//                             mobileView === "cart"
-//                                 ? dark ? "text-blue-400 border-t-2 border-blue-500" : "text-blue-600 border-t-2 border-blue-500"
-//                                 : textMuted
-//                         }`}>
-//                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-//                         </svg>
-//                         Cart
-//                         {totalQty > 0 && (
-//                             <span className="absolute top-2 right-8 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-//                                 {totalQty > 9 ? "9+" : totalQty}
-//                             </span>
-//                         )}
-//                     </button>
-//                 </div>
-//             </div>
-//         </>
-//     );
-// }
-
-// // ─── Serial Number Modal ──────────────────────────────────────────────────────
-// function SerialNumberModal({ product, dark, existingSerials = [], existingWarrantyMonths = 0, existingWarrantyStart, onConfirm, onClose }: SerialNumberModalProps) {
-//     const [selectedSerials, setSelectedSerials] = useState<MultiValue>(
-//         existingSerials.map(s => ({ id: s.id, name: s.serialNo, value: s.id, data: s.data ?? null }))
-//     );
-//     const [warrantyMonths, setWarrantyMonths] = useState(existingWarrantyMonths);
-//     const [warrantyInput, setWarrantyInput]   = useState(existingWarrantyMonths > 0 ? String(existingWarrantyMonths) : "");
-//     const [warrantyStart, setWarrantyStart]   = useState(existingWarrantyStart ?? todayISO());
-//     const warrantyEnd = warrantyMonths > 0 ? addMonths(warrantyStart, warrantyMonths) : "";
-
-//     const dl     = dark;
-//     const border = dl ? "border-slate-700" : "border-slate-200";
-//     const txt    = dl ? "text-slate-100"   : "text-slate-900";
-//     const txtSub = dl ? "text-slate-400"   : "text-slate-500";
-//     const txtMuted = dl ? "text-slate-500" : "text-slate-400";
-//     const inputCls = `w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${
-//         dl ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500"
-//            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"
-//     }`;
-
-//     return (
-//         <div className={`fixed inset-0 z-50 flex items-center justify-center mt-15 ${dl ? "bg-black/70" : "bg-black/50"} backdrop-blur-sm p-3 sm:p-4`}
-//             onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-//             <div className={`${dl ? "bg-[#1e293b]" : "bg-white"} rounded-2xl border ${border} w-full max-w-xl shadow-2xl flex flex-col overflow-hidden`}
-//                 style={{ maxHeight: "90vh" }}>
-//                 <div className={`flex items-start gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b ${border} shrink-0`}>
-//                     <div className="flex-1 min-w-0">
-//                         <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400">Serial Number</span>
-//                         <h3 className={`font-bold text-sm sm:text-base ${txt} truncate mt-1`}>{product.name}</h3>
-//                         {product.sku && <p className={`text-xs font-mono ${txtMuted} mt-0.5`}>SKU: {product.sku}</p>}
-//                     </div>
-//                     <button onClick={onClose} className={`w-8 h-8 rounded-lg flex items-center justify-center ${dl ? "hover:bg-slate-700 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}>
-//                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-//                         </svg>
-//                     </button>
-//                 </div>
-//                 <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-5">
-//                     <div>
-//                         <label className={`block text-xs font-semibold ${txtSub} mb-2 uppercase tracking-wide`}>
-//                             Select Serial Numbers <span className="text-blue-400 normal-case font-normal">(multiple)</span>
-//                         </label>
-//                         <XSelectSearch multiple value={selectedSerials}
-//                             onChange={val => setSelectedSerials(val as MultiValue)}
-//                             placeholder="Search serial numbers…"
-//                             selectOption={{ id: "id", name: "serialNo", value: "id", apiEndpoint: `SerialNumber?ProductId=${product.id}&Status=Available`, pageSize: 50, searchParam: "Search" }}
-//                             isSearchable clearable noOptionsMessage="No available serial numbers" />
-//                     </div>
-//                     <div>
-//                         <label className={`block text-xs font-semibold ${txtSub} mb-2 uppercase tracking-wide`}>Warranty Period</label>
-//                         <div className="grid grid-cols-6 gap-1.5 sm:gap-2 mb-3">
-//                             {WARRANTY_OPTIONS.map(opt => {
-//                                 const active = warrantyMonths === opt.months;
-//                                 return (
-//                                     <button key={opt.months}
-//                                         onClick={() => { setWarrantyMonths(opt.months); setWarrantyInput(opt.months === 0 ? "" : String(opt.months)); }}
-//                                         className={`px-1.5 sm:px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-//                                             active
-//                                                 ? "bg-blue-600 border-blue-600 text-white"
-//                                                 : dl ? "bg-slate-800 border-slate-600 text-slate-300 hover:border-blue-500/60"
-//                                                      : "bg-slate-50 border-slate-200 text-slate-600 hover:border-blue-400/60"
-//                                         }`}>{opt.label}</button>
-//                                 );
-//                             })}
-//                         </div>
-//                         <div className="relative">
-//                             <input type="number" min={0} value={warrantyInput}
-//                                 onChange={e => {
-//                                     setWarrantyInput(e.target.value);
-//                                     const p = parseInt(e.target.value, 10);
-//                                     setWarrantyMonths(!isNaN(p) && p >= 0 ? p : 0);
-//                                 }}
-//                                 placeholder="Or type months (e.g. 18)" className={inputCls} />
-//                             <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none ${txtMuted}`}>months</span>
-//                         </div>
-//                     </div>
-//                     <div>
-//                         <label className={`block text-xs font-semibold ${txtSub} mb-2 uppercase tracking-wide`}>Warranty Dates</label>
-//                         <div className="grid grid-cols-2 gap-3">
-//                             <div>
-//                                 <p className={`text-[11px] ${txtMuted} mb-1`}>Start date</p>
-//                                 <input type="date" value={warrantyStart} onChange={e => setWarrantyStart(e.target.value)} className={inputCls} />
-//                             </div>
-//                             <div>
-//                                 <p className={`text-[11px] ${txtMuted} mb-1`}>End date <span className="text-blue-400">(auto)</span></p>
-//                                 <div className={`w-full px-3 py-2 rounded-lg border text-sm font-medium ${
-//                                     warrantyMonths > 0
-//                                         ? dl ? "bg-slate-900/60 border-slate-700 text-blue-400" : "bg-blue-50 border-blue-100 text-blue-600"
-//                                         : dl ? "bg-slate-900/40 border-slate-700 text-slate-600" : "bg-slate-50 border-slate-200 text-slate-400"
-//                                 }`}>{warrantyMonths > 0 ? formatDate(warrantyEnd) : "—"}</div>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 </div>
-//                 <div className={`flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 border-t ${border} shrink-0`}>
-//                     <button onClick={onClose}
-//                         className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border ${dl ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-//                         Cancel
-//                     </button>
-//                     <button
-//                         onClick={() => onConfirm(product, selectedSerials.map(s => ({ id: s.id, serialNo: s.name, data: s.data as SerialNumberItem | null })), warrantyMonths, warrantyStart, warrantyEnd)}
-//                         disabled={selectedSerials.length === 0}
-//                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-//                             selectedSerials.length === 0
-//                                 ? dl ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-100 text-slate-400 cursor-not-allowed"
-//                                 : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md active:scale-95"
-//                         }`}>
-//                         {selectedSerials.length === 0
-//                             ? "Select serials"
-//                             : `Add ${selectedSerials.length} · $${(product.price * selectedSerials.length).toFixed(2)}`}
-//                     </button>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// }
-
-// // ─── Product Row ──────────────────────────────────────────────────────────────
-// function ProductRow({ product, cartItem, onAdd, dark, productBg, borderColor, textPrimary, textMuted, imgFallback }: ProductRowProps) {
-//     const outOfStock   = (product.stock ?? 0) <= 0;
-//     const productPrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
-
-//     return (
-//         <div onClick={() => !outOfStock && onAdd(product)} style={{ minHeight: "90px" }}
-//             className={`flex items-stretch rounded-2xl overflow-hidden border transition-all select-none
-//                 ${outOfStock ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${productBg} ${borderColor}
-//                 ${cartItem ? "ring-2 ring-blue-500 shadow-md shadow-blue-500/10" : dark ? "hover:border-slate-600 hover:shadow-lg" : "hover:border-slate-300 hover:shadow-md"}`}>
-//             <div className={`relative w-[90px] sm:w-[130px] shrink-0 ${dark ? "bg-slate-800" : "bg-slate-100"}`}>
-//                 <img src={product.imageProduct || imgFallback} alt={product.name}
-//                     className="w-full h-full object-cover" style={{ minHeight: "90px", maxHeight: "130px" }}
-//                     onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
-//                 {cartItem && <span className="absolute top-2 left-2 bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">×{cartItem.qty}</span>}
-//                 {product.isSerialNumber && (
-//                     <span className={`absolute bottom-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${dark ? "bg-violet-900/80 text-violet-300" : "bg-violet-100 text-violet-700"}`}>S/N</span>
-//                 )}
-//                 {outOfStock && (
-//                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-//                         <span className="text-[10px] font-bold text-white bg-red-500/90 px-1.5 py-0.5 rounded-lg">Out of Stock</span>
-//                     </div>
-//                 )}
-//             </div>
-//             <div className="flex-1 px-3 sm:px-4 py-3 flex flex-col justify-between min-w-0">
-//                 <div>
-//                     {product.category?.name && <p className={`text-[11px] font-medium ${textMuted} mb-0.5`}>{product.category.name}</p>}
-//                     <p className={`text-xs sm:text-sm font-bold ${textPrimary} leading-snug line-clamp-2`}>{product.name}</p>
-//                     {product.sku && <p className={`text-[10px] sm:text-[11px] ${textMuted} mt-0.5 font-mono`}>{product.sku}</p>}
-//                 </div>
-//                 <div className="flex items-center justify-between mt-2 gap-2">
-//                     <div className="flex items-center gap-1.5">
-//                         <span className="text-sm sm:text-base font-extrabold text-sky-500">${productPrice.toFixed(2)}</span>
-//                         {(product.taxRate ?? 0) > 0 && (
-//                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400">+{product.taxRate}%</span>
-//                         )}
-//                     </div>
-//                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${
-//                         (product.stock ?? 0) > 0
-//                             ? dark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 text-emerald-700"
-//                             : dark ? "bg-red-900/50 text-red-400"         : "bg-red-100 text-red-600"
-//                     }`}>{product.stock ?? 0}</span>
-//                 </div>
-//             </div>
-//             <div className={`w-6 sm:w-8 shrink-0 flex items-center justify-center ${cartItem ? "text-blue-400" : dark ? "text-slate-700" : "text-slate-200"}`}>
-//                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-//                 </svg>
-//             </div>
-//         </div>
-//     );
-// }
-
-// // ─── Cart Row ─────────────────────────────────────────────────────────────────
-// function CartRow({ item, onInc, onDec, onRemove, dark, rowBg, textPrimary, textMuted }: CartRowProps) {
-//     const btnBase = dark ? "bg-slate-700 hover:bg-slate-600 text-slate-200" : "bg-slate-200 hover:bg-slate-300 text-slate-700";
-//     return (
-//         <div className={`${rowBg} rounded-xl px-3 py-2.5`}>
-//             <div className="flex items-center gap-3">
-//                 <div className="flex-1 min-w-0">
-//                     <p className={`text-sm font-semibold ${textPrimary} truncate`}>{item.name}</p>
-//                     <p className="text-xs font-bold text-sky-500 mt-0.5">
-//                         ${(item.price * item.qty).toFixed(2)}
-//                         <span className={`${textMuted} font-normal ml-1 text-[11px]`}>(${Number(item.price).toFixed(2)} × {item.qty})</span>
-//                     </p>
-//                 </div>
-//                 <div className="flex items-center gap-1 shrink-0">
-//                     {!item.isSerialNumber && (
-//                         <>
-//                             <button onClick={onDec} className={`w-7 h-7 rounded-lg ${btnBase} font-bold text-lg flex items-center justify-center`}>−</button>
-//                             <span className={`w-7 text-center text-sm font-bold ${textPrimary} select-none`}>{item.qty}</span>
-//                             <button onClick={onInc} className={`w-7 h-7 rounded-lg ${dark ? "bg-slate-700 hover:bg-blue-600 text-slate-200" : "bg-slate-200 hover:bg-blue-500 hover:text-white text-slate-700"} font-bold text-lg flex items-center justify-center`}>+</button>
-//                         </>
-//                     )}
-//                     {item.isSerialNumber && (
-//                         <span className={`text-xs font-bold px-2 py-1 rounded-lg ${dark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>×{item.qty}</span>
-//                     )}
-//                     <button onClick={onRemove}
-//                         className={`w-7 h-7 rounded-lg flex items-center justify-center ml-0.5 ${dark ? "bg-slate-700 hover:bg-red-600 text-slate-400 hover:text-white" : "bg-slate-200 hover:bg-red-500 text-slate-500 hover:text-white"}`}>
-//                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-//                         </svg>
-//                     </button>
-//                 </div>
-//             </div>
-//             {item.isSerialNumber && item.serialNumbers && item.serialNumbers.length > 0 && (
-//                 <div className={`mt-2 pt-2 border-t ${dark ? "border-slate-700" : "border-slate-200"}`}>
-//                     <div className="flex flex-wrap gap-1">
-//                         {item.serialNumbers.map(s => (
-//                             <span key={s.id} className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded ${dark ? "bg-violet-900/50 text-violet-300" : "bg-violet-50 text-violet-700"}`}>
-//                                 {s.serialNo}
-//                             </span>
-//                         ))}
-//                     </div>
-//                     <p className={`text-[10px] ${dark ? "text-slate-500" : "text-slate-400"} mt-1`}>
-//                         {item.warrantyMonths && item.warrantyMonths > 0
-//                             ? `Warranty: ${item.warrantyMonths}mo · ${formatDate(item.warrantyStart!)} → ${formatDate(item.warrantyEnd!)}`
-//                             : "Warranty: 0 Month"}
-//                     </p>
-//                 </div>
-//             )}
-//         </div>
-//     );
-// }
-
-// // ─── Spinner ──────────────────────────────────────────────────────────────────
-// function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-//     const cls = size === "sm" ? "w-5 h-5 border-2" : size === "lg" ? "w-9 h-9 border-[3px]" : "w-7 h-7 border-2";
-//     return <div className={`${cls} rounded-full border-slate-300 border-t-blue-500 animate-spin`} />;
-// }
-
-
-
-
-
-
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useGlobleContextDarklight } from "../../AllContext/context";
 import { AxiosApi } from "../../component/Axios/Axios";
@@ -2530,18 +62,372 @@ interface ProductRowProps {
   textPrimary: string; textSub: string; textMuted: string; imgFallback: string;
 }
 
+// ─── Receipt Data Interface ───────────────────────────────────────────────────
+interface ReceiptData {
+  transId: string;
+  customerName: string;
+  items: CartItem[];
+  subtotal: number;
+  totalTax: number;
+  totalAmount: number;
+  paymentMethod: number;
+  cashGiven?: number;
+  change?: number;
+  discount?: number;
+}
+
 const PAYMENT_METHODS = [
   { value: 1, label: "Cash", icon: "💵" },
   { value: 2, label: "Bank QR", icon: "📲" },
   { value: 3, label: "Point", icon: "⭐" },
 ];
 
+// ─── Realistic SVG Barcode Generator ──────────────────────────────────────────
+function BarcodeSVG({ value, height = 50 }: { value: string; height?: number }) {
+  const rects: React.ReactNode[] = [];
+  let x = 0;
+
+  const addBar = (w: number) => {
+    rects.push(<rect key={x} x={x} y={0} width={w} height={height} fill="#000" />);
+    x += w;
+  };
+  const addSpace = (w: number) => {
+    x += w;
+  };
+
+  // Start pattern
+  addBar(2); addSpace(1); addBar(1); addSpace(1); addBar(1); addSpace(1);
+
+  // Data encoding (deterministic variable-width bars based on char codes)
+  for (let i = 0; i < value.length; i++) {
+    const c = value.charCodeAt(i);
+    addBar((c % 3) + 1); addSpace(1);
+    addBar(((c >> 1) % 2) + 1); addSpace(1);
+    addBar(((c >> 2) % 3) + 1); addSpace(2); // wider gap between chars
+  }
+
+  // Stop pattern
+  addBar(2); addSpace(1); addBar(1); addSpace(1); addBar(2);
+
+  return (
+    <svg viewBox={`0 0 ${x} ${height}`} width="100%" height={height} preserveAspectRatio="none" style={{ display: 'block' }}>
+      {rects}
+    </svg>
+  );
+}
+
+// ─── Receipt Modal ────────────────────────────────────────────────────────────
+function ReceiptModal({ data, onClose }: { data: ReceiptData; onClose: () => void }) {
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const thermalCSS = `
+    @page { size: 80mm auto; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 4mm 3mm; font-size: 11px; line-height: 1.5; color: #000; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: 700; }
+    .title { font-size: 18px; font-weight: 900; letter-spacing: 3px; }
+    .subtitle { font-size: 8px; letter-spacing: 1.5px; }
+    .divider { border-top: 1px dashed #000; margin: 5px 0; }
+    .divider-double { border-top: 2px solid #000; margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 10px; text-align: left; padding: 2px 0; border-bottom: 1px solid #000; }
+    th.right { text-align: right; }
+    th.qty { text-align: center; width: 24px; }
+    td { font-size: 11px; padding: 2px 0; vertical-align: top; }
+    td.right { text-align: right; }
+    td.qty { text-align: center; }
+    .serial { font-size: 8px; color: #555; }
+    .total-label { font-size: 15px; font-weight: 900; }
+    .total-value { font-size: 15px; font-weight: 900; text-align: right; }
+    .paid { display: inline-block; border: 2px solid #000; padding: 1px 8px; font-weight: 900; font-size: 13px; letter-spacing: 3px; }
+    .footer { font-size: 9px; }
+    .trans-id { font-size: 8px; margin-top: 2px; }
+  `;
+
+  const handlePrint = () => {
+    const el = printRef.current;
+    if (!el) return;
+    const win = window.open("", "_blank", "width=320,height=600");
+    if (!win) return;
+    win.document.write(
+      `<html><head><title>Receipt ${data.transId}</title><style>${thermalCSS}</style></head><body>${el.innerHTML}</body></html>`
+    );
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 300);
+  };
+
+  const methodLabel = data.paymentMethod === 1 ? "Cash" : data.paymentMethod === 2 ? "Bank QR" : "Points";
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const barcodeValue = data.transId.replace("#", "");
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm mt-15">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[420px] flex flex-col overflow-hidden"
+        style={{ maxHeight: "87vh" }}>
+
+        {/* ─── Beautiful Screen UI ─── */}
+        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+          <div className="px-8 pt-7 pb-2 text-black">
+
+            {/* Header */}
+            <div className="flex flex-col items-center mb-3">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-black text-blue-900 text-base leading-tight">SOKHA SK</p>
+                  <p className="text-[10px] text-slate-400 leading-tight tracking-wider">SECURITY & TECH SOLUTIONS</p>
+                </div>
+              </div>
+
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-2 shadow-md shadow-emerald-200">
+                <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-black text-emerald-600 tracking-tight">Transaction Successful!</h2>
+            </div>
+
+            {/* Info Row */}
+            <div className="flex justify-between text-xs text-slate-500 mb-1">
+              <span>Date: <b className="text-slate-700">{dateStr}</b></span>
+              <span>Time: <b className="text-slate-700">{timeStr}</b></span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-500 mb-4">
+              <span>Trans: <b className="text-slate-700">{data.transId}</b></span>
+              <span>Customer: <b className="text-slate-700">{data.customerName}</b></span>
+            </div>
+
+            <div className="border-t border-dashed border-slate-300 mb-4" />
+
+            {/* Items Table */}
+            <table className="w-full text-xs mb-4">
+              <thead>
+                <tr className="border-b border-slate-300">
+                  <th className="text-left py-2 font-bold text-slate-600 pr-3">Item</th>
+                  <th className="text-center py-2 font-bold text-slate-600 w-10">Qty</th>
+                  <th className="text-right py-2 font-bold text-slate-600 w-20">Price</th>
+                  <th className="text-right py-2 font-bold text-slate-600 w-20">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map(item => (
+                  <tr key={item.id} className="border-b border-slate-100">
+                    <td className="py-2 text-slate-700 font-medium pr-3">
+                      <p className="truncate max-w-[160px]">{item.name}</p>
+                      {item.isSerialNumber && item.serialNumbers && item.serialNumbers.length > 0 && (
+                        <p className="text-[9px] font-mono text-slate-400 truncate mt-0.5">
+                          S/N: {item.serialNumbers.map(s => s.serialNo).join(", ")}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-2 text-center text-slate-600">{item.qty}</td>
+                    <td className="py-2 text-right text-slate-600">${Number(item.price).toFixed(2)}</td>
+                    <td className="py-2 text-right font-semibold text-slate-700">${(item.price * item.qty).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="border-t border-dashed border-slate-300 mb-4" />
+
+            {/* Totals */}
+            <div className="space-y-1.5 text-xs mb-4">
+              <div className="flex justify-between text-slate-500">
+                <span>Sub-total</span>
+                <span className="text-slate-700">${data.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-500">
+                <span>Tax ({data.items[0]?.taxRate ?? 0}%)</span>
+                <span className="text-slate-700">${data.totalTax.toFixed(2)}</span>
+              </div>
+              {(data.discount ?? 0) > 0 && (
+                <div className="flex justify-between text-emerald-600 font-semibold">
+                  <span>Discount</span>
+                  <span>-${data.discount!.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-black text-base pt-3 border-t-2 border-slate-800 mt-2">
+                <span className="text-slate-900">TOTAL</span>
+                <span className="text-blue-600">${data.totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-dashed border-slate-300 mb-4" />
+
+            {/* Payment */}
+            <div className="text-xs space-y-1.5 mb-4">
+              <div className="flex justify-between text-slate-600">
+                <span>Payment Method</span>
+                <span className="font-semibold">{methodLabel}</span>
+              </div>
+              {data.paymentMethod === 1 && data.cashGiven != null && (
+                <>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Cash Given</span>
+                    <span className="font-semibold">${data.cashGiven.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-emerald-600">
+                    <span>Change</span>
+                    <span>${(data.change ?? 0).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+              {data.paymentMethod === 3 && (
+                <div className="flex justify-between text-amber-600 font-semibold">
+                  <span>Points Redeemed</span>
+                  <span>✓ Applied</span>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t-2 border-slate-800 mb-5" />
+
+            {/* PAID Stamp */}
+            <div className="flex justify-center mb-5">
+              <span className="inline-block border-[3px] border-emerald-500 text-emerald-600 font-black text-sm tracking-[5px] px-4 py-1 rotate-[-6deg]">
+                PAID
+              </span>
+            </div>
+
+            {/* Barcode */}
+            <div className="w-full max-w-[240px] mx-auto mb-3">
+              <BarcodeSVG value={barcodeValue} height={44} />
+              <p className="text-center text-[10px] text-slate-500 mt-1.5 font-mono tracking-widest">{data.transId}</p>
+            </div>
+
+            {/* Footer */}
+            <div className="text-center text-[11px] text-slate-400 space-y-0.5 mt-3">
+              <p className="font-semibold text-slate-500">THANK YOU FOR YOUR PURCHASE!</p>
+              <p>www.sokhask.com</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Hidden Thermal Print Content ─── */}
+        <div ref={printRef} style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <div className="center" style={{ marginBottom: "2px" }}>
+            <div className="title">SOKHA SK</div>
+            <div className="subtitle">SECURITY & TECH SOLUTIONS</div>
+            <div style={{ fontSize: "9px" }}>www.sokhask.com</div>
+          </div>
+          <div className="divider-double" />
+          <table>
+            <tbody>
+              <tr><td>Date: {dateStr}</td><td className="right">Time: {timeStr}</td></tr>
+              <tr><td>Trans: {data.transId}</td><td className="right">Customer: {data.customerName}</td></tr>
+            </tbody>
+          </table>
+          <div className="divider" />
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th className="qty">Qty</th>
+                <th className="right">Price</th>
+                <th className="right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map(item => (
+                <tr key={item.id}>
+                  <td>
+                    {item.name}
+                    {item.isSerialNumber && item.serialNumbers && item.serialNumbers.length > 0 && (
+                      <div className="serial">S/N: {item.serialNumbers.map(s => s.serialNo).join(", ")}</div>
+                    )}
+                  </td>
+                  <td className="qty">{item.qty}</td>
+                  <td className="right">${Number(item.price).toFixed(2)}</td>
+                  <td className="right bold">${(item.price * item.qty).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="divider" />
+          <table>
+            <tbody>
+              <tr><td>Sub-total</td><td className="right">${data.subtotal.toFixed(2)}</td></tr>
+              <tr><td>Tax ({data.items[0]?.taxRate ?? 0}%)</td><td className="right">${data.totalTax.toFixed(2)}</td></tr>
+              {(data.discount ?? 0) > 0 && (
+                <tr><td>Discount</td><td className="right">-${data.discount!.toFixed(2)}</td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="divider-double" />
+          <table>
+            <tbody>
+              <tr>
+                <td className="total-label">TOTAL</td>
+                <td className="total-value">${data.totalAmount.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="divider" />
+          <table>
+            <tbody>
+              <tr><td>Payment Method</td><td className="right bold">{methodLabel.toUpperCase()}</td></tr>
+              {data.paymentMethod === 1 && data.cashGiven != null && (
+                <>
+                  <tr><td>Cash Given</td><td className="right">${data.cashGiven.toFixed(2)}</td></tr>
+                  <tr><td className="bold">Change</td><td className="right bold">${(data.change ?? 0).toFixed(2)}</td></tr>
+                </>
+              )}
+              {data.paymentMethod === 3 && (
+                <tr><td>Points Redeemed</td><td className="right">Applied</td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="divider" />
+          <div className="center" style={{ padding: "3px 0" }}>
+            <span className="paid">PAID</span>
+          </div>
+          <div style={{ width: '100%', marginTop: '4px' }}>
+            <BarcodeSVG value={barcodeValue} height={50} />
+            <div className="center trans-id">{data.transId}</div>
+          </div>
+          <div className="divider" />
+          <div className="center footer">
+            <div className="bold">THANK YOU FOR YOUR PURCHASE!</div>
+            <div>Please come again</div>
+          </div>
+          <div className="divider-double" />
+        </div>
+
+        {/* ─── Buttons ─── */}
+        <div className="px-6 py-1 space-y-1 border-t border-slate-100 shrink-0 bg-white">
+          <button onClick={handlePrint}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all active:scale-95 shadow-md">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print Receipt
+          </button>
+          <button onClick={onClose}
+            className="w-full py-2.5 rounded-xl text-sm font-black bg-emerald-500 text-white hover:bg-emerald-600 transition-all active:scale-95 shadow-md">
+            🛒 New Sale
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── Payment Modal ────────────────────────────────────────────────────────────
 interface PaymentModalProps {
   dark: boolean; cart: CartItem[];
   subtotal: number; totalTax: number; autoDiscount: number;
   customer: CustomerInfo | null; pointSetup: PointSetupInfo | null;
-  onConfirm: (paymentMethod: number, discount: number, notes: string, pointsUsed: number) => void;
+  onConfirm: (paymentMethod: number, discount: number, notes: string, pointsUsed: number, cashGiven: number, finalTotal: number) => void;
   onClose: () => void; placing: boolean; orderError: string | null;
 }
 
@@ -2555,8 +441,9 @@ function PaymentModal({
   const [cashGiven, setCashGiven] = useState<string>("");
   const [showSummary, setShowSummary] = useState(false);
 
-  const manualDiscountAmt = Math.min(parseFloat(manualDiscount) || 0, subtotal + totalTax);
-  const totalDiscountAmt = Math.min(autoDiscount + manualDiscountAmt, subtotal + totalTax);
+  const maxDiscount = subtotal + totalTax;
+  const manualDiscountAmt = Math.min(parseFloat(manualDiscount) || 0, maxDiscount);
+  const totalDiscountAmt = Math.min(autoDiscount + manualDiscountAmt, maxDiscount);
   const baseTotal = subtotal + totalTax - totalDiscountAmt;
   const redemptionRate = pointSetup?.pointsPerRedemption ?? 0;
   const pointsNeeded = redemptionRate > 0 ? Math.ceil(baseTotal * redemptionRate) : 0;
@@ -2568,6 +455,9 @@ function PaymentModal({
   const cashGivenNum = parseFloat(cashGiven) || 0;
   const change = paymentMethod === 1 ? Math.max(0, cashGivenNum - total) : 0;
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+
+  const cashIsValid = paymentMethod !== 1 || cashGivenNum >= total;
+  const canConfirm = !placing && cashIsValid;
 
   useEffect(() => {
     if (paymentMethod === 3 && !canPayByPoint) setPaymentMethod(1);
@@ -2582,9 +472,17 @@ function PaymentModal({
   const overlay = dl ? "bg-black/75" : "bg-black/55";
   const sectionBg = dl ? "bg-slate-800/60" : "bg-slate-50";
   const divider = dl ? "border-slate-700" : "border-slate-200";
-  const inputCls = `w-full px-3 py-2 rounded-xl border text-sm outline-none transition-colors ${dl ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500 placeholder-slate-500"
-      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400 placeholder-slate-400"
-    }`;
+  const inputCls = `w-full px-3 py-2 rounded-xl border text-sm outline-none transition-colors ${dl
+    ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500 placeholder-slate-500"
+    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400 placeholder-slate-400"}`;
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === "" || raw === ".") { setManualDiscount(raw); return; }
+    const parsed = parseFloat(raw);
+    if (isNaN(parsed)) { setManualDiscount(""); return; }
+    setManualDiscount(parsed > maxDiscount ? maxDiscount.toFixed(2) : raw);
+  };
 
   const SummaryContent = () => (
     <>
@@ -2632,8 +530,7 @@ function PaymentModal({
         {autoDiscount > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-emerald-400 flex items-center gap-1">
-              Auto Discount
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15">Applied</span>
+              Auto Discount <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15">Applied</span>
             </span>
             <span className="text-emerald-400 font-medium">-${autoDiscount.toFixed(2)}</span>
           </div>
@@ -2648,9 +545,7 @@ function PaymentModal({
           <div className="flex justify-between text-sm">
             <span className="text-amber-400 flex items-center gap-1.5">
               ⭐ Point Payment
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">
-                {pointsUsed} pts
-              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">{pointsUsed} pts</span>
             </span>
             <span className="text-amber-400 font-medium">-${pointDiscount.toFixed(2)}</span>
           </div>
@@ -2674,11 +569,12 @@ function PaymentModal({
   return (
     <div
       className={`fixed inset-0 z-50 flex mt-16 items-center justify-center ${overlay} backdrop-blur-sm p-2 sm:p-4`}
-      onClick={e => { if (e.target === e.currentTarget && !placing) onClose(); }}>
+      onClick={e => { if (e.target === e.currentTarget && !placing) onClose(); }}
+    >
       <div
         className={`${modal} rounded-2xl border ${border} w-full shadow-2xl flex flex-col overflow-hidden`}
-        style={{ maxWidth: "860px", height: "calc(100vh - 74px)", maxHeight: "760px" }}>
-
+        style={{ maxWidth: "860px", height: "calc(100vh - 74px)", maxHeight: "760px" }}
+      >
         {/* Header */}
         <div className={`flex items-center gap-3 px-4 sm:px-5 py-2 border-b ${border} shrink-0`}>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0">
@@ -2694,8 +590,7 @@ function PaymentModal({
               {customer && <span className="ml-2 text-amber-400 font-semibold">· ⭐ {customer.totalPoint} pts</span>}
             </p>
           </div>
-          <button
-            onClick={() => setShowSummary(v => !v)}
+          <button onClick={() => setShowSummary(v => !v)}
             className={`sm:hidden px-2 py-1 rounded-lg text-xs font-semibold border ${dl ? "border-slate-600 text-slate-300" : "border-slate-200 text-slate-600"}`}>
             {showSummary ? "Payment" : "Summary"}
           </button>
@@ -2709,14 +604,16 @@ function PaymentModal({
 
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
-          <div className={`flex-col border-r ${border}
-                        sm:flex sm:w-[300px] md:w-[340px] sm:shrink-0
-                        ${showSummary ? "flex w-full" : "hidden sm:flex"}`}>
+          {/* Left: Summary */}
+          <div className={`flex-col border-r ${border} sm:flex sm:w-[300px] md:w-[340px] sm:shrink-0 ${showSummary ? "flex w-full" : "hidden sm:flex"}`}>
             <SummaryContent />
           </div>
-          <div className={`flex-1 flex-col overflow-hidden sm:flex
-                        ${showSummary ? "hidden sm:flex" : "flex"}`}>
+
+          {/* Right: Payment Form */}
+          <div className={`flex-1 flex-col overflow-hidden sm:flex ${showSummary ? "hidden sm:flex" : "flex"}`}>
             <div className="flex-1 px-4 sm:px-5 py-4 space-y-4 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+
+              {/* Payment Method */}
               <div>
                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-2`}>Payment Method</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -2728,14 +625,11 @@ function PaymentModal({
                         onClick={() => !disabled && setPaymentMethod(pm.value)}
                         disabled={disabled}
                         className={`flex flex-col items-center gap-1 px-2 sm:px-3 py-3 rounded-xl border-2 transition-all ${disabled
-                            ? dl ? "border-slate-700 bg-slate-800/30 opacity-40 cursor-not-allowed"
-                              : "border-slate-200 bg-slate-50 opacity-40 cursor-not-allowed"
-                            : active
-                              ? "border-blue-500 bg-blue-500/10 shadow-sm"
-                              : dl
-                                ? "border-slate-700 bg-slate-800/60 hover:border-slate-600"
-                                : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                          }`}>
+                          ? dl ? "border-slate-700 bg-slate-800/30 opacity-40 cursor-not-allowed"
+                            : "border-slate-200 bg-slate-50 opacity-40 cursor-not-allowed"
+                          : active ? "border-blue-500 bg-blue-500/10 shadow-sm"
+                            : dl ? "border-slate-700 bg-slate-800/60 hover:border-slate-600"
+                              : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}>
                         <span className="text-xl sm:text-2xl leading-none">{pm.icon}</span>
                         <span className={`text-xs font-semibold ${active ? (dl ? "text-blue-400" : "text-blue-600") : txt}`}>{pm.label}</span>
                         {pm.value === 3 && (
@@ -2756,43 +650,58 @@ function PaymentModal({
                 </div>
               </div>
 
+              {/* Cash */}
               {paymentMethod === 1 && (
                 <div>
-                  <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Cash Given</label>
+                  <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>
+                    Cash Given
+                    {cashGiven !== "" && !cashIsValid && (
+                      <span className="ml-2 normal-case text-red-400 font-semibold text-[11px]">
+                        ⚠ Need at least ${total.toFixed(2)}
+                      </span>
+                    )}
+                  </label>
                   <div className="relative mb-2.5">
                     <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${txtMuted}`}>$</span>
                     <input type="number" min="0" step="0.01" placeholder="0.00"
                       value={cashGiven} onChange={e => setCashGiven(e.target.value)}
-                      className={`${inputCls} pl-7`} />
+                      className={`${inputCls} pl-7 ${cashGiven !== "" && !cashIsValid
+                        ? "border-red-500 focus:border-red-500"
+                        : cashGivenNum >= total && cashGivenNum > 0 ? "border-emerald-500 focus:border-emerald-500" : ""}`} />
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[50, 100, 500, 1000, 2000, 5000].map(amount => (
                       <button key={amount} onClick={() => setCashGiven(String(amount))}
                         className={`py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 border-2 ${cashGiven === String(amount)
-                            ? "border-blue-500 bg-blue-500/15 text-blue-400"
-                            : dl
-                              ? "border-slate-600 bg-slate-700 text-slate-200 hover:border-blue-500/50"
-                              : "border-slate-200 bg-slate-100 text-slate-700 hover:border-blue-400/50"
-                          }`}>
+                          ? "border-blue-500 bg-blue-500/15 text-blue-400"
+                          : dl ? "border-slate-600 bg-slate-700 text-slate-200 hover:border-blue-500/50"
+                            : "border-slate-200 bg-slate-100 text-slate-700 hover:border-blue-400/50"}`}>
                         ${amount}
                       </button>
                     ))}
                   </div>
+                  {cashGivenNum >= total && cashGivenNum > 0 && (
+                    <div className={`mt-2.5 flex justify-between items-center px-3 py-2 rounded-xl ${dl ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-emerald-50 border border-emerald-200"}`}>
+                      <span className={`text-sm font-semibold ${dl ? "text-emerald-300" : "text-emerald-700"}`}>Change</span>
+                      <span className={`text-lg font-extrabold ${dl ? "text-emerald-300" : "text-emerald-600"}`}>${change.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* Bank QR */}
               {paymentMethod === 2 && (
                 <div className="flex flex-col items-center gap-3">
                   <label className={`self-start block text-xs font-bold uppercase tracking-wide ${txtSub}`}>Scan to Pay</label>
                   <div className={`w-full rounded-2xl border-2 ${dl ? "border-slate-600 bg-slate-800/60" : "border-slate-200 bg-slate-50"} flex flex-col items-center py-4 gap-3`}>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
-                      alt="QR" className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl"
-                      style={{ background: "white", padding: "8px" }} />
+                      alt="QR" className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl" style={{ background: "white", padding: "8px" }} />
                     <p className={`text-xs ${txtMuted}`}>Scan with your banking app to pay</p>
                   </div>
                 </div>
               )}
 
+              {/* Point Payment */}
               {paymentMethod === 3 && canPayByPoint && (
                 <div className={`rounded-xl px-4 py-4 border ${dl ? "bg-amber-500/10 border-amber-500/30" : "bg-amber-50 border-amber-200"}`}>
                   <div className="flex items-center gap-3 mb-3">
@@ -2826,16 +735,21 @@ function PaymentModal({
                 </div>
               )}
 
+              {/* Additional Discount */}
               <div>
-                <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Additional Discount ($)</label>
+                <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>
+                  Additional Discount ($)
+                  <span className={`ml-2 normal-case font-normal text-[11px] ${txtMuted}`}>max ${maxDiscount.toFixed(2)}</span>
+                </label>
                 <div className="relative">
                   <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${txtMuted}`}>$</span>
-                  <input type="number" min="0" step="0.01" placeholder="0.00"
-                    value={manualDiscount} onChange={e => setManualDiscount(e.target.value)}
+                  <input type="number" min="0" step="0.01" placeholder="0.00" max={maxDiscount}
+                    value={manualDiscount} onChange={handleDiscountChange}
                     className={`${inputCls} pl-7`} />
                 </div>
               </div>
 
+              {/* Notes */}
               <div>
                 <label className={`block text-xs font-bold uppercase tracking-wide ${txtSub} mb-1.5`}>Notes (optional)</label>
                 <textarea rows={3} placeholder="Add a note for this order…"
@@ -2850,27 +764,30 @@ function PaymentModal({
               )}
             </div>
 
+            {/* Footer */}
             <div className={`flex items-center gap-3 px-4 sm:px-5 py-3 border-t ${border} shrink-0`}>
               <button onClick={onClose} disabled={placing}
-                className={`flex-1 py-2.5 sm:py-3 rounded-xl text-sm font-semibold border ${dl ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                className={`flex-1 py-2.5 sm:py-3 rounded-xl text-sm font-semibold border ${dl
+                  ? "border-slate-600 text-slate-300 hover:bg-slate-700"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                 Cancel
               </button>
               <button
-                onClick={() => onConfirm(paymentMethod, manualDiscountAmt, notes, pointsUsed)}
-                disabled={placing}
-                className={`flex-[2] py-2.5 sm:py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${placing
-                    ? dl ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"
-                  }`}>
-                {placing
-                  ? <><Spinner size="sm" /><span>Processing…</span></>
-                  : <>
+                onClick={() => onConfirm(paymentMethod, manualDiscountAmt, notes, pointsUsed, cashGivenNum, total)}
+                disabled={!canConfirm}
+                className={`flex-[2] py-2.5 sm:py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${!canConfirm
+                  ? dl ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"}`}>
+                {placing ? (
+                  <><Spinner size="sm" /><span>Processing…</span></>
+                ) : (
+                  <>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>Confirm · ${total.toFixed(2)}</span>
                   </>
-                }
+                )}
               </button>
             </div>
           </div>
@@ -2981,6 +898,11 @@ export default function PosShop() {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerInfo | null>(null);
   const [pointSetup, setPointSetup] = useState<PointSetupInfo | null>(null);
   const [mobileView, setMobileView] = useState<"products" | "cart">("products");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef(false);
+
+  // ── Receipt State ──────────────────────────────────────────────────────────
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
   useEffect(() => {
     fetchCategories().then(res => setCategories(res?.data ?? [])).catch(console.error);
@@ -2992,8 +914,31 @@ export default function PosShop() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setProducts([]); setPage(1); setHasMore(true); }, [activeTab, debouncedSearch]);
+  // useEffect(() => { setProducts([]); setPage(1); setHasMore(true); }, [activeTab, debouncedSearch]);
+  useEffect(() => {
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+    isFetchingRef.current = false;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [activeTab, debouncedSearch]);
 
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   const load = async () => {
+  //     if (page === 1) setLoadingProducts(true); else setLoadingMore(true);
+  //     try {
+  //       const res = await fetchProducts({ page, pageSize: PAGE_SIZE, search: debouncedSearch, categoryId: activeTab });
+  //       if (!cancelled) {
+  //         setProducts(prev => page === 1 ? res.data ?? [] : [...prev, ...(res.data ?? [])]);
+  //         setHasMore(res.hasNext ?? false);
+  //       }
+  //     } catch (e) { console.error(e); }
+  //     finally { if (!cancelled) { setLoadingProducts(false); setLoadingMore(false); } }
+  //   };
+  //   load();
+  //   return () => { cancelled = true; };
+  // }, [page, activeTab, debouncedSearch, callListProduct]);
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -3005,7 +950,13 @@ export default function PosShop() {
           setHasMore(res.hasNext ?? false);
         }
       } catch (e) { console.error(e); }
-      finally { if (!cancelled) { setLoadingProducts(false); setLoadingMore(false); } }
+      finally {
+        if (!cancelled) {
+          setLoadingProducts(false);
+          setLoadingMore(false);
+          setTimeout(() => { isFetchingRef.current = false; }, 50);
+        }
+      }
     };
     load();
     return () => { cancelled = true; };
@@ -3023,11 +974,35 @@ export default function PosShop() {
     return () => { if (summaryDebounceRef.current) clearTimeout(summaryDebounceRef.current); };
   }, [cart]);
 
+  // const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+  //   const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+  //   if (scrollHeight - scrollTop - clientHeight < 150 && hasMore && !loadingMore && !loadingProducts)
+  //     setPage(p => p + 1);
+  // }, [hasMore, loadingMore, loadingProducts]);
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop - clientHeight < 150 && hasMore && !loadingMore && !loadingProducts)
+    if (
+      scrollHeight - scrollTop - clientHeight < 150 &&
+      hasMore && !loadingMore && !loadingProducts && !isFetchingRef.current
+    ) {
+      isFetchingRef.current = true;
       setPage(p => p + 1);
+    }
   }, [hasMore, loadingMore, loadingProducts]);
+
+  // Auto-fill: load more if content doesn't fill viewport
+  useEffect(() => {
+    if (products.length > 0 && !loadingProducts && !loadingMore && hasMore && !isFetchingRef.current) {
+      requestAnimationFrame(() => {
+        const el = scrollRef.current;
+        if (el && el.scrollHeight <= el.clientHeight + 10) {
+          isFetchingRef.current = true;
+          setPage(p => p + 1);
+        }
+      });
+    }
+  }, [products.length, loadingProducts, loadingMore, hasMore]);
 
   const addToCart = useCallback((product: Product) => {
     if (product.isSerialNumber) { setSerialModal({ open: true, product }); return; }
@@ -3068,12 +1043,23 @@ export default function PosShop() {
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const nearHints = summaryData?.nearDiscountHints ?? [];
 
+  // ── Handle Place Order — now receives cashGiven + finalTotal from PaymentModal ──
   const handlePlaceOrder = async (
-    paymentMethod: number, manualDiscountAmount: number,
-    notes: string, pointsUsed: number
+    paymentMethod: number,
+    manualDiscountAmount: number,
+    notes: string,
+    pointsUsed: number,
+    cashGivenNum: number,
+    finalTotal: number
   ) => {
     if (cart.length === 0 || placingOrder) return;
-    setOrderError(null); setPlacingOrder(true);
+    setOrderError(null);
+    setPlacingOrder(true);
+
+    // Snapshot cart before clearing
+    const cartSnapshot = [...cart];
+    const customerSnapshot = selectedCustomer;
+
     const payload: PlaceOrderPayload = {
       customerId: selectedCustomer?.id,
       saleType: 1, paymentStatus: 2, status: 3, paymentMethod,
@@ -3086,17 +1072,40 @@ export default function PosShop() {
           : { productId: item.id, quantity: item.qty, unitPrice: item.price } satisfies PlaceOrderItemPayload
       ),
     };
+
     try {
       const res = await AxiosApi.post("Order", payload);
       if (res?.data?.data) {
-        alertify.success("Payment success");
-        clearCart(); setPaymentModal(false); setSelectedCustomer(null);
+        alertify.success("Payment Successful");
+        const orderId = res.data.data?.id ?? res.data.data?.orderId ?? Date.now().toString().slice(-6);
+        const change = paymentMethod === 1 ? Math.max(0, cashGivenNum - finalTotal) : 0;
+
+        // Show receipt
+        setReceiptData({
+          transId: `#SK${String(orderId).padStart(6, "0")}`,
+          customerName: customerSnapshot?.name ?? "Guest",
+          items: cartSnapshot,
+          subtotal,
+          totalTax,
+          totalAmount: finalTotal,
+          paymentMethod,
+          cashGiven: paymentMethod === 1 ? cashGivenNum : undefined,
+          change: paymentMethod === 1 ? change : undefined,
+          discount: manualDiscountAmount > 0 ? manualDiscountAmount : undefined,
+        });
+
+        clearCart();
+        setPaymentModal(false);
+        setSelectedCustomer(null);
         setCallListProduct(p => !p);
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Failed to place order.";
-      setOrderError(msg); alertError(msg);
-    } finally { setPlacingOrder(false); }
+      setOrderError(msg);
+      alertError(msg);
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
   const allTabs = [
@@ -3141,9 +1150,16 @@ export default function PosShop() {
         />
       )}
 
-      <div className={`flex flex-col ${bg} ${textPrimary} overflow-hidden`} style={{ height: "calc(100vh - 80px)" }}>
+      {/* ── Receipt Modal ── */}
+      {receiptData && (
+        <ReceiptModal
+          data={receiptData}
+          onClose={() => { setReceiptData(null); }}
+        />
+      )}
 
-        {/* ── FIX 1: Mobile category bar — only show on products view ── */}
+      <div className={`flex flex-col ${bg} ${textPrimary} overflow-hidden`} style={{ height: "calc(100vh - 100px)" }}>
+
         {mobileView === "products" && (
           <div className={`md:hidden flex overflow-x-auto shrink-0 border-b ${borderColor} ${sidebarBg} py-2 px-2 gap-2`}
             style={{ scrollbarWidth: "none" }}>
@@ -3152,36 +1168,30 @@ export default function PosShop() {
               return (
                 <button key={cat.id} onClick={() => setActiveTab(cat.id)}
                   className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl shrink-0 transition-all ${isActive
-                      ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
-                      : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"
-                    }`}>
-                  <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center ${isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"
-                    }`}>
+                    ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
+                    : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"}`}>
+                  <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center ${isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"}`}>
                     {cat.id === "0"
                       ? <svg className={`w-5 h-5 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                       </svg>
                       : cat.image
-                        ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover"
-                          onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
+                        ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
                         : <svg className={`w-5 h-5 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         </svg>
                     }
                   </div>
-                  <span className={`text-[10px] font-semibold truncate max-w-[56px] ${isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub}`}>
-                    {cat.name}
-                  </span>
+                  <span className={`text-[10px] font-semibold truncate max-w-[56px] ${isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub}`}>{cat.name}</span>
                 </button>
               );
             })}
           </div>
         )}
 
-        {/* ── Main row ── */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* Desktop: vertical category sidebar */}
+          {/* Desktop Sidebar */}
           <div className={`hidden md:flex w-[104px] shrink-0 flex-col overflow-hidden ${sidebarBg} border-r ${borderColor}`}>
             <div className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1.5" style={{ scrollbarWidth: "none" }}>
               {allTabs.map(cat => {
@@ -3189,26 +1199,22 @@ export default function PosShop() {
                 return (
                   <button key={cat.id} onClick={() => setActiveTab(cat.id)}
                     className={`w-full flex flex-col items-center gap-1.5 p-1.5 rounded-xl transition-all ${isActive
-                        ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
-                        : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"
-                      }`}>
-                    <div className={`w-[68px] h-[68px] rounded-xl overflow-hidden flex items-center justify-center ${isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"
-                      }`}>
+                      ? dark ? "bg-blue-600/20 ring-2 ring-blue-500/50" : "bg-blue-50 ring-2 ring-blue-400/50"
+                      : dark ? "hover:bg-slate-700/60" : "hover:bg-slate-100"}`}>
+                    <div className={`w-[68px] h-[68px] rounded-xl overflow-hidden flex items-center justify-center ${isActive ? "ring-2 ring-blue-500 shadow-lg" : dark ? "bg-slate-700/80 ring-1 ring-slate-600/50" : "bg-slate-100 ring-1 ring-slate-200"}`}>
                       {cat.id === "0"
                         ? <svg className={`w-8 h-8 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
                         : cat.image
-                          ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover"
-                            onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
+                          ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
                           : <svg className={`w-7 h-7 ${isActive ? "text-blue-400" : textMuted}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
                       }
                     </div>
-                    <span className={`text-[11px] font-semibold text-center leading-tight w-full truncate ${isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub
-                      }`}>{cat.name}</span>
+                    <span className={`text-[11px] font-semibold text-center leading-tight w-full truncate ${isActive ? (dark ? "text-blue-400" : "text-blue-600") : textSub}`}>{cat.name}</span>
                   </button>
                 );
               })}
@@ -3216,8 +1222,7 @@ export default function PosShop() {
           </div>
 
           {/* Product List */}
-          <div className={`flex-col flex-1 overflow-hidden border-r ${borderColor}
-                        ${mobileView === "products" ? "flex" : "hidden md:flex"}`}>
+          <div className={`flex-col flex-1 overflow-hidden border-r ${borderColor} ${mobileView === "products" ? "flex" : "hidden md:flex"}`}>
             <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 ${panelBg} border-b ${borderColor}`}>
               <span className={`text-base sm:text-2xl font-black tracking-wider truncate ${dark ? "text-white" : "text-blue-900"}`}>
                 WELCOME SOKHA <span className="text-yellow-500">SK</span>
@@ -3227,13 +1232,13 @@ export default function PosShop() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
                 </svg>
                 <input className={`flex-1 bg-transparent text-sm ${textPrimary} placeholder-slate-400 outline-none`}
-                  placeholder="Search..." value={search}
-                  onChange={e => setSearch(e.target.value)} />
+                  placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
                 {search && <button className={`${textMuted} hover:text-red-400 text-sm`} onClick={() => setSearch("")}>✕</button>}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 flex flex-col gap-2.5"
+            <div ref={scrollRef}
+              className="flex-1 overflow-y-auto px-3 sm:px-4 py-1.5 flex flex-col gap-1"
               style={{ scrollbarWidth: "thin", scrollbarColor: scrollStyle }}
               onScroll={handleScroll}>
               {loadingProducts ? (
@@ -3253,13 +1258,12 @@ export default function PosShop() {
                       textPrimary={textPrimary} textSub={textSub} textMuted={textMuted} imgFallback={imgFallback} />
                   ))}
                   {loadingMore && (
-                    <div className={`flex items-center justify-center gap-3 py-5 rounded-2xl ${dark ? "bg-slate-800/60" : "bg-slate-100/80"}`}>
-                      <Spinner size="sm" />
-                      <span className={`${textMuted} text-sm`}>Loading more…</span>
+                    <div className={`flex items-center justify-center gap-3 py-3 rounded-xl ${dark ? "bg-slate-800/60" : "bg-slate-100/80"}`}>
+                      <Spinner size="sm" /><span className={`${textMuted} text-sm`}>Loading more…</span>
                     </div>
                   )}
                   {!hasMore && !loadingMore && products.length > 0 && (
-                    <div className="flex items-center justify-center gap-3 py-4">
+                    <div className="flex items-center justify-center gap-3 py-2">
                       <div className={`h-px flex-1 ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
                       <span className={`${textMuted} text-xs px-2`}>No more products</span>
                       <div className={`h-px flex-1 ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
@@ -3271,10 +1275,7 @@ export default function PosShop() {
           </div>
 
           {/* Order Panel */}
-          <div className={`flex-col overflow-hidden ${panelBg} shrink-0
-                        w-full md:w-80 xl:w-96
-                        ${mobileView === "cart" ? "flex" : "hidden md:flex"}`}>
-
+          <div className={`flex-col overflow-hidden ${panelBg} shrink-0 w-full md:w-80 xl:w-96 ${mobileView === "cart" ? "flex" : "hidden md:flex"}`}>
             <div className={`flex items-center gap-2.5 px-4 py-3.5 border-b ${borderColor} shrink-0`}>
               <svg className="w-5 h-5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -3297,9 +1298,7 @@ export default function PosShop() {
               <p className={`text-[11px] font-bold uppercase tracking-wide ${textMuted} mb-1.5`}>Customer (optional)</p>
               <XSelectSearch
                 multiple={false}
-                value={selectedCustomer
-                  ? { id: selectedCustomer.id, name: selectedCustomer.name, value: selectedCustomer.id, data: null }
-                  : null}
+                value={selectedCustomer ? { id: selectedCustomer.id, name: selectedCustomer.name, value: selectedCustomer.id, data: null } : null}
                 onChange={val => {
                   if (!val) { setSelectedCustomer(null); return; }
                   setSelectedCustomer({ id: val.id as number, name: val.name, totalPoint: (val.data as any)?.totalPoint ?? 0 });
@@ -3363,9 +1362,7 @@ export default function PosShop() {
               </div>
               {autoDiscount > 0
                 ? <div className="flex justify-between text-sm">
-                  <span className="text-emerald-400 flex items-center gap-1">
-                    Discount <span className="text-[10px] font-bold px-1 rounded bg-emerald-500/15">Auto</span>
-                  </span>
+                  <span className="text-emerald-400 flex items-center gap-1">Discount <span className="text-[10px] font-bold px-1 rounded bg-emerald-500/15">Auto</span></span>
                   <span className="text-emerald-400">-${autoDiscount.toFixed(2)}</span>
                 </div>
                 : <div className="flex justify-between text-sm">
@@ -3384,9 +1381,8 @@ export default function PosShop() {
                 disabled={cart.length === 0}
                 onClick={() => { if (cart.length > 0) { setOrderError(null); setPaymentModal(true); } }}
                 className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2 ${cart.length === 0
-                    ? dark ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"
-                  }`}>
+                  ? dark ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg active:scale-95"}`}>
                 {cart.length === 0 ? "No Items Selected" : (
                   <>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3401,25 +1397,19 @@ export default function PosShop() {
           </div>
         </div>
 
-        {/* ── Mobile: bottom tab bar ── */}
+        {/* Mobile Bottom Tab */}
         <div className={`md:hidden flex items-stretch border-t ${borderColor} ${panelBg} shrink-0`}>
-          <button
-            onClick={() => setMobileView("products")}
+          <button onClick={() => setMobileView("products")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all ${mobileView === "products"
-                ? dark ? "text-blue-400 border-t-2 border-blue-500" : "text-blue-600 border-t-2 border-blue-500"
-                : textMuted
-              }`}>
+              ? dark ? "text-blue-400 border-t-2 border-blue-500" : "text-blue-600 border-t-2 border-blue-500" : textMuted}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
             Products
           </button>
-          <button
-            onClick={() => setMobileView("cart")}
+          <button onClick={() => setMobileView("cart")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all relative ${mobileView === "cart"
-                ? dark ? "text-blue-400 border-t-2 border-blue-500" : "text-blue-600 border-t-2 border-blue-500"
-                : textMuted
-              }`}>
+              ? dark ? "text-blue-400 border-t-2 border-blue-500" : "text-blue-600 border-t-2 border-blue-500" : textMuted}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -3452,9 +1442,9 @@ function SerialNumberModal({ product, dark, existingSerials = [], existingWarran
   const txt = dl ? "text-slate-100" : "text-slate-900";
   const txtSub = dl ? "text-slate-400" : "text-slate-500";
   const txtMuted = dl ? "text-slate-500" : "text-slate-400";
-  const inputCls = `w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${dl ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500"
-      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"
-    }`;
+  const inputCls = `w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${dl
+    ? "bg-slate-800 border-slate-600 text-slate-100 focus:border-blue-500"
+    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"}`;
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center mt-15 ${dl ? "bg-black/70" : "bg-black/50"} backdrop-blur-sm p-3 sm:p-4`}
@@ -3493,20 +1483,15 @@ function SerialNumberModal({ product, dark, existingSerials = [], existingWarran
                   <button key={opt.months}
                     onClick={() => { setWarrantyMonths(opt.months); setWarrantyInput(opt.months === 0 ? "" : String(opt.months)); }}
                     className={`px-1.5 sm:px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all ${active
-                        ? "bg-blue-600 border-blue-600 text-white"
-                        : dl ? "bg-slate-800 border-slate-600 text-slate-300 hover:border-blue-500/60"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-blue-400/60"
-                      }`}>{opt.label}</button>
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : dl ? "bg-slate-800 border-slate-600 text-slate-300 hover:border-blue-500/60"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-blue-400/60"}`}>{opt.label}</button>
                 );
               })}
             </div>
             <div className="relative">
               <input type="number" min={0} value={warrantyInput}
-                onChange={e => {
-                  setWarrantyInput(e.target.value);
-                  const p = parseInt(e.target.value, 10);
-                  setWarrantyMonths(!isNaN(p) && p >= 0 ? p : 0);
-                }}
+                onChange={e => { setWarrantyInput(e.target.value); const p = parseInt(e.target.value, 10); setWarrantyMonths(!isNaN(p) && p >= 0 ? p : 0); }}
                 placeholder="Or type months (e.g. 18)" className={inputCls} />
               <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none ${txtMuted}`}>months</span>
             </div>
@@ -3521,9 +1506,10 @@ function SerialNumberModal({ product, dark, existingSerials = [], existingWarran
               <div>
                 <p className={`text-[11px] ${txtMuted} mb-1`}>End date <span className="text-blue-400">(auto)</span></p>
                 <div className={`w-full px-3 py-2 rounded-lg border text-sm font-medium ${warrantyMonths > 0
-                    ? dl ? "bg-slate-900/60 border-slate-700 text-blue-400" : "bg-blue-50 border-blue-100 text-blue-600"
-                    : dl ? "bg-slate-900/40 border-slate-700 text-slate-600" : "bg-slate-50 border-slate-200 text-slate-400"
-                  }`}>{warrantyMonths > 0 ? formatDate(warrantyEnd) : "—"}</div>
+                  ? dl ? "bg-slate-900/60 border-slate-700 text-blue-400" : "bg-blue-50 border-blue-100 text-blue-600"
+                  : dl ? "bg-slate-900/40 border-slate-700 text-slate-600" : "bg-slate-50 border-slate-200 text-slate-400"}`}>
+                  {warrantyMonths > 0 ? formatDate(warrantyEnd) : "—"}
+                </div>
               </div>
             </div>
           </div>
@@ -3537,12 +1523,9 @@ function SerialNumberModal({ product, dark, existingSerials = [], existingWarran
             onClick={() => onConfirm(product, selectedSerials.map(s => ({ id: s.id, serialNo: s.name, data: s.data as SerialNumberItem | null })), warrantyMonths, warrantyStart, warrantyEnd)}
             disabled={selectedSerials.length === 0}
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedSerials.length === 0
-                ? dl ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md active:scale-95"
-              }`}>
-            {selectedSerials.length === 0
-              ? "Select serials"
-              : `Add ${selectedSerials.length} · $${(product.price * selectedSerials.length).toFixed(2)}`}
+              ? dl ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-100 text-slate-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md active:scale-95"}`}>
+            {selectedSerials.length === 0 ? "Select serials" : `Add ${selectedSerials.length} · $${(product.price * selectedSerials.length).toFixed(2)}`}
           </button>
         </div>
       </div>
@@ -3556,50 +1539,64 @@ function ProductRow({ product, cartItem, onAdd, dark, productBg, borderColor, te
   const productPrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
 
   return (
-    <div onClick={() => !outOfStock && onAdd(product)} style={{ minHeight: "90px" }}
-      className={`flex items-stretch rounded-2xl overflow-hidden border transition-all select-none
-                ${outOfStock ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${productBg} ${borderColor}
-                ${cartItem ? "ring-2 ring-blue-500 shadow-md shadow-blue-500/10" : dark ? "hover:border-slate-600 hover:shadow-lg" : "hover:border-slate-300 hover:shadow-md"}`}>
-      <div className={`relative w-[90px] sm:w-[130px] shrink-0 ${dark ? "bg-slate-800" : "bg-slate-100"}`}>
+    <div
+      onClick={() => !outOfStock && onAdd(product)}
+      style={{ height: "88px", minHeight: "88px", maxHeight: "88px", flex: "0 0 88px" }}
+      className={`flex items-stretch rounded-xl overflow-hidden border transition-all select-none w-full
+        ${outOfStock ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
+        ${productBg} ${borderColor}
+        ${cartItem
+          ? "ring-2 ring-blue-500 shadow-md shadow-blue-500/10"
+          : dark ? "hover:border-slate-600 hover:shadow-lg" : "hover:border-slate-300 hover:shadow-md"}`}
+    >
+      <div className={`relative shrink-0 w-[88px] h-[88px] ${dark ? "bg-slate-800" : "bg-slate-100"}`}>
         <img src={product.imageProduct || imgFallback} alt={product.name}
-          className="w-full h-full object-cover" style={{ minHeight: "90px", maxHeight: "130px" }}
+          className="w-full h-full object-cover"
           onError={e => { (e.target as HTMLImageElement).src = imgFallback; }} />
-        {cartItem && <span className="absolute top-2 left-2 bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">×{cartItem.qty}</span>}
+        {cartItem && (
+          <span className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+            ×{cartItem.qty}
+          </span>
+        )}
         {product.isSerialNumber && (
-          <span className={`absolute bottom-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${dark ? "bg-violet-900/80 text-violet-300" : "bg-violet-100 text-violet-700"}`}>S/N</span>
+          <span className={`absolute bottom-1 left-1 text-[9px] font-bold px-1 py-0.5 rounded ${dark ? "bg-violet-900/80 text-violet-300" : "bg-violet-100 text-violet-700"}`}>
+            S/N
+          </span>
         )}
         {outOfStock && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-white bg-red-500/90 px-1.5 py-0.5 rounded-lg">Out of Stock</span>
+            <span className="text-[9px] font-bold text-white bg-red-500/90 px-1 py-0.5 rounded">Out</span>
           </div>
         )}
       </div>
-      <div className="flex-1 px-3 sm:px-4 py-3 flex flex-col justify-between min-w-0">
-        <div>
-          {/* ── FIX 2: Hide category on mobile ── */}
+
+      <div className="flex-1 px-3 py-2 flex flex-col justify-between min-w-0 overflow-hidden">
+        <div className="min-w-0">
           {product.category?.name && (
-            <p className={`hidden sm:block text-[11px] font-medium ${textMuted} mb-0.5`}>
-              {product.category.name}
-            </p>
+            <p className={`text-[10px] font-medium ${textMuted} truncate leading-tight`}>{product.category.name}</p>
           )}
-          <p className={`text-xs sm:text-sm font-bold ${textPrimary} leading-snug line-clamp-2`}>{product.name}</p>
-          {product.sku && <p className={`text-[10px] sm:text-[11px] ${textMuted} mt-0.5 font-mono`}>{product.sku}</p>}
+          <p className={`text-[13px] font-bold ${textPrimary} truncate leading-snug`}>{product.name}</p>
+          {product.sku && (
+            <p className={`text-[10px] font-mono ${textMuted} truncate`}>{product.sku}</p>
+          )}
         </div>
-        <div className="flex items-center justify-between mt-2 gap-2">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm sm:text-base font-extrabold text-sky-500">${productPrice.toFixed(2)}</span>
+            <span className="text-[13px] font-extrabold text-sky-500">${productPrice.toFixed(2)}</span>
             {(product.taxRate ?? 0) > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400">+{product.taxRate}%</span>
+              <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/15 text-amber-400">+{product.taxRate}%</span>
             )}
           </div>
-          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${(product.stock ?? 0) > 0
-              ? dark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 text-emerald-700"
-              : dark ? "bg-red-900/50 text-red-400" : "bg-red-100 text-red-600"
-            }`}>{product.stock ?? 0}</span>
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-lg shrink-0 ${(product.stock ?? 0) > 0
+            ? dark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 text-emerald-700"
+            : dark ? "bg-red-900/50 text-red-400" : "bg-red-100 text-red-600"}`}>
+            {product.stock ?? 0}
+          </span>
         </div>
       </div>
-      <div className={`w-6 sm:w-8 shrink-0 flex items-center justify-center ${cartItem ? "text-blue-400" : dark ? "text-slate-700" : "text-slate-200"}`}>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+      <div className={`w-6 shrink-0 flex items-center justify-center ${cartItem ? "text-blue-400" : dark ? "text-slate-700" : "text-slate-200"}`}>
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
         </svg>
       </div>

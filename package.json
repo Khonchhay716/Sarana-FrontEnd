@@ -14,6 +14,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@tailwindcss/vite": "^4.1.5",
+    "@zxing/library": "^0.21.3",
     "alertifyjs": "^1.14.0",
     "antd": "^6.2.2",
     "axios": "^1.10.0",
