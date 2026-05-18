@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import { alertError } from '../../HtmlHelper/Alert';
 import { AxiosApi } from '../../component/Axios/Axios';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface LeaveRequest {
     id: number;
@@ -153,25 +154,31 @@ const LeaveRequestAll = () => {
             align: 'center',
             render: (_, record) => (
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => handleOpenView(record)}
-                        className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer ${dl
-                            ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}>
-                        View
-                    </button>
+                    <ComponentPermission scopes={["leave_request:view"]}>
+                        <button
+                            onClick={() => handleOpenView(record)}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer ${dl
+                                ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}>
+                            View
+                        </button>
+                    </ComponentPermission>
                     {record.status === 'Pending' && (
                         <>
-                            <button
-                                onClick={() => handleOpenApprove(record)}
-                                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                                Approve
-                            </button>
-                            <button
-                                onClick={() => handleOpenReject(record)}
-                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                                Reject
-                            </button>
+                            <ComponentPermission scopes={["leave_request:approve"]}>
+                                <button
+                                    onClick={() => handleOpenApprove(record)}
+                                    className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                                    Approve
+                                </button>
+                            </ComponentPermission>
+                            <ComponentPermission scopes={["leave_request:reject"]}>
+                                <button
+                                    onClick={() => handleOpenReject(record)}
+                                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                                    Reject
+                                </button>
+                            </ComponentPermission>
                         </>
                     )}
                 </div>
@@ -388,14 +395,18 @@ const LeaveRequestAll = () => {
                                     {/* Quick Actions for Managers - Only show if Pending */}
                                     {viewRecord.status === 'Pending' && (
                                         <>
-                                            <button onClick={() => { handleCloseView(); setTimeout(() => handleOpenReject(viewRecord), 300); }}
-                                                className="px-6 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white transition-all shadow-md">
-                                                Reject
-                                            </button>
-                                            <button onClick={() => { handleCloseView(); setTimeout(() => handleOpenApprove(viewRecord), 300); }}
-                                                className="px-6 py-2.5 rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white transition-all shadow-md">
-                                                Approve
-                                            </button>
+                                            <ComponentPermission scopes={["leave_request:reject"]}>
+                                                <button onClick={() => { handleCloseView(); setTimeout(() => handleOpenReject(viewRecord), 300); }}
+                                                    className="px-6 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white transition-all shadow-md">
+                                                    Reject
+                                                </button>
+                                            </ComponentPermission>
+                                            <ComponentPermission scopes={["leave_request:approve"]}>
+                                                <button onClick={() => { handleCloseView(); setTimeout(() => handleOpenApprove(viewRecord), 300); }}
+                                                    className="px-6 py-2.5 rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white transition-all shadow-md">
+                                                    Approve
+                                                </button>
+                                            </ComponentPermission>
                                         </>
                                     )}
                                     <button onClick={handleCloseView}
@@ -472,11 +483,13 @@ const LeaveRequestAll = () => {
                                         className={`px-5 py-2.5 rounded-lg font-medium ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                         Cancel
                                     </button>
-                                    <button onClick={handleApprove} disabled={loadingAction}
-                                        className="px-5 py-2.5 rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 flex items-center gap-2">
-                                        {loadingAction && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>}
-                                        Approve
-                                    </button>
+                                    <ComponentPermission scopes={["leave_request:approve"]}>
+                                        <button onClick={handleApprove} disabled={loadingAction}
+                                            className="px-5 py-2.5 rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 flex items-center gap-2">
+                                            {loadingAction && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>}
+                                            Approve
+                                        </button>
+                                    </ComponentPermission>
                                 </div>
                             </div>
                         </div>
@@ -547,11 +560,13 @@ const LeaveRequestAll = () => {
                                         className={`px-5 py-2.5 rounded-lg font-medium ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                         Cancel
                                     </button>
-                                    <button onClick={handleReject} disabled={loadingAction}
-                                        className="px-5 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 flex items-center gap-2">
-                                        {loadingAction && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>}
-                                        Reject
-                                    </button>
+                                    <ComponentPermission scopes={["leave_request:reject"]}>
+                                        <button onClick={handleReject} disabled={loadingAction}
+                                            className="px-5 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 flex items-center gap-2">
+                                            {loadingAction && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>}
+                                            Reject
+                                        </button>
+                                    </ComponentPermission>
                                 </div>
                             </div>
                         </div>

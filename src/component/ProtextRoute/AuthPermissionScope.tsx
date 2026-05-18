@@ -36,7 +36,7 @@ const UnauthorizedWrapper: React.FC<UnauthorizedWrapperProps> = ({ children }) =
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      height: "100vh",
+      height: "80vh",
       width: "100%",
     }}
   >

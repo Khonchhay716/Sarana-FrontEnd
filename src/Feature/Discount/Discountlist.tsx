@@ -7,6 +7,7 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 // import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import DiscountForm from './Discountform';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface DiscountProductItem {
     productDiscountId: number;
@@ -126,18 +127,18 @@ const DiscountList = () => {
             width: 130,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    {/* <ComponentPermission scopes={["discount:update"]}> */}
+                    <ComponentPermission scopes={["discount:update"]}>
                     <button onClick={() => handleEdit(record)}
                         className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
                         Edit
                     </button>
-                    {/* </ComponentPermission> */}
-                    {/* <ComponentPermission scopes={["discount:delete"]}> */}
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["discount:delete"]}>
                     <button onClick={() => handleOpenDeleteModal(record)}
                         className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
                         Delete
                     </button>
-                    {/* </ComponentPermission> */}
+                    </ComponentPermission>
                 </div>
             ),
         },
@@ -178,12 +179,12 @@ const DiscountList = () => {
                         DISCOUNT MANAGEMENT
                     </h3>
                 </div>
-                {/* <ComponentPermission scopes={["discount:create"]}> */}
+                <ComponentPermission scopes={["discount:create"]}>
                 <button onClick={handleAddDiscount}
                     className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
                     Add Discount
                 </button>
-                {/* </ComponentPermission> */}
+                </ComponentPermission>
             </div>
 
             <XDataTable

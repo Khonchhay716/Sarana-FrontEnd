@@ -9,6 +9,7 @@ import PersonForm from './PersonForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import { useFileUpload } from '../../component/FileUpload/Usefileupload';
 import { FaUserCheck, FaUserPlus } from 'react-icons/fa';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface UserInfo {
     id: number;
@@ -135,21 +136,23 @@ const CustomerList = () => {
                 const hasUser = !!record.user;
                 return (
                     <div className="flex items-center gap-2">
-                        <button
-                            title={hasUser ? "Edit User Account" : "Add User Account"}
-                            onClick={() => setActiveModal({
-                                type: "personForm",
-                                customerId: record.id,
-                                customerName,
-                                userId: record.user?.id,
-                            })}
-                            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer">
-                            {hasUser ? (
-                                <FaUserCheck size={18} className={dl ? "text-green-400" : "text-green-600"} />
-                            ) : (
-                                <FaUserPlus size={18} className={dl ? "text-gray-400" : "text-gray-500"} />
-                            )}
-                        </button>
+                        <ComponentPermission scopes={[hasUser ? "user:update" : "user:create"]}>
+                            <button
+                                title={hasUser ? "Edit User Account" : "Add User Account"}
+                                onClick={() => setActiveModal({
+                                    type: "personForm",
+                                    customerId: record.id,
+                                    customerName,
+                                    userId: record.user?.id,
+                                })}
+                                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer">
+                                {hasUser ? (
+                                    <FaUserCheck size={18} className={dl ? "text-green-400" : "text-green-600"} />
+                                ) : (
+                                    <FaUserPlus size={18} className={dl ? "text-gray-400" : "text-gray-500"} />
+                                )}
+                            </button>
+                        </ComponentPermission>
                     </div>
                 );
             },
@@ -181,20 +184,20 @@ const CustomerList = () => {
             width: 130,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    {/* <ComponentPermission scopes={["customer:update"]}> */}
-                    <button
-                        onClick={() => setActiveModal({ type: "customerForm", customerId: record.id })}
-                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        Edit
-                    </button>
-                    {/* </ComponentPermission> */}
-                    {/* <ComponentPermission scopes={["customer:delete"]}> */}
-                    <button
-                        onClick={() => openDeleteModal(record)}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        Delete
-                    </button>
-                    {/* </ComponentPermission> */}
+                    <ComponentPermission scopes={["customer:update"]}>
+                        <button
+                            onClick={() => setActiveModal({ type: "customerForm", customerId: record.id })}
+                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            Edit
+                        </button>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["customer:delete"]}>
+                        <button
+                            onClick={() => openDeleteModal(record)}
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            Delete
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         },
@@ -209,13 +212,13 @@ const CustomerList = () => {
                         CUSTOMER MANAGEMENT
                     </h3>
                 </div>
-                {/* <ComponentPermission scopes={["customer:create"]}> */}
-                <button
-                    onClick={() => setActiveModal({ type: "customerForm" })}
-                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                    Add Customer
-                </button>
-                {/* </ComponentPermission> */}
+                <ComponentPermission scopes={["customer:create"]}>
+                    <button
+                        onClick={() => setActiveModal({ type: "customerForm" })}
+                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
+                        Add Customer
+                    </button>
+                </ComponentPermission>
             </div>
 
             <XDataTable

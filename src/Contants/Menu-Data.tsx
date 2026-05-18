@@ -33,42 +33,47 @@ const menuItems = [
     label: "Dashboard",
     icon: <FiBarChart2 />,
     path: "/dashbord",
-    permission: "role:list",
+    // No permission guard — everyone who is logged in can see the dashboard
   },
   {
     label: "Sale",
-    icon: <FaCashRegister />, // good for sales
+    icon: <FaCashRegister />,
     children: [
       {
         name: "Sale Product",
-        icon: <FaShoppingCart />, // product selling
+        icon: <FaShoppingCart />,
         path: "/sale-product",
+        permission: "order:create",
       },
       {
         name: "Order List",
-        icon: <FaClipboardList />, // better than FaListAlt
+        icon: <FaClipboardList />,
         path: "/order-list",
+        permission: "order:read",
       },
     ],
   },
   {
     label: "Leave",
-    icon: <FaUserClock />, // better meaning (time + user)
+    icon: <FaUserClock />,
     children: [
       {
         name: "My Leave Request",
-        icon: <FaUserClock />, // personal leave
+        icon: <FaUserClock />,
         path: "/my-leave-request",
+        permission: "leave_request:read_my",
       },
       {
         name: "All Leave Request",
-        icon: <FaUsers />, // group of users
+        icon: <FaUsers />,
         path: "/all-leave-request",
+        permission: "leave_request:read_all",
       },
       {
         name: "Leave Type",
-        icon: <FaLayerGroup />, // types/categories
+        icon: <FaLayerGroup />,
         path: "/leave-type",
+        permission: "leave_type:read",
       },
     ],
   },
@@ -76,41 +81,49 @@ const menuItems = [
     label: "Branch",
     icon: <MdOutlineStorefront />,
     path: "/branch",
+    permission: "branch:read",
   },
   {
     label: "Customer",
     icon: <MdPeopleAlt />,
     path: "/customer",
+    permission: "customer:read",
   },
   {
     label: "Staff",
     icon: <FaUserTie />,
     path: "/staff",
+    permission: "staff:read",
   },
   {
     label: "Category",
     icon: <FiGrid />,
     path: "/category",
+    permission: "category:read",
   },
   {
     label: "Product",
     icon: <FiPackage />,
     path: "/product",
+    permission: "product:read",
   },
   {
     label: "Low Stock",
     icon: <FaExclamationTriangle />,
     path: "/lowstock",
+    permission: "product:read",
   },
   {
     label: "Discount",
     icon: <BiSolidDiscount />,
     path: "/discount",
+    permission: "discount:read",
   },
   {
     label: "Stock",
     icon: <MdInventory2 />,
     path: "/stock",
+    permission: "manage_stock:all",
   },
   {
     label: "User Management",
@@ -120,6 +133,7 @@ const menuItems = [
         name: "User",
         path: "/userlist",
         icon: <FiUser />,
+        permission: "user:list",
       },
       {
         name: "Role",
@@ -137,9 +151,10 @@ const menuItems = [
         name: "PointSetting",
         path: "/point-setting",
         icon: <FiUserCheck />,
+        permission: "point_setting:view",
       },
-    ]
-  }
+    ],
+  },
 ];
 
 export default menuItems;

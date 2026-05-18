@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import LeaveTypeForm from './LeaveTypeForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface LeaveType {
     id: number;
@@ -72,10 +73,18 @@ const LeaveTypeList = () => {
             width: 150,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    <button onClick={() => { setSelectedId(record.id); setShowModal(true); }}
-                        className="px-3 py-1.5 bg-blue-500 text-white rounded text-xs">Edit</button>
-                    <button onClick={() => handleDelete(record.id)}
-                        className="px-3 py-1.5 bg-red-500 text-white rounded text-xs">Delete</button>
+                    <ComponentPermission scopes={["leave_type:update"]}>
+                        <button onClick={() => { setSelectedId(record.id); setShowModal(true); }}
+                            className="px-3 py-1.5 bg-blue-500 text-white rounded text-xs">
+                            Edit
+                        </button>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["leave_type:delete"]}>
+                        <button onClick={() => handleDelete(record.id)}
+                            className="px-3 py-1.5 bg-red-500 text-white rounded text-xs">
+                            Delete
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         },
@@ -98,10 +107,12 @@ const LeaveTypeList = () => {
                         LEAVE TYPE MANAGEMENT
                     </h3>
                 </div>
-                <button onClick={() => { setSelectedId(undefined); setShowModal(true); }}
-                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                    + Add Leave Type
-                </button>
+                <ComponentPermission scopes={["leave_type:create"]}>
+                    <button onClick={() => { setSelectedId(undefined); setShowModal(true); }}
+                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
+                        + Add Leave Type
+                    </button>
+                </ComponentPermission>
             </div>
 
             <XDataTable

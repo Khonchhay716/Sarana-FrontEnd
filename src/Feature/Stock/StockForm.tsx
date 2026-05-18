@@ -311,7 +311,7 @@ const StockForm = ({ initialProduct, onClose, onSuccess }: StockFormProps) => {
     const loadSummary = useCallback(async (pid: number) => {
         setSummaryLoading(true);
         try {
-            const res = await AxiosApi.get(`Product/${pid}/summary`);
+            const res = await AxiosApi.get(`Stock/${pid}/summary`);
             setSummary(res?.data?.data ?? res?.data);
         } catch (err) { console.error(err); }
         finally { setSummaryLoading(false); }

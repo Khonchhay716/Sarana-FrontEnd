@@ -587,7 +587,7 @@ const StockList = () => {
             const params = new URLSearchParams();
             if (from) params.append("StartDate", from);
             if (to) params.append("EndDate", to);
-            const res = await AxiosApi.get(`Product/stock-summary?${params.toString()}`);
+            const res = await AxiosApi.get(`Stock/stock-summary?${params.toString()}`);
             const data: StockSummaryResponse = res?.data?.data ?? res?.data ?? res;
             setSummary({
                 totalStockSerial: data.totalStockSerial ?? 0,
@@ -739,7 +739,7 @@ const StockList = () => {
             <XDataTable
                 TableName="Stock list"
                 columns={columns}
-                apiUrl="Product"
+                apiUrl="Stock"
                 selection={false}
                 hideAction={true}
                 searchPlaceholder="Search product name or SKU..."

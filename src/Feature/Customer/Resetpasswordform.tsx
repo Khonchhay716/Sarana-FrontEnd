@@ -3,6 +3,7 @@ import { useGlobleContextDarklight } from "../../AllContext/context";
 import { alertError } from "../../HtmlHelper/Alert";
 import { AxiosApi } from "../../component/Axios/Axios";
 import alertify from "alertifyjs";
+import { Eye, EyeOff } from "lucide-react";
 
 interface ResetPasswordFormProps {
     userId: number;
@@ -25,11 +26,10 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
     });
 
     const dl = darkLight;
-    const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 ${
-        dl
-            ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-orange-500"
-            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:bg-orange-50/30"
-    }`;
+    const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 ${dl
+        ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-orange-500"
+        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:bg-orange-50/30"
+        }`;
     const labelClass = `block mb-1.5 text-sm font-semibold ${dl ? "text-gray-200" : "text-gray-700"}`;
 
     useEffect(() => {
@@ -74,10 +74,24 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
 
     const passwordStrength = (pwd: string) => {
         if (!pwd) return null;
-        if (pwd.length < 6) return { level: "Weak", color: "text-red-500", bar: "w-1/4 bg-red-500" };
-        if (pwd.length < 8) return { level: "Fair", color: "text-yellow-500", bar: "w-2/4 bg-yellow-500" };
-        if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd)) return { level: "Good", color: "text-blue-500", bar: "w-3/4 bg-blue-500" };
-        return { level: "Strong", color: "text-green-500", bar: "w-full bg-green-500" };
+
+        const checks = {
+            length: pwd.length >= 8,
+            upper: /[A-Z]/.test(pwd),
+            lower: /[a-z]/.test(pwd),
+            number: /[0-9]/.test(pwd),
+            symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd),
+        };
+
+        const passed = Object.values(checks).filter(Boolean).length;
+
+        let level = "", color = "", bar = "";
+        if (passed <= 2) { level = "Weak"; color = "text-red-500"; bar = "w-1/4 bg-red-500"; }
+        else if (passed === 3) { level = "Fair"; color = "text-yellow-500"; bar = "w-2/4 bg-yellow-500"; }
+        else if (passed === 4) { level = "Good"; color = "text-blue-500"; bar = "w-3/4 bg-blue-500"; }
+        else { level = "Strong"; color = "text-green-500"; bar = "w-full bg-green-500"; }
+
+        return { level, color, bar, checks };
     };
 
     const strength = passwordStrength(formData.newPassword);
@@ -148,7 +162,8 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
                                             onClick={() => setShowNewPassword(v => !v)}
                                             className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${dl ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600"}`}
                                         >
-                                            {showNewPassword ? "🙈" : "👁️"}
+                                            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+
                                         </button>
                                     </div>
                                     {/* Password Strength Bar */}
@@ -157,9 +172,25 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
                                             <div className={`w-full h-1.5 rounded-full ${dl ? "bg-gray-700" : "bg-gray-200"}`}>
                                                 <div className={`h-1.5 rounded-full transition-all duration-300 ${strength.bar}`} />
                                             </div>
-                                            <p className={`text-xs mt-1 font-medium ${strength.color}`}>
-                                                Password Strength: {strength.level}
-                                            </p>
+                                            <p className={`text-xs mt-1 font-medium ${strength.color}`}>Strength: {strength.level}</p>
+
+                                            {/* Checklist */}
+                                            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                                {[
+                                                    { key: "length", label: "Min 8 characters" },
+                                                    { key: "upper", label: "Uppercase (A–Z)" },
+                                                    { key: "lower", label: "Lowercase (a–z)" },
+                                                    { key: "number", label: "Number (0–9)" },
+                                                    { key: "symbol", label: "Symbol (!@#$...)" },
+                                                ].map(({ key, label }) => (
+                                                    <p key={key} className={`text-xs flex items-center gap-1 ${strength.checks[key as keyof typeof strength.checks]
+                                                        ? "text-green-500"
+                                                        : dl ? "text-gray-500" : "text-gray-400"
+                                                        }`}>
+                                                        {strength.checks[key as keyof typeof strength.checks] ? "✓" : "○"} {label}
+                                                    </p>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -173,13 +204,12 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
                                             name="confirmPassword"
                                             value={formData.confirmPassword}
                                             onChange={handleInputChange}
-                                            className={`${inputClass} pr-10 ${
-                                                formData.confirmPassword && formData.newPassword !== formData.confirmPassword
-                                                    ? "border-red-400 focus:border-red-500"
-                                                    : formData.confirmPassword && formData.newPassword === formData.confirmPassword
+                                            className={`${inputClass} pr-10 ${formData.confirmPassword && formData.newPassword !== formData.confirmPassword
+                                                ? "border-red-400 focus:border-red-500"
+                                                : formData.confirmPassword && formData.newPassword === formData.confirmPassword
                                                     ? "border-green-400 focus:border-green-500"
                                                     : ""
-                                            }`}
+                                                }`}
                                             placeholder="Re-enter new password"
                                             autoComplete="new-password"
                                         />
@@ -188,7 +218,8 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
                                             onClick={() => setShowConfirmPassword(v => !v)}
                                             className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${dl ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600"}`}
                                         >
-                                            {showConfirmPassword ? "🙈" : "👁️"}
+                                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+
                                         </button>
                                     </div>
                                     {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
@@ -215,9 +246,8 @@ const ResetPasswordForm = ({ userId, username, customerName, onClose }: ResetPas
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${
-                                        loading ? "bg-orange-400 cursor-not-allowed" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                                    } text-white disabled:opacity-50`}
+                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${loading ? "bg-orange-400 cursor-not-allowed" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                                        } text-white disabled:opacity-50`}
                                 >
                                     {loading ? (
                                         <span className="flex items-center gap-2">

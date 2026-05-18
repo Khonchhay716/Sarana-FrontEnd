@@ -644,7 +644,7 @@ const Dashboard = () => {
             if (fromDate) params.StartDate = fromDate;
             if (toDate) params.EndDate = toDate;
 
-            const res = await AxiosApi.get("Product/stock-summary", { params });
+            const res = await AxiosApi.get("stock/stock-summary", { params });
             const raw = res.data?.data ?? res.data;
             setStockData(raw);
         } catch (err: any) {
@@ -777,7 +777,6 @@ const Dashboard = () => {
                     <span>{errorDashboard || errorStock}</span>
                 </div>
             )}
-            {/* ===== SECTION: Stock Summary (from /api/Product/stock-summary) ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
                     📊 Stock Summary

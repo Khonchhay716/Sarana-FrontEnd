@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { AxiosApi } from "../../component/Axios/Axios";
 import { useGlobleContextDarklight, useRefreshTable } from "../../AllContext/context";
-import { FaUser, FaEdit, FaTrash, FaSearchMinus, FaSearchPlus, FaExpand } from "react-icons/fa";
+import { FaUser, FaEdit, FaTrash, FaSearchMinus, FaSearchPlus, FaExpand, FaUserCheck, FaUserPlus } from "react-icons/fa";
 import { HiUserGroup } from "react-icons/hi";
+import ComponentPermission from "../../component/ProtextRoute/ComponentPermissions";
 
 interface LinkedUserInfo {
     id: number;
@@ -27,9 +28,10 @@ interface OrgNodeProps {
     darkLight: boolean;
     onEdit: (id: number) => void;
     onDelete: (id: number, imageProfile: string) => void;
+    onAddUser: (staffId: number, staffName: string, userId?: number) => void;
 }
 
-const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
+const OrgNode = ({ node, darkLight, onEdit, onDelete, onAddUser }: OrgNodeProps) => {
     const [expanded, setExpanded] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
     const dl = darkLight;
@@ -50,29 +52,41 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
         <div className="flex flex-col items-center">
             <div className={`relative rounded-2xl shadow-lg border-2 ${color.border} w-[130px] transition-all hover:shadow-xl hover:-translate-y-0.5 ${dl ? "bg-gray-800" : "bg-white"}`}>
 
+                {/* Action menu */}
                 <div className="absolute top-2 right-2 z-10">
-                    <button type="button"
-                        onClick={() => setShowMenu(v => !v)}
-                        onBlur={() => setTimeout(() => setShowMenu(false), 150)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${dl ? "text-gray-400 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100"}`}>
-                        ⋮
-                    </button>
-                    {showMenu && (
-                        <div className={`absolute right-0 top-7 w-28 rounded-xl shadow-xl border z-50 overflow-hidden ${dl ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
-                            <button type="button"
-                                onClick={() => { onEdit(node.id); setShowMenu(false); }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-all ${dl ? "text-gray-200 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-50"}`}>
-                                <FaEdit className="text-blue-500 w-3 h-3" /> Edit
-                            </button>
-                            <button type="button"
-                                onClick={() => { onDelete(node.id, node.imageProfile); setShowMenu(false); }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-all ${dl ? "text-gray-200 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-50"}`}>
-                                <FaTrash className="text-red-500 w-3 h-3" /> Delete
-                            </button>
-                        </div>
-                    )}
+                    <ComponentPermission scopes={["staff:update", "staff:delete"]}>
+                        <button
+                            type="button"
+                            onClick={() => setShowMenu(v => !v)}
+                            onBlur={() => setTimeout(() => setShowMenu(false), 150)}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${dl ? "text-gray-400 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100"}`}>
+                            ⋮
+                        </button>
+
+                        {showMenu && (
+                            <div className={`absolute right-0 top-7 w-28 rounded-xl shadow-xl border z-50 overflow-hidden ${dl ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+                                <ComponentPermission scopes={["staff:update"]}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { onEdit(node.id); setShowMenu(false); }}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-all ${dl ? "text-gray-200 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-50"}`}>
+                                        <FaEdit className="text-blue-500 w-3 h-3" /> Edit
+                                    </button>
+                                </ComponentPermission>
+                                <ComponentPermission scopes={["staff:delete"]}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { onDelete(node.id, node.imageProfile); setShowMenu(false); }}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-all ${dl ? "text-gray-200 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-50"}`}>
+                                        <FaTrash className="text-red-500 w-3 h-3" /> Delete
+                                    </button>
+                                </ComponentPermission>
+                            </div>
+                        )}
+                    </ComponentPermission>
                 </div>
 
+                {/* Avatar */}
                 <div className={`flex flex-col items-center pt-2 pb-1 px-3 ${dl ? "" : color.light} rounded-t-2xl`}>
                     <div className={`w-10 h-10 rounded-full border-4 border-white shadow-md overflow-hidden flex items-center justify-center ${color.bg}`}>
                         {node.imageProfile ? (
@@ -84,6 +98,7 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
                     <div className={`w-3 h-3 rounded-full border-2 border-white -mt-1.5 ml-8 ${node.status ? "bg-green-400" : "bg-red-400"}`} />
                 </div>
 
+                {/* Info */}
                 <div className="px-3 pb-3 text-center">
                     <p className={`font-bold text-xs leading-tight mt-1 ${dl ? "text-white" : "text-gray-900"}`}>
                         {node.fullName}
@@ -91,20 +106,40 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
                     <p className={`text-[10px] mt-0.5 ${dl ? "text-gray-400" : "text-gray-500"}`}>
                         {node.position || "—"}
                     </p>
+
                     {node.user && (
                         <span className={`inline-block text-[9px] px-1.5 py-0.5 rounded-full mt-1 font-medium ${dl ? "bg-indigo-900/40 text-indigo-300" : `${color.light} ${color.text}`}`}>
                             @{node.user.username}
                         </span>
                     )}
+
                     <div className={`mt-2 text-[9px] px-2 py-0.5 rounded-full font-semibold inline-block ${node.status
                         ? dl ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
                         : dl ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-600"}`}>
                         {node.status ? "Active" : "Inactive"}
                     </div>
+
+                    {/* User Account Button */}
+                    <div className="mt-2 flex justify-center">
+                        <ComponentPermission scopes={[node.user ? "user:update" : "user:create"]}>
+                            <button
+                                type="button"
+                                onClick={() => onAddUser(node.id, node.fullName, node.user?.id)}
+                                title={node.user ? "Edit User Account" : "Add User Account"}
+                                className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:scale-110 ${dl ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}>
+                                {node.user
+                                    ? <FaUserCheck size={15} className={dl ? "text-green-400 " : "text-green-600"} />
+                                    : <FaUserPlus size={15} className={dl ? "text-gray-400" : "text-gray-500"} />
+                                }
+                            </button>
+                        </ComponentPermission>
+                    </div>
                 </div>
 
+                {/* Expand/Collapse */}
                 {hasChildren && (
-                    <button type="button"
+                    <button
+                        type="button"
                         onClick={() => setExpanded(v => !v)}
                         className={`absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full border-2 shadow flex items-center justify-center text-xs font-bold z-10 transition-all hover:scale-110 ${color.bg} text-white border-white`}>
                         {expanded ? "−" : "+"}
@@ -133,6 +168,7 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
                                     darkLight={darkLight}
                                     onEdit={onEdit}
                                     onDelete={onDelete}
+                                    onAddUser={onAddUser}
                                 />
                             </div>
                         ))}
@@ -146,9 +182,10 @@ const OrgNode = ({ node, darkLight, onEdit, onDelete }: OrgNodeProps) => {
 interface StaffTreeProps {
     onEdit: (staffId: number) => void;
     onDelete: (staffId: number, imageProfile: string) => void;
+    onAddUser: (staffId: number, staffName: string, userId?: number) => void;
 }
 
-const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
+const StaffTree = ({ onEdit, onDelete, onAddUser }: StaffTreeProps) => {
     const { darkLight } = useGlobleContextDarklight();
     const [treeData, setTreeData] = useState<StaffTreeNode[]>([]);
     const [loading, setLoading] = useState(true);
@@ -184,6 +221,7 @@ const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
             className={`rounded-2xl mb-15 ${dl ? "bg-gray-800" : "bg-white"}`}
             style={{ boxShadow: "0 0 5px 1px rgba(0,0,0,0.3)", minHeight: "75vh", position: "relative" }}>
 
+            {/* Zoom controls */}
             <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${dl ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>
                     {Math.round(scale * 100)}%
@@ -231,6 +269,7 @@ const StaffTree = ({ onEdit, onDelete }: StaffTreeProps) => {
                                         darkLight={dl}
                                         onEdit={onEdit}
                                         onDelete={onDelete}
+                                        onAddUser={onAddUser}
                                     />
                                 ))}
                             </div>

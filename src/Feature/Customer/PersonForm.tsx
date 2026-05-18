@@ -4,6 +4,8 @@ import { HookIntergrateAPI } from "../../component/HookintagrateAPI/Hookintegart
 import { alertError } from "../../HtmlHelper/Alert";
 import ResetPasswordForm from "./Resetpasswordform";
 import XSelectSearch, { MultiValue } from "../../component/XSelectSearch/Xselectsearch";
+import ComponentPermission from "../../component/ProtextRoute/ComponentPermissions";
+import { Eye, EyeOff } from "lucide-react";
 
 interface PersonFormData {
     username: string;
@@ -52,11 +54,10 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
 
     const dl = darkLight;
 
-    const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-        dl
-            ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-blue-500"
-            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-blue-50/30"
-    }`;
+    const inputClass = `w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${dl
+        ? "bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:bg-gray-700 focus:border-blue-500"
+        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-blue-50/30"
+        }`;
     const labelClass = `block mb-1.5 text-sm font-semibold ${dl ? "text-gray-200" : "text-gray-700"}`;
 
     useEffect(() => {
@@ -153,10 +154,24 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
 
     const passwordStrength = (pwd: string) => {
         if (!pwd) return null;
-        if (pwd.length < 6) return { level: "Weak", color: "text-red-500", bar: "w-1/4 bg-red-500" };
-        if (pwd.length < 8) return { level: "Fair", color: "text-yellow-500", bar: "w-2/4 bg-yellow-500" };
-        if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd)) return { level: "Good", color: "text-blue-500", bar: "w-3/4 bg-blue-500" };
-        return { level: "Strong", color: "text-green-500", bar: "w-full bg-green-500" };
+
+        const checks = {
+            length: pwd.length >= 8,
+            upper: /[A-Z]/.test(pwd),
+            lower: /[a-z]/.test(pwd),
+            number: /[0-9]/.test(pwd),
+            symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd),
+        };
+
+        const passed = Object.values(checks).filter(Boolean).length;
+
+        let level = "", color = "", bar = "";
+        if (passed <= 2) { level = "Weak"; color = "text-red-500"; bar = "w-1/4 bg-red-500"; }
+        else if (passed === 3) { level = "Fair"; color = "text-yellow-500"; bar = "w-2/4 bg-yellow-500"; }
+        else if (passed === 4) { level = "Good"; color = "text-blue-500"; bar = "w-3/4 bg-blue-500"; }
+        else { level = "Strong"; color = "text-green-500"; bar = "w-full bg-green-500"; }
+
+        return { level, color, bar, checks };
     };
     const strength = passwordStrength(formData.password);
 
@@ -244,9 +259,9 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                         onChange={handleRoleChange}
                                         placeholder="Select roles..."
                                         selectOption={{
-                                            apiEndpoint: "Roles", 
+                                            apiEndpoint: "Roles",
                                             id: "id",
-                                            name: "name", 
+                                            name: "name",
                                             value: "id",
                                         }}
                                         bgColor={dl ? "#374151" : "#ffffff"}
@@ -270,7 +285,7 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                                 />
                                                 <button type="button" onClick={() => setShowPassword(v => !v)}
                                                     className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${dl ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600"}`}>
-                                                    {showPassword ? "🙈" : "👁️"}
+                                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                 </button>
                                             </div>
                                             {strength && (
@@ -279,6 +294,24 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                                         <div className={`h-1.5 rounded-full transition-all duration-300 ${strength.bar}`} />
                                                     </div>
                                                     <p className={`text-xs mt-1 font-medium ${strength.color}`}>Strength: {strength.level}</p>
+
+                                                    {/* Checklist */}
+                                                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                                        {[
+                                                            { key: "length", label: "Min 8 characters" },
+                                                            { key: "upper", label: "Uppercase (A–Z)" },
+                                                            { key: "lower", label: "Lowercase (a–z)" },
+                                                            { key: "number", label: "Number (0–9)" },
+                                                            { key: "symbol", label: "Symbol (!@#$...)" },
+                                                        ].map(({ key, label }) => (
+                                                            <p key={key} className={`text-xs flex items-center gap-1 ${strength.checks[key as keyof typeof strength.checks]
+                                                                    ? "text-green-500"
+                                                                    : dl ? "text-gray-500" : "text-gray-400"
+                                                                }`}>
+                                                                {strength.checks[key as keyof typeof strength.checks] ? "✓" : "○"} {label}
+                                                            </p>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -291,19 +324,18 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                                     name="confirmPassword"
                                                     value={formData.confirmPassword}
                                                     onChange={handleInputChange}
-                                                    className={`${inputClass} pr-10 ${
-                                                        formData.confirmPassword && formData.password !== formData.confirmPassword
-                                                            ? "border-red-400"
-                                                            : formData.confirmPassword && formData.password === formData.confirmPassword
+                                                    className={`${inputClass} pr-10 ${formData.confirmPassword && formData.password !== formData.confirmPassword
+                                                        ? "border-red-400"
+                                                        : formData.confirmPassword && formData.password === formData.confirmPassword
                                                             ? "border-green-400"
                                                             : ""
-                                                    }`}
+                                                        }`}
                                                     placeholder="Re-enter password"
                                                     autoComplete="new-password"
                                                 />
                                                 <button type="button" onClick={() => setShowConfirmPassword(v => !v)}
                                                     className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${dl ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600"}`}>
-                                                    {showConfirmPassword ? "🙈" : "👁️"}
+                                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                 </button>
                                             </div>
                                             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -338,14 +370,12 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                 )}
 
                                 {/* isActive toggle */}
-                                <div className={`rounded-xl border-2 transition-all p-4 ${
-                                    formData.isActive
-                                        ? dl ? "border-green-600 bg-green-900/10" : "border-green-400 bg-green-50"
-                                        : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"
-                                }`}>
+                                <div className={`rounded-xl border-2 transition-all p-4 ${formData.isActive
+                                    ? dl ? "border-green-600 bg-green-900/10" : "border-green-400 bg-green-50"
+                                    : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"
+                                    }`}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <span className="text-xl">{formData.isActive ? "✅" : "⛔"}</span>
                                             <div>
                                                 <p className={`text-sm font-bold ${formData.isActive ? dl ? "text-green-300" : "text-green-700" : dl ? "text-gray-300" : "text-gray-700"}`}>
                                                     Status
@@ -374,23 +404,24 @@ const PersonForm = ({ customerId, customerName, userId, onClose }: PersonFormPro
                                 >
                                     Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${
-                                        loading ? "bg-teal-400 cursor-not-allowed" : "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
-                                    } text-white disabled:opacity-50`}
-                                >
-                                    {loading ? (
-                                        <span className="flex items-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                            </svg>
-                                            Saving...
-                                        </span>
-                                    ) : isEditMode ? "Update" : "Create"}
-                                </button>
+                                <ComponentPermission scopes={[isEditMode ? "user:update" : "user:create"]}>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className={`px-8 py-2.5 rounded-lg font-medium transition-all shadow-lg ${loading ? "bg-teal-400 cursor-not-allowed" : "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+                                            } text-white disabled:opacity-50`}
+                                    >
+                                        {loading ? (
+                                            <span className="flex items-center gap-2">
+                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                </svg>
+                                                Saving...
+                                            </span>
+                                        ) : isEditMode ? "Update" : "Create"}
+                                    </button>
+                                </ComponentPermission>
                             </div>
                         </div>
                     </form>

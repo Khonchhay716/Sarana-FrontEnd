@@ -7,6 +7,7 @@ import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/con
 import XSelectSearch, { SingleValue } from '../../component/XSelectSearch/Xselectsearch';
 import { alertError } from '../../HtmlHelper/Alert';
 import { AxiosApi } from '../../component/Axios/Axios';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface LeaveRequest {
     id: number;
@@ -58,17 +59,11 @@ const MyLeaveRequest = () => {
         reason: '',
         session: 'FullDay',
     });
-
-    // ===== Working Day API State =====
     const [workingDayResult, setWorkingDayResult] = useState<WorkingDayResult | null>(null);
     const [calculatingDays, setCalculatingDays] = useState(false);
-
-    // ===== View State =====
     const [showViewModal, setShowViewModal] = useState(false);
     const [viewAnimating, setViewAnimating] = useState(false);
     const [viewRecord, setViewRecord] = useState<LeaveRequest | null>(null);
-
-    // ===== Cancel State =====
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelId, setCancelId] = useState<number | null>(null);
     const [cancelAnimating, setCancelAnimating] = useState(false);
@@ -79,7 +74,6 @@ const MyLeaveRequest = () => {
         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-blue-50/30"}`;
     const labelClass = `block mb-1.5 text-sm font-semibold ${dl ? "text-gray-200" : "text-gray-700"}`;
 
-    // ✅ Call calculate API when startDate + endDate + session all filled
     useEffect(() => {
         if (!formData.startDate || !formData.endDate || !formData.session) {
             setWorkingDayResult(null);
@@ -218,18 +212,22 @@ const MyLeaveRequest = () => {
             align: 'center',
             render: (_, record) => (
                 <div className="flex gap-2">
-                    <button onClick={() => handleOpenView(record)}
-                        className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer ${dl
-                            ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}>
-                        View
-                    </button>
-                    {record.status === 'Pending' && (
-                        <button onClick={() => handleOpenCancel(record.id)}
-                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                            Cancel
+                    <ComponentPermission scopes={["leave_request:view"]}>
+                        <button onClick={() => handleOpenView(record)}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer ${dl
+                                ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}>
+                            View
                         </button>
-                    )}
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["leave_request:cancel"]}>
+                        {record.status === 'Pending' && (
+                            <button onClick={() => handleOpenCancel(record.id)}
+                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                                Cancel
+                            </button>
+                        )}
+                    </ComponentPermission>
                 </div>
             ),
         },
@@ -327,10 +325,12 @@ const MyLeaveRequest = () => {
                         MY LEAVE REQUESTS
                     </h3>
                 </div>
-                <button onClick={handleOpenForm}
-                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                    + Request Leave
-                </button>
+                <ComponentPermission scopes={["leave_request:create"]}>
+                    <button onClick={handleOpenForm}
+                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
+                        + Request Leave
+                    </button>
+                </ComponentPermission>
             </div>
 
             <XDataTable
@@ -522,18 +522,14 @@ const MyLeaveRequest = () => {
                                             </div>
                                         </div>
 
-                                        {/* ✅ Session — horizontal row (1 line) */}
                                         <div className="w-full">
                                             <label className={labelClass}>Session <span className="text-red-500">*</span></label>
-
-                                            {/* Changed to flex-row to keep everything on 1 line */}
                                             <div className="flex flex-row gap-2 w-full mt-1">
                                                 {SESSION_OPTIONS.map(opt => (
                                                     <button
                                                         key={opt.value}
                                                         type="button"
                                                         onClick={() => setFormData(prev => ({ ...prev, session: opt.value }))}
-                                                        /* Added flex-1 so they have equal widths, adjusted padding to fit horizontal layout */
                                                         className={`flex flex-1 items-center gap-1 px-1.5 py-2.5 rounded-xl border-2 transition-all cursor-pointer text-left ${formData.session === opt.value
                                                             ? dl
                                                                 ? "border-blue-500 bg-blue-900/20"
@@ -543,7 +539,6 @@ const MyLeaveRequest = () => {
                                                                 : "border-gray-200 bg-white hover:border-gray-300"
                                                             }`}
                                                     >
-                                                        {/* Checkbox circle (slightly smaller to save horizontal space) */}
                                                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.session === opt.value
                                                             ? "border-blue-500 bg-blue-500"
                                                             : dl ? "border-gray-500" : "border-gray-300"
@@ -554,8 +549,6 @@ const MyLeaveRequest = () => {
                                                                 </svg>
                                                             )}
                                                         </div>
-
-                                                        {/* Label + description */}
                                                         <div className="flex flex-col">
                                                             <p className={`text-sm font-semibold whitespace-nowrap ${formData.session === opt.value
                                                                 ? "text-blue-600"
@@ -569,7 +562,6 @@ const MyLeaveRequest = () => {
                                             </div>
                                         </div>
 
-                                        {/* ✅ Working Days Preview from API */}
                                         {(formData.startDate && formData.endDate && formData.session) && (
                                             <div className={`rounded-xl p-4 text-sm ${dl ? "bg-gray-700" : "bg-blue-50"}`}>
                                                 {calculatingDays ? (
@@ -642,22 +634,24 @@ const MyLeaveRequest = () => {
                                             className={`px-6 py-2.5 rounded-lg font-medium ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                             Cancel
                                         </button>
-                                        <button type="submit"
-                                            disabled={submitting || calculatingDays || !workingDayResult || workingDayResult.totalWorkingDays <= 0}
-                                            className={`px-8 py-2.5 rounded-lg font-medium shadow-lg text-white disabled:opacity-50
+                                        <ComponentPermission scopes={["leave_request:create"]}>
+                                            <button type="submit"
+                                                disabled={submitting || calculatingDays || !workingDayResult || workingDayResult.totalWorkingDays <= 0}
+                                                className={`px-8 py-2.5 rounded-lg font-medium shadow-lg text-white disabled:opacity-50
                                                 ${submitting || calculatingDays || !workingDayResult || workingDayResult.totalWorkingDays <= 0
-                                                    ? "bg-blue-400 cursor-not-allowed"
-                                                    : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"}`}>
-                                            {submitting ? (
-                                                <span className="flex items-center gap-2">
-                                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                    Submitting...
-                                                </span>
-                                            ) : "Submit Request"}
-                                        </button>
+                                                        ? "bg-blue-400 cursor-not-allowed"
+                                                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"}`}>
+                                                {submitting ? (
+                                                    <span className="flex items-center gap-2">
+                                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                        </svg>
+                                                        Submitting...
+                                                    </span>
+                                                ) : "Submit Request"}
+                                            </button>
+                                        </ComponentPermission>
                                     </div>
                                 </div>
                             </form>
@@ -687,16 +681,18 @@ const MyLeaveRequest = () => {
                                         className={`px-6 py-2.5 rounded-lg font-medium ${dl ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                                         No, Keep it
                                     </button>
-                                    <button onClick={handleConfirmCancel} disabled={cancelling}
-                                        className="px-6 py-2.5 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 flex items-center gap-2">
-                                        {cancelling && (
-                                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                            </svg>
-                                        )}
-                                        Yes, Cancel It
-                                    </button>
+                                    <ComponentPermission scopes={["leave_request:cancel"]}>
+                                        <button onClick={handleConfirmCancel} disabled={cancelling}
+                                            className="px-6 py-2.5 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 flex items-center gap-2">
+                                            {cancelling && (
+                                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                </svg>
+                                            )}
+                                            Yes, Cancel It
+                                        </button>
+                                    </ComponentPermission>
                                 </div>
                             </div>
                         </div>

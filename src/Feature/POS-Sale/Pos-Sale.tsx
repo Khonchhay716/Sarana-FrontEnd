@@ -404,7 +404,7 @@ function ReceiptModal({ data, onClose }: { data: ReceiptData; onClose: () => voi
         </div>
 
         {/* ─── Buttons ─── */}
-        <div className="px-6 py-1 space-y-1 border-t border-slate-100 shrink-0 bg-white">
+        <div className="px-6 py-1 pb-2 space-y-1 border-t border-slate-100 shrink-0 bg-white">
           <button onClick={handlePrint}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all active:scale-95 shadow-md">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -824,7 +824,7 @@ function NearDiscountHintBanner({ hint, dark }: { hint: NearDiscountHint; dark: 
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const fetchCategories = async (): Promise<PaginatedResponse<Category>> => {
-  const res = await AxiosApi.get("Category", { params: { Page: 1, PageSize: 100 } });
+  const res = await AxiosApi.get("Category/lookup", { params: { Page: 1, PageSize: 100 } });
   return res.data;
 };
 const fetchProducts = async (params: { page: number; pageSize: number; search: string; categoryId: string }): Promise<PaginatedResponse<Product>> => {
@@ -848,7 +848,7 @@ const fetchOrderSummary = async (cart: CartItem[]): Promise<OrderSummaryResponse
 };
 const fetchPointSetup = async (): Promise<PointSetupInfo | null> => {
   try {
-    const res = await AxiosApi.get("PointSetup");
+    const res = await AxiosApi.get("PointSetup/lookup");
     const d = res.data?.data;
     return d ? { pointsPerRedemption: d.pointsPerRedemption ?? 0, isActive: d.isActive ?? false } : null;
   } catch { return null; }
@@ -1146,7 +1146,8 @@ export default function PosShop() {
           customer={selectedCustomer} pointSetup={pointSetup}
           onConfirm={handlePlaceOrder}
           onClose={() => { if (!placingOrder) { setPaymentModal(false); setOrderError(null); } }}
-          placing={placingOrder} orderError={orderError}
+          placing={placingOrder}
+          orderError={orderError}
         />
       )}
 

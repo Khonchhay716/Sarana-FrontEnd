@@ -784,6 +784,7 @@ import XSelectSearch, { SingleValue } from '../../component/XSelectSearch/Xselec
 import { AxiosApi } from '../../component/Axios/Axios';
 import { alertError } from '../../HtmlHelper/Alert';
 import alertify from 'alertifyjs';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 // ==================== INTERFACES ====================
 interface SerialNo { id: number; name: string; }
@@ -1392,17 +1393,21 @@ const OrderList = () => {
             render: (_, record) => (
                 <div className="flex gap-1.5 justify-end">
                     {record.paymentStatus?.id === 2 && (
-                        <button onClick={() => setRefundOrder(record)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                        <ComponentPermission scopes={["order:refound"]}>
+                            <button onClick={() => setRefundOrder(record)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
                                 ${darkLight ? 'bg-orange-900/50 text-orange-300 hover:bg-orange-900' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
-                            <RotateCcw className="w-3.5 h-3.5" /> Refund
-                        </button>
+                                <RotateCcw className="w-3.5 h-3.5" /> Refund
+                            </button>
+                        </ComponentPermission>
                     )}
-                    <button onClick={() => setSelectedOrder(record)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                    <ComponentPermission scopes={["order:view"]}>
+                        <button onClick={() => setSelectedOrder(record)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
                             ${darkLight ? 'bg-indigo-900 text-indigo-300 hover:bg-indigo-800' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
-                        <Eye className="w-3.5 h-3.5" /> View
-                    </button>
+                            <Eye className="w-3.5 h-3.5" /> View
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         },

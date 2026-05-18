@@ -11,6 +11,7 @@ import { HiUserGroup } from 'react-icons/hi';
 import { MdTableRows, MdAccountTree } from 'react-icons/md';
 import StaffPersonForm from './Staffpersonform';
 import StaffTree from './StaffTree';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface UserInfo {
     id: number;
@@ -175,27 +176,29 @@ const StaffList = () => {
             ),
         },
         {
-            title: 'User',
+            title: 'User Account',
             key: 'user',
-            width: 60,
+            width: 110,
             align: 'center',
             render: (_, record) => {
                 const hasUser = !!record.user;
                 return (
-                    <button
-                        title={hasUser ? "Edit User Account" : "Add User Account"}
-                        onClick={() => setActiveModal({
-                            type: "staffPersonForm",
-                            staffId: record.id,
-                            staffName: `${record.firstName} ${record.lastName}`,
-                            userId: record.user?.id,
-                        })}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer mx-auto">
-                        {hasUser
-                            ? <FaUserCheck size={14} className={dl ? "text-green-400" : "text-green-600"} />
-                            : <FaUserPlus size={14} className={dl ? "text-gray-400" : "text-gray-500"} />
-                        }
-                    </button>
+                    <ComponentPermission scopes={[hasUser ? "user:update" : "user:create"]}>
+                        <button
+                            title={hasUser ? "Edit User Account" : "Add User Account"}
+                            onClick={() => setActiveModal({
+                                type: "staffPersonForm",
+                                staffId: record.id,
+                                staffName: `${record.firstName} ${record.lastName}`,
+                                userId: record.user?.id,
+                            })}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer mx-auto">
+                            {hasUser
+                                ? <FaUserCheck size={20} className={dl ? "text-green-400" : "text-green-600"} />
+                                : <FaUserPlus size={20} className={dl ? "text-gray-400" : "text-gray-500"} />
+                            }
+                        </button>
+                    </ComponentPermission>
                 );
             },
         },
@@ -217,16 +220,20 @@ const StaffList = () => {
             width: 110,
             render: (_, record) => (
                 <div className="flex gap-1.5 justify-center">
-                    <button
-                        onClick={() => setActiveModal({ type: "staffForm", staffId: record.id })}
-                        className="px-2.5 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        Edit
-                    </button>
-                    <button
-                        onClick={() => openDeleteModal(record)}
-                        className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        Delete
-                    </button>
+                    <ComponentPermission scopes={["staff:update"]}>
+                        <button
+                            onClick={() => setActiveModal({ type: "staffForm", staffId: record.id })}
+                            className="px-2.5 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            Edit
+                        </button>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["staff:delete"]}>
+                        <button
+                            onClick={() => openDeleteModal(record)}
+                            className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            Delete
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         },
@@ -261,11 +268,12 @@ const StaffList = () => {
                             <span className="hidden sm:inline">Tree View</span>
                         </button>
                     </div>
-                    {/* Add Staff */}
-                    <button onClick={() => setActiveModal({ type: "staffForm" })}
-                        className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow whitespace-nowrap">
-                        + <span className="hidden sm:inline">Add</span> Staff
-                    </button>
+                    <ComponentPermission scopes={["staff:create"]}>
+                        <button onClick={() => setActiveModal({ type: "staffForm" })}
+                            className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow whitespace-nowrap">
+                            + <span className="hidden sm:inline">Add</span> Staff
+                        </button>
+                    </ComponentPermission>
                 </div>
             </div>
 
@@ -289,6 +297,9 @@ const StaffList = () => {
                         setActiveModal({ type: "deleteConfirm", staff: { id: staffId, imageProfile } as Staff });
                         setTimeout(() => setIsDeleteAnimating(true), 10);
                     }}
+                    onAddUser={(staffId, staffName, userId) =>
+                        setActiveModal({ type: "staffPersonForm", staffId, staffName, userId })
+                    }
                 />
             )}
 

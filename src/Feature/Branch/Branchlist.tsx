@@ -8,6 +8,7 @@ import { HookIntergrateAPI } from '../../component/HookintagrateAPI/Hookintegart
 import { useFileUpload } from '../../component/FileUpload/Usefileupload';
 // import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import BranchForm from './Branchform';
+import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface Branch {
     id: number;
@@ -89,18 +90,18 @@ const BranchList = () => {
             width: 130,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    {/* <ComponentPermission scopes={["branch:update"]}> */}
-                    <button onClick={() => handleEdit(record)}
-                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        Edit
-                    </button>
-                    {/* </ComponentPermission> */}
-                    {/* <ComponentPermission scopes={["branch:delete"]}> */}
-                    <button onClick={() => handleOpenDeleteModal(record)}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        Delete
-                    </button>
-                    {/* </ComponentPermission> */}
+                    <ComponentPermission scopes={["branch:update"]}>
+                        <button onClick={() => handleEdit(record)}
+                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            Edit
+                        </button>
+                    </ComponentPermission>
+                    <ComponentPermission scopes={["branch:delete"]}>
+                        <button onClick={() => handleOpenDeleteModal(record)}
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            Delete
+                        </button>
+                    </ComponentPermission>
                 </div>
             ),
         },
@@ -144,10 +145,12 @@ const BranchList = () => {
                         BRANCH MANAGEMENT
                     </h3>
                 </div>
-                <button onClick={handleAddBranch}
-                    className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                    Add Branch
-                </button>
+                <ComponentPermission scopes={["branch:create"]}>
+                    <button onClick={handleAddBranch}
+                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
+                        Add Branch
+                    </button>
+                </ComponentPermission>
             </div>
 
             <XDataTable

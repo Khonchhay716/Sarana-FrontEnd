@@ -1,4 +1,3 @@
-
 import DashBord from "../../page DashBoard/DashBord.tsx";
 import ForgotPassword from "../../component/Form/FormLoginLogout/ForgotPassword.tsx";
 import FormVerifycode from "../../component/Form/FormLoginLogout/FormVerifyCode.tsx";
@@ -32,11 +31,6 @@ import CategoryList from "../../Feature/Category/CategoryList1.tsx";
 
 const routes = all_routes;
 export const publicRoutes = [
-    // {
-    //     path: "/",
-    //     element: <Formlogin />,
-    //     route: Route,
-    // },
     {
         path: routes.formLogin,
         element: <Formlogin />,
@@ -68,16 +62,12 @@ export const publicRoutes = [
         route: Route,
     },
     {
-        path: routes.formResetPassword,
-        element: <FormResetPassword />,
-        route: Route,
-    }, {
         path: routes.pageNotFound,
         element: <PageNotFound />,
         route: Route,
     },
+];
 
-]
 export const path = [
     {
         path: "/",
@@ -90,128 +80,124 @@ export const path = [
         route: Route,
     },
     {
+        path: routes.Profile,
+        element: <Profile />,
+        route: Route,
+    },
+    {
         path: routes.SaleProduct,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <PosShop />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["order:create"]}>
+                <PosShop />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
         path: routes.OrderList,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <OrderList />
-            // </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.Customer,
-        element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <CustomerList />
-            // </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.AllLeaveRequest,
-        element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <LeaveRequestAll />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["order:read"]}>
+                <OrderList />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
         path: routes.MyLeaveRequest,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <MyLeaveRequest />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["leave_request:read_my"]}>
+                <MyLeaveRequest />
+            </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.AllLeaveRequest,
+        element: (
+            <ProtextRoute scopes={["leave_request:read_all"]}>
+                <LeaveRequestAll />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
         path: routes.LeaveType,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <LeaveTypeList />
-            // </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.Staff,
-        element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <StaffList />
-            // </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.Product,
-        element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <ProductList />
-            // </ProtextRoute>
-        ),
-        route: Route,
-    },
-    {
-        path: routes.Stock,
-        element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <StockList />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["leave_type:read"]}>
+                <LeaveTypeList />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
         path: routes.Branch,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <BranchList />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["branch:read"]}>
+                <BranchList />
+            </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Customer,
+        element: (
+            <ProtextRoute scopes={["customer:read"]}>
+                <CustomerList />
+            </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Staff,
+        element: (
+            <ProtextRoute scopes={["staff:read"]}>
+                <StaffList />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
         path: routes.Category,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <CategoryList />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["category:read"]}>
+                <CategoryList />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
-        path: routes.Discount,
+        path: routes.Product,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <DiscountList />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["product:read"]}>
+                <ProductList />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
         path: routes.LowStock,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <ProductLowStockList />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["product:read"]}>
+                <ProductLowStockList />
+            </ProtextRoute>
         ),
         route: Route,
     },
     {
-        path: routes.PointSetting,
+        path: routes.Discount,
         element: (
-            // <ProtextRoute scopes={["user:list"]}>
-            <PointSetupPage />
-            // </ProtextRoute>
+            <ProtextRoute scopes={["discount:read"]}>
+                <DiscountList />
+            </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.Stock,
+        element: (
+            <ProtextRoute scopes={["manage_stock:all"]}>
+                <StockList />
+            </ProtextRoute>
         ),
         route: Route,
     },
@@ -236,16 +222,18 @@ export const path = [
     {
         path: routes.permission,
         element: (
-            <ProtextRoute scopes={["permission:read"]}>
+            // <ProtextRoute scopes={["permission:read"]}>
                 <Permissions />
-            </ProtextRoute>
+            // </ProtextRoute>
         ),
         route: Route,
     },
     {
-        path: routes.Profile,
+        path: routes.PointSetting,
         element: (
-            <Profile />
+            <ProtextRoute scopes={["point_setting:view"]}>
+                <PointSetupPage />
+            </ProtextRoute>
         ),
         route: Route,
     },
