@@ -157,6 +157,7 @@ import DropdownManu from "../../CustomHook/DropdownManu";
 import { useGlobleContextDarklight, useSidebar } from "../../AllContext/context";
 import { useEffect, useRef, useState } from "react";
 import { AxiosApi } from "../Axios/Axios";
+import { useGlobleContextHeader } from "../../AllContext/context";
 
 interface Role { id: number; name: string; description: string; }
 interface StaffData { id: number; firstName: string; lastName: string; phoneNumber: string; position: string; salary: number; imageProfile: string; }
@@ -170,6 +171,7 @@ const Header = () => {
   const [dateTime, setDateTime] = useState<string>("");
   const [user, setUser] = useState<UserData | null>(null);
   const hasInitialized = useRef(false);
+  const { header } = useGlobleContextHeader();
 
   useEffect(() => {
     if (hasInitialized.current) return;
@@ -180,6 +182,15 @@ const Header = () => {
       if (parsed?.userId) getCurrentUser(parsed.userId);
     }
   }, []);
+
+  useEffect(() => {
+    if (!header) return;
+    const stored = localStorage.getItem("CurrentUserLibrary");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.userId) getCurrentUser(parsed.userId);
+    }
+  }, [header]);
 
   const getCurrentUser = async (userid: number) => {
     try {
@@ -209,26 +220,23 @@ const Header = () => {
   };
 
   const getProfileImage = () => {
-    if (!user || user.type === "None") return "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-    if (user.type === "Staff") return user.staff?.imageProfile || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-    if (user.type === "Customer") return user.customer?.imageProfile || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-    return "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+    if (!user || user.type === "None") return "https://i.pinimg.com/originals/15/0f/a8/150fa8800b0a0d5633abc1d1c4db3d87.jpg?nii=t";
+    if (user.type === "Staff") return user.staff?.imageProfile || "https://i.pinimg.com/originals/15/0f/a8/150fa8800b0a0d5633abc1d1c4db3d87.jpg?nii=t";
+    if (user.type === "Customer") return user.customer?.imageProfile || "https://i.pinimg.com/originals/15/0f/a8/150fa8800b0a0d5633abc1d1c4db3d87.jpg?nii=t";
+    return "https://i.pinimg.com/originals/15/0f/a8/150fa8800b0a0d5633abc1d1c4db3d87.jpg?nii=t";
   };
 
   return (
-    <nav className={`navbar px-4 w-full h-[65px] shadow-lg sticky top-0 z-50 flex justify-between items-center border-b-2 transition-all duration-300 ${
-      darkLight
+    <nav className={`navbar px-4 w-full h-[65px] shadow-lg sticky top-0 z-50 flex justify-between items-center border-b-2 transition-all duration-300 ${darkLight
         ? "bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 border-purple-700"
         : "bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-200 border-indigo-300"
-    }`}>
+      }`}>
       <div className="flex items-center gap-3">
 
-        {/* ✅ Same button, all screens — open/close sidebar */}
         <button
           onClick={() => setSidebarVisible((prev: boolean) => !prev)}
-          className={`p-2 rounded-xl transition-all duration-300 hover:scale-110 shadow-lg flex-shrink-0 ${
-            darkLight ? "bg-slate-800 text-cyan-400 hover:bg-slate-700" : "bg-white/90 hover:bg-white text-indigo-600"
-          }`}
+          className={`p-2 rounded-xl transition-all duration-300 hover:scale-110 shadow-lg flex-shrink-0 ${darkLight ? "bg-slate-800 text-cyan-400 hover:bg-slate-700" : "bg-white/90 hover:bg-white text-indigo-600"
+            }`}
         >
           {sidebarVisible ? <FiX className="w-5 h-5" /> : <FiMenu className="w-5 h-5" />}
         </button>

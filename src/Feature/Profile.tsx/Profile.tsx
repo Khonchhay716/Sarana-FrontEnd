@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AxiosApi } from "../../component/Axios/Axios";
-import { useGlobleContextDarklight } from "../../AllContext/context";
+import { useGlobleContextDarklight, useGlobleContextHeader } from "../../AllContext/context";
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaEnvelope, FaKey, FaArrowLeft } from "react-icons/fa";
 import { message, Modal } from "antd";
 import { alertError } from "../../HtmlHelper/Alert";
@@ -82,7 +82,7 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const hasInitialized = useRef(false);
-
+    const { setHeader } = useGlobleContextHeader();
     const {
         preview: imagePreview, uploading: uploadingImage, selecting,
         hasNewFile, isRemoved,
@@ -175,6 +175,7 @@ const Profile = () => {
                 await AxiosApi.put(`Customer/${user.customer.id}`, { firstName: profileForm.firstName, lastName: profileForm.lastName, imageProfile: imageUrl, phoneNumber: profileForm.phoneNumber, status: true });
             }
             message.success("Profile updated successfully!");
+            setHeader(new Date());
             setIsEditing(false);
             const stored = localStorage.getItem("CurrentUserLibrary");
             if (stored) fetchUser(JSON.parse(stored)?.userId);
@@ -325,7 +326,7 @@ const Profile = () => {
     const inputClass = `w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-all duration-200 text-sm ${dl
         ? "bg-gray-700/50 border-gray-600 text-gray-100 focus:border-blue-500"
         : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:bg-blue-50/30"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60`;
+        } focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60`;
 
     const labelClass = `block mb-1.5 text-xs sm:text-sm font-semibold ${dl ? "text-gray-200" : "text-gray-700"}`;
     const pwInput = `w-full px-4 py-2.5 rounded-lg border text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 pr-12 bg-white border-gray-300 text-gray-900 focus:border-blue-500`;

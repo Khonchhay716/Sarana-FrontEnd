@@ -105,3 +105,15 @@ export const SidebarProvider = ({ children }: ContextProviderProps) => {
     </SidebarContext.Provider>
   );
 };
+
+
+const GlobleContextHeader = createContext<any>(null);
+export const useGlobleContextHeader = () => useContext(GlobleContextHeader);
+export const ContextProviderHeader = ({ children }: ContextProviderProps) => {
+  const [header, setHeader] = useState(null);
+  return (
+    <GlobleContextHeader.Provider value={{ header, setHeader }}>
+      {children}
+    </GlobleContextHeader.Provider>
+  );
+};
