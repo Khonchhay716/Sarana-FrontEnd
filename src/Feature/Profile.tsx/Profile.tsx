@@ -16,6 +16,18 @@ interface UserData {
 
 type PwStep = "reset" | "forgot_email" | "forgot_code" | "forgot_newpw";
 
+// ─── Password Strength Helper ─────────────────────────────────────────────────
+const passwordStrength = (pwd: string) => {
+    if (!pwd) return null;
+    if (pwd.length < 6) return { level: "Weak", color: "text-red-500", bar: "w-1/4 bg-red-500" };
+    if (pwd.length < 8) return { level: "Fair", color: "text-yellow-500", bar: "w-2/4 bg-yellow-500" };
+    if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd))
+        return { level: "Good", color: "text-blue-500", bar: "w-3/4 bg-blue-500" };
+    if (!/[!@#$%^&*]/.test(pwd))
+        return { level: "Good", color: "text-blue-500", bar: "w-3/4 bg-blue-500" };
+    return { level: "Strong", color: "text-green-500", bar: "w-full bg-green-500" };
+};
+
 // ─── OTP Input Component (6 boxes) ───
 const OtpInput = ({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) => {
     const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -126,6 +138,10 @@ const Profile = () => {
     const [forgotNewPwLoading, setForgotNewPwLoading] = useState(false);
     const [forgotNewPwError, setForgotNewPwError] = useState("");
 
+    // ── Password strength ─────────────────────────────────────────────────────
+    const strength = passwordStrength(forgotNewPw);           // forgot_newpw step
+    const resetStrength = passwordStrength(passwordForm.newPassword); // reset step
+
     // Helper: get error message from API response
     const getApiError = (error: any, fallback: string) =>
         error?.response?.data?.error || error?.response?.data?.message || fallback;
@@ -175,6 +191,7 @@ const Profile = () => {
                 await AxiosApi.put(`Customer/${user.customer.id}`, { firstName: profileForm.firstName, lastName: profileForm.lastName, imageProfile: imageUrl, phoneNumber: profileForm.phoneNumber, status: true });
             }
             message.success("Profile updated successfully!");
+            localStorage.setItem("EmailCurrentAccount", personForm?.email);
             setHeader(new Date());
             setIsEditing(false);
             const stored = localStorage.getItem("CurrentUserLibrary");
@@ -226,18 +243,16 @@ const Profile = () => {
         } finally { setSavingPassword(false); }
     };
 
-    // ─── Forgot: Send Email ─── validate email vs localStorage first
+    // ─── Forgot: Send Email ───
     const handleSendVerification = async () => {
         setForgotEmailError("");
         if (!forgotEmail.trim()) { setForgotEmailError("Email is required!"); return; }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail)) { setForgotEmailError("Please enter a valid email address!"); return; }
 
-        // ✅ Validate email matches localStorage
         try {
-            const stored = localStorage.getItem("CurrentUserLibrary");
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                const storedEmail: string = parsed?.email || "";
+            const EmailCurrentAccount = localStorage.getItem("EmailCurrentAccount");
+            if (EmailCurrentAccount) {
+                const storedEmail = EmailCurrentAccount || "";
                 if (storedEmail && forgotEmail.toLowerCase().trim() !== storedEmail.toLowerCase().trim()) {
                     setForgotEmailError(`This email does not match your account email (${storedEmail})`);
                     return;
@@ -266,7 +281,7 @@ const Profile = () => {
             setPwStep("forgot_newpw");
         } catch (error: any) {
             setForgotCodeError(getApiError(error, "Invalid or expired code."));
-            setForgotCode(""); // clear boxes on wrong code
+            setForgotCode("");
         } finally { setForgotCodeLoading(false); }
     };
 
@@ -333,7 +348,6 @@ const Profile = () => {
 
     const ErrorBox = ({ msg }: { msg: string }) => !msg ? null : (
         <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
-            <span className="text-red-500 text-sm mt-0.5 flex-shrink-0">⚠</span>
             <p className="text-red-600 text-xs leading-relaxed">{msg}</p>
         </div>
     );
@@ -547,6 +561,36 @@ const Profile = () => {
                                         {show ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                                     </button>
                                 </div>
+
+                                {/* ── Strength bar (New Password only) ── */}
+                                {label === "New Password" && resetStrength && (
+                                    <div className="mt-2">
+                                        <div className="w-full h-1.5 rounded-full bg-gray-200">
+                                            <div className={`h-1.5 rounded-full transition-all duration-300 ${resetStrength.bar}`} />
+                                        </div>
+                                        <p className={`text-xs mt-1 font-medium ${resetStrength.color}`}>
+                                            Strength: {resetStrength.level}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* ── Checklist (New Password only) ── */}
+                                {label === "New Password" && passwordForm.newPassword && (
+                                    <ul className="mt-1 text-xs space-y-0.5 text-gray-400">
+                                        <li className={passwordForm.newPassword.length >= 8 ? "text-green-500" : ""}>
+                                            {passwordForm.newPassword.length >= 8 ? "✓" : "✗"} At least 8 characters
+                                        </li>
+                                        <li className={/[A-Z]/.test(passwordForm.newPassword) ? "text-green-500" : ""}>
+                                            {/[A-Z]/.test(passwordForm.newPassword) ? "✓" : "✗"} One uppercase letter (A–Z)
+                                        </li>
+                                        <li className={/[0-9]/.test(passwordForm.newPassword) ? "text-green-500" : ""}>
+                                            {/[0-9]/.test(passwordForm.newPassword) ? "✓" : "✗"} One number (0–9)
+                                        </li>
+                                        <li className={/[!@#$%^&*]/.test(passwordForm.newPassword) ? "text-green-500" : ""}>
+                                            {/[!@#$%^&*]/.test(passwordForm.newPassword) ? "✓" : "✗"} One special character (!@#$%^&*)
+                                        </li>
+                                    </ul>
+                                )}
                             </div>
                         ))}
                         <ErrorBox msg={pwError} />
@@ -594,7 +638,7 @@ const Profile = () => {
                     </div>
                 )}
 
-                {/* Step 2: Verify Code - 6 OTP Boxes */}
+                {/* Step 2: Verify Code */}
                 {pwStep === "forgot_code" && (
                     <div className="flex flex-col gap-4 pt-2">
                         <div className="flex items-start gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
@@ -603,8 +647,6 @@ const Profile = () => {
                                 6-digit code sent to <span className="font-bold">{forgotEmail}</span>. Check your inbox.
                             </p>
                         </div>
-
-                        {/* 6 OTP Boxes */}
                         <div>
                             <label className="block mb-3 text-xs sm:text-sm font-semibold text-gray-700 text-center">
                                 Verification Code <span className="text-red-500">*</span>
@@ -616,8 +658,6 @@ const Profile = () => {
                             />
                             <ErrorBox msg={forgotCodeError} />
                         </div>
-
-                        {/* Resend */}
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500">Didn't receive the code?</span>
                             {resendCountdown > 0 ? (
@@ -629,7 +669,6 @@ const Profile = () => {
                                 </button>
                             )}
                         </div>
-
                         <div className="flex justify-end gap-2 pt-1 border-t border-gray-100">
                             <button type="button" onClick={handleClosePasswordModal} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">Cancel</button>
                             <button type="button" onClick={handleVerifyCode} disabled={forgotCodeLoading || forgotCode.length < 6}
@@ -647,6 +686,7 @@ const Profile = () => {
                             <span className="text-lg">✅</span>
                             <p className="text-xs text-green-700 font-medium">Email verified! Now set your new password.</p>
                         </div>
+
                         {[
                             { label: "New Password", val: forgotNewPw, setVal: setForgotNewPw, show: showForgotNewPw, toggle: () => setShowForgotNewPw(v => !v), ph: "Enter new password" },
                             { label: "Confirm Password", val: forgotConfirmPw, setVal: setForgotConfirmPw, show: showForgotConfirmPw, toggle: () => setShowForgotConfirmPw(v => !v), ph: "Re-enter new password" },
@@ -663,8 +703,39 @@ const Profile = () => {
                                         {show ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                                     </button>
                                 </div>
+
+                                {/* ── Strength bar (New Password only) ── */}
+                                {label === "New Password" && strength && (
+                                    <div className="mt-2">
+                                        <div className="w-full h-1.5 rounded-full bg-gray-200">
+                                            <div className={`h-1.5 rounded-full transition-all duration-300 ${strength.bar}`} />
+                                        </div>
+                                        <p className={`text-xs mt-1 font-medium ${strength.color}`}>
+                                            Strength: {strength.level}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* ── Checklist (New Password only) ── */}
+                                {label === "New Password" && forgotNewPw && (
+                                    <ul className="mt-1 text-xs space-y-0.5 text-gray-400">
+                                        <li className={forgotNewPw.length >= 8 ? "text-green-500" : ""}>
+                                            {forgotNewPw.length >= 8 ? "✓" : "✗"} At least 8 characters
+                                        </li>
+                                        <li className={/[A-Z]/.test(forgotNewPw) ? "text-green-500" : ""}>
+                                            {/[A-Z]/.test(forgotNewPw) ? "✓" : "✗"} One uppercase letter (A–Z)
+                                        </li>
+                                        <li className={/[0-9]/.test(forgotNewPw) ? "text-green-500" : ""}>
+                                            {/[0-9]/.test(forgotNewPw) ? "✓" : "✗"} One number (0–9)
+                                        </li>
+                                        <li className={/[!@#$%^&*]/.test(forgotNewPw) ? "text-green-500" : ""}>
+                                            {/[!@#$%^&*]/.test(forgotNewPw) ? "✓" : "✗"} One special character (!@#$%^&*)
+                                        </li>
+                                    </ul>
+                                )}
                             </div>
                         ))}
+
                         <ErrorBox msg={forgotNewPwError} />
                         <div className="flex justify-end gap-2 pt-1 border-t border-gray-100">
                             <button type="button" onClick={handleClosePasswordModal} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">Cancel</button>

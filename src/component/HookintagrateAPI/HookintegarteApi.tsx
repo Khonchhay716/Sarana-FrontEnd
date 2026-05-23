@@ -49,7 +49,7 @@ export function HookIntergrateAPI<T>() {
       }
       console.error(error);
       alertError(error?.response?.data?.message || error?.message || "Something went wrong.");
-      onError?.(); // ✅ Call ពេល Exception
+      onError?.(); //  Call ពេល Exception
     } finally {
       setTimeout(() => { setLoading(false); }, 500);
     }

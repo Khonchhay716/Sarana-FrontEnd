@@ -412,6 +412,7 @@ const Login: React.FC = () => {
         } else {
           localStorage.removeItem(REMEMBER_ME_KEY);
         }
+        localStorage.setItem('EmailCurrentAccount', formData.email);
 
         localStorage.setItem('CurrentUserLibrary', JSON.stringify(res?.data?.data));
         alertify.success('Login successful!');

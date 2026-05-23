@@ -4,6 +4,7 @@ import XSelectSearch, { MultiValue } from "../../component/XSelectSearch/Xselect
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
 import { alertError } from "../../HtmlHelper/Alert";
 import ComponentPermission from "../../component/ProtextRoute/ComponentPermissions";
+import { Eye, EyeOff } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,8 @@ const UserForm = ({ userId, onClose }: UserFormProps) => {
         if (pwd.length < 8) return { level: "Fair", color: "text-yellow-500", bar: "w-2/4 bg-yellow-500" };
         if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd))
             return { level: "Good", color: "text-blue-500", bar: "w-3/4 bg-blue-500" };
+        if (!/[!@#$%^&*]/.test(pwd))
+            return { level: "Good", color: "text-blue-500", bar: "w-3/4 bg-blue-500" };
         return { level: "Strong", color: "text-green-500", bar: "w-full bg-green-500" };
     };
     const strength = passwordStrength(formData.password);
@@ -260,7 +263,7 @@ const UserForm = ({ userId, onClose }: UserFormProps) => {
                                                 onClick={() => setShowPassword(v => !v)}
                                                 className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${dl ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600"}`}
                                             >
-                                                {showPassword ? "🙈" : "👁️"}
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
                                         {strength && (
@@ -273,6 +276,22 @@ const UserForm = ({ userId, onClose }: UserFormProps) => {
                                                 </p>
                                             </div>
                                         )}
+                                        {formData.password && (
+                                            <ul className="mt-1 text-xs space-y-0.5 text-gray-400">
+                                                <li className={formData.password.length >= 8 ? "text-green-500" : ""}>
+                                                    {formData.password.length >= 8 ? "✓" : "✗"} At least 8 characters
+                                                </li>
+                                                <li className={/[A-Z]/.test(formData.password) ? "text-green-500" : ""}>
+                                                    {/[A-Z]/.test(formData.password) ? "✓" : "✗"} One uppercase letter (A–Z)
+                                                </li>
+                                                <li className={/[0-9]/.test(formData.password) ? "text-green-500" : ""}>
+                                                    {/[0-9]/.test(formData.password) ? "✓" : "✗"} One number (0–9)
+                                                </li>
+                                                <li className={/[!@#$%^&*]/.test(formData.password) ? "text-green-500" : ""}>
+                                                    {/[!@#$%^&*]/.test(formData.password) ? "✓" : "✗"} One special character (!@#$%^&*)
+                                                </li>
+                                            </ul>
+                                        )}
                                     </div>
                                 )}
 
@@ -283,7 +302,6 @@ const UserForm = ({ userId, onClose }: UserFormProps) => {
                                     }`}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <span className="text-xl">{formData.isActive ? "✅" : "⛔"}</span>
                                             <p className={`text-sm font-bold ${formData.isActive
                                                 ? dl ? "text-green-300" : "text-green-700"
                                                 : dl ? "text-gray-300" : "text-gray-700"}`}>
