@@ -59,10 +59,10 @@ const ProductList = () => {
                 <div className="flex items-center gap-3">
                     <img src={record.imageProduct || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
                         alt={record.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-gray-700" />
-                    <div>
+                    {/* <div>
                         <p className={`font-bold text-sm ${darkLight ? "text-white" : "text-gray-800"}`}>{record.name}</p>
                         <span className="text-[10px] uppercase tracking-wider font-mono text-gray-500">{record.sku}</span>
-                    </div>
+                    </div> */}
                 </div>
             ),
         },
