@@ -18,23 +18,32 @@
     font-size: 14px;
 }
 
-.xdata-table-light .ant-table-tbody > tr {
-    background: #ffffff;
-    transition: all 0.2s ease;
-}
-
-.xdata-table-light .ant-table-tbody > tr:hover {
-    background: #f9fafb !important;
-}
-
+/* Alternating Row Colors - Light */
 .xdata-table-light .ant-table-tbody > tr > td {
     border-bottom: 1px solid #f3f4f6;
     padding: 14px 16px;
     color: #4b5563;
+    transition: background 0.2s ease;
+}
+
+.xdata-table-light .ant-table-tbody > tr.xdata-table-row-even > td {
+    background: #ffffff;
+}
+
+.xdata-table-light .ant-table-tbody > tr.xdata-table-row-odd > td {
+    background: #f9fafb; /* Very subtle light gray */
+}
+
+.xdata-table-light .ant-table-tbody > tr:hover > td {
+    background: #eff6ff !important; /* Hover blue tint */
 }
 
 .xdata-table-light .ant-table-tbody > tr.ant-table-row-selected > td {
-    background: #eff6ff;
+    background: #eff6ff !important;
+}
+
+.xdata-table-light .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+    background: #dbeafe !important;
 }
 
 .xdata-table-light .ant-checkbox-wrapper {
@@ -113,6 +122,14 @@
     color: #6b7280;
 }
 
+.xdata-table-light .ant-spin-text {
+    color: #4b5563;
+}
+
+.xdata-table-light .ant-spin-dot-item {
+    background-color: #3b82f6;
+}
+
 /* ============================================
    DARK THEME STYLES
    ============================================ */
@@ -143,24 +160,32 @@
     background: #1f2937 !important;
 }
 
-.xdata-table-dark .ant-table-tbody > tr {
-    background: #1f2937 !important;
-    transition: all 0.2s ease;
-}
-
-.xdata-table-dark .ant-table-tbody > tr:hover {
-    background: #374151 !important;
-}
-
+/* Alternating Row Colors - Dark */
 .xdata-table-dark .ant-table-tbody > tr > td {
     border-bottom: 1px solid #374151;
     padding: 14px 16px;
     color: #d1d5db;
-    background: transparent !important;
+    transition: background 0.2s ease;
+}
+
+.xdata-table-dark .ant-table-tbody > tr.xdata-table-row-even > td {
+    background: #1f2937 !important; /* Deep navy/dark gray */
+}
+
+.xdata-table-dark .ant-table-tbody > tr.xdata-table-row-odd > td {
+    background: #253347 !important; /* Slightly lighter navy for contrast */
+}
+
+.xdata-table-dark .ant-table-tbody > tr:hover > td {
+    background: #374151 !important;
 }
 
 .xdata-table-dark .ant-table-tbody > tr.ant-table-row-selected > td {
-    background: #1e3a5f;
+    background: #1e3a5f !important;
+}
+
+.xdata-table-dark .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+    background: #1e40af !important;
 }
 
 .xdata-table-dark .ant-checkbox-wrapper {
@@ -288,18 +313,6 @@
 }
 
 /* ============================================
-   LOADING SPINNER
-   ============================================ */
-
-.xdata-table-light .ant-spin-text {
-    color: #4b5563;
-}
-
-.xdata-table-light .ant-spin-dot-item {
-    background-color: #3b82f6;
-}
-
-/* ============================================
    SCROLLBAR STYLES
    ============================================ */
 
@@ -365,18 +378,6 @@
 }
 
 /* ============================================
-   SELECTION HIGHLIGHT
-   ============================================ */
-
-.xdata-table-light .ant-table-tbody > tr.ant-table-row-selected:hover > td {
-    background: #dbeafe !important;
-}
-
-.xdata-table-dark .ant-table-tbody > tr.ant-table-row-selected:hover > td {
-    background: #1e40af !important;
-}
-
-/* ============================================
    TABLE BORDERS AND SPACING
    ============================================ */
 
@@ -438,4 +439,3 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
- 

@@ -574,7 +574,9 @@ const XDataTable = <T extends Record<string, any>>({
             <div className="overflow-x-auto w-full">
                 <Table<T>
                     className={`xdata-table ${darkLight ? "xdata-table-dark" : "xdata-table-light"}`}
-                    rowClassName={() => "xdata-table-row"}
+                    rowClassName={(_, index) =>
+                        `xdata-table-row ${index % 2 === 0 ? "xdata-table-row-even" : "xdata-table-row-odd"}`
+                    }
                     rowKey={(record, index) => {
                         if (record.id) return `row-${record.id}`;
                         if (record.key) return `row-${record.key}`;
