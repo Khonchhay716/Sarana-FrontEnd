@@ -77,7 +77,7 @@ const ProductList = () => {
             dataIndex: 'storage',
             key: 'storage',
             render: (barcode: string) => (
-                <span className={`text-xs ${darkLight ? "text-gray-400" : "text-gray-500"}`}>{barcode || "—"}</span>
+                <span className={`text-xs ${darkLight ? "text-gray-400" : "text-gray-500"}`}>{barcode || "N/A"}</span>
             ),
         },
         {
