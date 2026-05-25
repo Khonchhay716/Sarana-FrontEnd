@@ -73,9 +73,9 @@ const ProductList = () => {
             ),
         },
         {
-            title: 'Barcode',
-            dataIndex: 'barcode',
-            key: 'barcode',
+            title: 'Storage',
+            dataIndex: 'storage',
+            key: 'storage',
             render: (barcode: string) => (
                 <span className={`text-xs ${darkLight ? "text-gray-400" : "text-gray-500"}`}>{barcode || "—"}</span>
             ),
