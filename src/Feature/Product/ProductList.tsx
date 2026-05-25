@@ -43,14 +43,27 @@ const ProductList = () => {
     const { deleteImage } = useFileUpload();
 
     const columns: TableColumnsType<Product> = [
+        // {
+        //     title: 'Image',
+        //     key: 'image',
+        //     width: 70,
+        //     align: 'center',
+        //     render: (_, record) => (
+        //         <img src={record.imageProduct || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
+        //             alt={record.name} className="w-10 h-10 rounded-lg object-cover" />
+        //     ),
+        // },
         {
-            title: 'Image',
-            key: 'image',
-            width: 70,
-            align: 'center',
+            title: "Image", key: "image",
             render: (_, record) => (
-                <img src={record.imageProduct || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
-                    alt={record.name} className="w-10 h-10 rounded-lg object-cover" />
+                <div className="flex items-center gap-3">
+                    <img src={record.imageProduct || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
+                        alt={record.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-gray-700" />
+                    <div>
+                        <p className={`font-bold text-sm ${darkLight ? "text-white" : "text-gray-800"}`}>{record.name}</p>
+                        <span className="text-[10px] uppercase tracking-wider font-mono text-gray-500">{record.sku}</span>
+                    </div>
+                </div>
             ),
         },
         {
@@ -64,14 +77,14 @@ const ProductList = () => {
                 </div>
             ),
         },
-        {
-            title: 'SKU',
-            dataIndex: 'sku',
-            key: 'sku',
-            render: (sku: string) => (
-                <span className={`font-mono text-xs px-2 py-1 rounded ${darkLight ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>{sku || "—"}</span>
-            ),
-        },
+        // {
+        //     title: 'SKU',
+        //     dataIndex: 'sku',
+        //     key: 'sku',
+        //     render: (sku: string) => (
+        //         <span className={`font-mono text-xs px-2 py-1 rounded ${darkLight ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>{sku || "—"}</span>
+        //     ),
+        // },
         {
             title: 'Storage',
             dataIndex: 'storage',
