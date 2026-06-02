@@ -587,14 +587,14 @@ const Login: React.FC = () => {
         </form>
 
         {/* Register Link */}
-        <div className="text-center">
+        {/* <div className="text-center">
           <p className="text-xs text-gray-500">
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500">
               Register here
             </Link>
           </p>
-        </div>
+        </div> */}
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-300">

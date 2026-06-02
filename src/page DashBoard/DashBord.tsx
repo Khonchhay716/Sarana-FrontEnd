@@ -777,83 +777,13 @@ const Dashboard = () => {
                     <span>{errorDashboard || errorStock}</span>
                 </div>
             )}
-            <div>
-                <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    📊 Stock Summary
-                </p>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    <MetricCard
-                        title="Stock Serial"
-                        value={stockData?.totalStockSerial}
-                        icon={<BiPackage />}
-                        gradient="bg-gradient-to-br from-blue-500 to-blue-700"
-                        textColor="text-blue-500"
-                        description="Total serial stock items"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                    <MetricCard
-                        title="Stock Movement"
-                        value={stockData?.totalStockMovement}
-                        icon={<BiTrendingUp />}
-                        gradient="bg-gradient-to-br from-emerald-500 to-emerald-700"
-                        textColor="text-emerald-500"
-                        description="Total movement stock"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                    <MetricCard
-                        title="Total Stock All"
-                        value={stockData?.totalStockAll}
-                        icon={<BiDesktop />}
-                        gradient="bg-gradient-to-br from-purple-500 to-purple-700"
-                        textColor="text-purple-500"
-                        description="All stock combined"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                    <MetricCard
-                        title="Cost (Serial)"
-                        prefix="$"
-                        value={stockData?.totalCostSerial}
-                        icon={<BiDollarCircle />}
-                        gradient="bg-gradient-to-br from-pink-500 to-pink-700"
-                        textColor="text-pink-500"
-                        description="Cost of serial stock"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                    <MetricCard
-                        title="Cost (Movement)"
-                        prefix="$"
-                        value={stockData?.totalCostMovement}
-                        icon={<BiCreditCard />}
-                        gradient="bg-gradient-to-br from-orange-500 to-orange-700"
-                        textColor="text-orange-500"
-                        description="Cost of movement stock"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                    <MetricCard
-                        title="Total Cost All"
-                        prefix="$"
-                        value={stockData?.totalCostAll}
-                        icon={<BiTrendingUp />}
-                        gradient="bg-gradient-to-br from-teal-500 to-teal-700"
-                        textColor="text-teal-500"
-                        description="Total inventory cost"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                </div>
-            </div>
 
             {/* ===== SECTION: Sales & Finance (from /api/Dashboard) ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    💰 Sales & Finance
+                    Sales & Finance
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     <MetricCard
                         title="Cash Received"
                         prefix="$"
@@ -886,7 +816,7 @@ const Dashboard = () => {
                         isLoading={loadingDashboard}
                         isError={!!errorDashboard}
                     />
-                    <MetricCard
+                    {/* <MetricCard
                         title="Completed Orders"
                         value={dashboardData?.totalCompletedOrders}
                         icon={<BiCheckCircle />}
@@ -895,17 +825,17 @@ const Dashboard = () => {
                         description="Successfully completed"
                         isLoading={loadingDashboard}
                         isError={!!errorDashboard}
-                    />
+                    /> */}
                 </div>
             </div>
 
             {/* ===== SECTION: Order Status ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    📦 Order Status
+                    Order Status
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <MetricCard
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {/* <MetricCard
                         title="Cancelled Orders"
                         value={dashboardData?.totalCancelledOrders}
                         icon={<BiXCircle />}
@@ -914,7 +844,7 @@ const Dashboard = () => {
                         description="Orders cancelled"
                         isLoading={loadingDashboard}
                         isError={!!errorDashboard}
-                    />
+                    /> */}
                     <MetricCard
                         title="Refunded Orders"
                         value={dashboardData?.totalRefundedOrders}
@@ -951,9 +881,37 @@ const Dashboard = () => {
             {/* ===== SECTION: Store Info ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    🏪 Store Info
+                    Total Stock all
                 </p>
-                <div className="grid grid-cols-6 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
+                    <MetricCard
+                        title="Total Stock All"
+                        value={stockData?.totalStockAll}
+                        icon={<BiDesktop />}
+                        gradient="bg-gradient-to-br from-purple-500 to-purple-700"
+                        textColor="text-purple-500"
+                        description="All stock combined"
+                        isLoading={loadingStock}
+                        isError={!!errorStock}
+                    />
+                    <MetricCard
+                        title="Total Cost All"
+                        prefix="$"
+                        value={stockData?.totalCostAll}
+                        icon={<BiTrendingUp />}
+                        gradient="bg-gradient-to-br from-teal-500 to-teal-700"
+                        textColor="text-teal-500"
+                        description="Total inventory cost"
+                        isLoading={loadingStock}
+                        isError={!!errorStock}
+                    />
+                </div>
+            </div>
+            <div>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
+                    Store Info
+                </p>
+                <div className="grid grid-cols-6 gap-3 sm:gap-4 mt-5">
                     <div className="col-span-3">
                         <MetricCard
                             title="Total Branches"
@@ -982,7 +940,7 @@ const Dashboard = () => {
             </div>
 
             {/* ===== CHARTS ===== */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+            {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
                 <div className="lg:col-span-2">
                     <ChartCard title="Monthly Revenue Flow" icon={<FaChartLine />}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -1021,7 +979,7 @@ const Dashboard = () => {
                         </ResponsiveContainer>
                     </ChartCard>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 };
