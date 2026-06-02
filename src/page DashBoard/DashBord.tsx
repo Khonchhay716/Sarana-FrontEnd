@@ -384,18 +384,16 @@
 
 
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { useGlobleContextDarklight } from '../AllContext/context';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-    BiDesktop, BiCart, BiDollarCircle,
-    BiPackage, BiTrendingUp, BiCreditCard, BiStore,
+    BiDesktop, BiCart, BiDollarCircle, BiTrendingUp, BiCreditCard, BiStore,
     BiCalendar, BiChevronDown, BiX, BiRefresh,
-    BiUser, BiBuilding, BiCategory, BiCheckCircle,
+    BiUser, BiBuilding, BiCategory,
     BiXCircle, BiRevision,
 } from "react-icons/bi";
-import { FaChartLine } from "react-icons/fa";
+// import { FaChartLine } from "react-icons/fa";
 import { AxiosApi } from "../component/Axios/Axios";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -573,21 +571,21 @@ const FilterDropdown = ({
 };
 
 // ── Static chart data (keep for charts) ───────────────────────────────────────
-const STATIC_MONTHLY_DATA = [
-    { name: "Jan", revenue: 4500 }, { name: "Feb", revenue: 5200 },
-    { name: "Mar", revenue: 6100 }, { name: "Apr", revenue: 5800 },
-    { name: "May", revenue: 7200 }, { name: "Jun", revenue: 8500 },
-    { name: "Jul", revenue: 9100 }, { name: "Aug", revenue: 8900 },
-    { name: "Sep", revenue: 9500 }, { name: "Oct", revenue: 10800 },
-    { name: "Nov", revenue: 12500 }, { name: "Dec", revenue: 15000 },
-];
+// const STATIC_MONTHLY_DATA = [
+//     { name: "Jan", revenue: 4500 }, { name: "Feb", revenue: 5200 },
+//     { name: "Mar", revenue: 6100 }, { name: "Apr", revenue: 5800 },
+//     { name: "May", revenue: 7200 }, { name: "Jun", revenue: 8500 },
+//     { name: "Jul", revenue: 9100 }, { name: "Aug", revenue: 8900 },
+//     { name: "Sep", revenue: 9500 }, { name: "Oct", revenue: 10800 },
+//     { name: "Nov", revenue: 12500 }, { name: "Dec", revenue: 15000 },
+// ];
 
-const STATIC_WEEKLY_DATA = [
-    { name: "Mon", sales: 1200 }, { name: "Tue", sales: 1900 },
-    { name: "Wed", sales: 1700 }, { name: "Thu", sales: 2100 },
-    { name: "Fri", sales: 2500 }, { name: "Sat", sales: 3200 },
-    { name: "Sun", sales: 2800 },
-];
+// const STATIC_WEEKLY_DATA = [
+//     { name: "Mon", sales: 1200 }, { name: "Tue", sales: 1900 },
+//     { name: "Wed", sales: 1700 }, { name: "Thu", sales: 2100 },
+//     { name: "Fri", sales: 2500 }, { name: "Sat", sales: 3200 },
+//     { name: "Sun", sales: 2800 },
+// ];
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 const Dashboard = () => {
@@ -703,22 +701,22 @@ const Dashboard = () => {
         </div>
     );
 
-    const ChartCard = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
-        <div className={`rounded-2xl shadow-xl p-4 sm:p-6 border h-full ${dl ? "bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700" : "bg-white border-gray-100"}`}>
-            <h2 className={`text-sm sm:text-lg font-bold mb-3 sm:mb-5 flex items-center gap-2 ${dl ? "text-white" : "text-gray-900"}`}>
-                <span className="text-blue-500">{icon}</span>{title}
-            </h2>
-            <div className="h-[200px] sm:h-[250px] w-full">{children}</div>
-        </div>
-    );
+    // const ChartCard = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
+    //     <div className={`rounded-2xl shadow-xl p-4 sm:p-6 border h-full ${dl ? "bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700" : "bg-white border-gray-100"}`}>
+    //         <h2 className={`text-sm sm:text-lg font-bold mb-3 sm:mb-5 flex items-center gap-2 ${dl ? "text-white" : "text-gray-900"}`}>
+    //             <span className="text-blue-500">{icon}</span>{title}
+    //         </h2>
+    //         <div className="h-[200px] sm:h-[250px] w-full">{children}</div>
+    //     </div>
+    // );
 
-    const tooltipStyle = {
-        backgroundColor: dl ? "#1f2937" : "#fff",
-        borderColor: dl ? "#374151" : "#e5e7eb",
-        borderRadius: "10px",
-        color: dl ? "#f9fafb" : "#111827",
-        fontSize: "12px",
-    };
+    // const tooltipStyle = {
+    //     backgroundColor: dl ? "#1f2937" : "#fff",
+    //     borderColor: dl ? "#374151" : "#e5e7eb",
+    //     borderRadius: "10px",
+    //     color: dl ? "#f9fafb" : "#111827",
+    //     fontSize: "12px",
+    // };
 
     // Error banner
     const hasError = errorDashboard || errorStock;
