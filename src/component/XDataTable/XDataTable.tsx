@@ -542,16 +542,12 @@ const XDataTable = <T extends Record<string, any>>({
         : undefined;
 
     return (
-        <div className={`w-full mb-15 rounded-lg shadow-sm ${darkLight ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200"}`}>
-
-            {/* ✅ Header — always one row, title left, search right */}
+        <div className={`w-full rounded-lg shadow-sm ${darkLight ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200"}`}>
             <div className={`px-1 py-2 border-b ${darkLight ? "border-gray-800" : "border-gray-200"}`}>
                 <div className="flex flex-row items-center justify-between gap-2 min-w-0">
-                    {/* Title — never wraps, shrinks text on mobile */}
                     <h3 className={`font-bold text-base sm:text-2xl whitespace-nowrap flex-shrink-0 ${darkLight ? "text-gray-100" : "text-gray-900"}`}>
                         {TableName ?? "Data List"}
                     </h3>
-                    {/* Search — fixed narrow width on mobile, wider on sm+ */}
                     <input
                         type="text"
                         placeholder={searchPlaceholder}

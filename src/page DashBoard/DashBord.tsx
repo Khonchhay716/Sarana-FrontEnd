@@ -2,39 +2,42 @@ import { useGlobleContextDarklight } from '../AllContext/context';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-    BiDesktop, BiCart, BiDollarCircle, BiTrendingUp, BiCreditCard, BiStore,
+    BiDesktop, BiCart, BiDollarCircle, BiCreditCard, BiStore,
     BiCalendar, BiChevronDown, BiX, BiRefresh,
     BiUser, BiBuilding, BiCategory,
-    BiXCircle, BiRevision,
+    BiXCircle, BiQrScan, BiCoinStack, BiBox,
 } from "react-icons/bi";
-// import { FaChartLine } from "react-icons/fa";
 import { AxiosApi } from "../component/Axios/Axios";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type FilterOption = "today" | "thisWeek" | "thisMonth" | "lastMonth" | "thisYear" | "custom" | "none";
 interface DateRange { from: string; to: string; }
 
-// API response types
-interface DashboardData {
-    totalCashReceived: number;
-    totalTaxAmount: number;
+// ✅ Matches DashboardSummaryInfo from POS.Application/Features/Dashboard/DashboardSummaryQuery.cs
+interface SalesSummary {
+    totalSold: number;
     totalOrders: number;
-    totalCancelledOrders: number;
-    totalCompletedOrders: number;
-    totalRefundedOrders: number;
-    totalStaffs: number;
-    totalCustomers: number;
-    totalBranches: number;
-    totalCategories: number;
+    saleByCashTotal: number;
+    saleByQRTotal: number;
+    saleByPointTotal: number;
 }
 
-interface StockSummaryData {
-    totalStockSerial: number;
-    totalStockMovement: number;
-    totalStockAll: number;
-    totalCostSerial: number;
-    totalCostMovement: number;
-    totalCostAll: number;
+interface StockSummary {
+    grandTotalPrice: number;
+    totalQuantity: number;
+    totalSerialPrice: number;
+    totalSerialQty: number;
+    totalNonSerialPrice: number;
+    totalNonSerialQty: number;
+}
+
+interface DashboardSummary {
+    salesSummary: SalesSummary;
+    stockSummary: StockSummary;
+    totalSuppliers: number;
+    totalCustomers: number;
+    totalStaff: number;
+    totalCategories: number;
 }
 
 const FILTER_OPTIONS: { label: string; value: FilterOption }[] = [
@@ -184,39 +187,19 @@ const FilterDropdown = ({
     );
 };
 
-// ── Static chart data (keep for charts) ───────────────────────────────────────
-// const STATIC_MONTHLY_DATA = [
-//     { name: "Jan", revenue: 4500 }, { name: "Feb", revenue: 5200 },
-//     { name: "Mar", revenue: 6100 }, { name: "Apr", revenue: 5800 },
-//     { name: "May", revenue: 7200 }, { name: "Jun", revenue: 8500 },
-//     { name: "Jul", revenue: 9100 }, { name: "Aug", revenue: 8900 },
-//     { name: "Sep", revenue: 9500 }, { name: "Oct", revenue: 10800 },
-//     { name: "Nov", revenue: 12500 }, { name: "Dec", revenue: 15000 },
-// ];
-
-// const STATIC_WEEKLY_DATA = [
-//     { name: "Mon", sales: 1200 }, { name: "Tue", sales: 1900 },
-//     { name: "Wed", sales: 1700 }, { name: "Thu", sales: 2100 },
-//     { name: "Fri", sales: 2500 }, { name: "Sat", sales: 3200 },
-//     { name: "Sun", sales: 2800 },
-// ];
-
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 const Dashboard = () => {
     const { darkLight } = useGlobleContextDarklight();
 
     // Filter state
-    const [filterOption, setFilterOption] = useState<FilterOption>("thisMonth");
-    const [fromDate, setFromDate] = useState(getRange("thisMonth").from);
-    const [toDate, setToDate] = useState(getRange("thisMonth").to);
+    const [filterOption, setFilterOption] = useState<FilterOption>("none");
+    const [fromDate, setFromDate] = useState("");
+    const [toDate, setToDate] = useState("");
 
     // API data state
-    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-    const [stockData, setStockData] = useState<StockSummaryData | null>(null);
-    const [loadingDashboard, setLoadingDashboard] = useState(false);
-    const [loadingStock, setLoadingStock] = useState(false);
-    const [errorDashboard, setErrorDashboard] = useState<string | null>(null);
-    const [errorStock, setErrorStock] = useState<string | null>(null);
+    const [summary, setSummary] = useState<DashboardSummary | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Sync dates when filter changes
     useEffect(() => {
@@ -227,55 +210,35 @@ const Dashboard = () => {
         }
     }, [filterOption]);
 
-    // Fetch dashboard data
-    const fetchDashboard = useCallback(async () => {
-        setLoadingDashboard(true);
-        setErrorDashboard(null);
+    // Fetch dashboard summary (single endpoint)
+    const fetchSummary = useCallback(async () => {
+        setLoading(true);
+        setError(null);
         try {
             const params: Record<string, string> = {};
             if (fromDate) params.FromDate = fromDate;
             if (toDate) params.ToDate = toDate;
 
-            const res = await AxiosApi.get("Dashboard", { params });
-            // API returns data directly (not wrapped in success/data)
+            const res = await AxiosApi.get("dashboard/summary", { params });
+            // ApiResponse<T> wrapper -> { success, message, data }
             const raw = res.data?.data ?? res.data;
-            setDashboardData(raw);
+            setSummary(raw);
         } catch (err: any) {
-            setErrorDashboard(err?.response?.data?.message ?? "Failed to load dashboard data");
+            setError(err?.response?.data?.message ?? "Failed to load dashboard data");
         } finally {
-            setLoadingDashboard(false);
-        }
-    }, [fromDate, toDate]);
+            setTimeout(() => {
+                setLoading(false);
+            }, 300);
 
-    // Fetch stock summary
-    const fetchStock = useCallback(async () => {
-        setLoadingStock(true);
-        setErrorStock(null);
-        try {
-            const params: Record<string, string> = {};
-            if (fromDate) params.StartDate = fromDate;
-            if (toDate) params.EndDate = toDate;
-
-            const res = await AxiosApi.get("stock/stock-summary", { params });
-            const raw = res.data?.data ?? res.data;
-            setStockData(raw);
-        } catch (err: any) {
-            setErrorStock(err?.response?.data?.message ?? "Failed to load stock data");
-        } finally {
-            setLoadingStock(false);
         }
     }, [fromDate, toDate]);
 
     // Fetch when dates change (debounce for custom input)
     useEffect(() => {
-        // For custom filter, only fetch when both dates are filled
         if (filterOption === "custom" && (!fromDate || !toDate)) return;
-        const timer = setTimeout(() => {
-            fetchDashboard();
-            fetchStock();
-        }, 300);
+        const timer = setTimeout(() => { fetchSummary(); }, 300);
         return () => clearTimeout(timer);
-    }, [fromDate, toDate, fetchDashboard, fetchStock, filterOption]);
+    }, [fromDate, toDate, fetchSummary, filterOption]);
 
     const handleClearFilter = () => setFilterOption("none");
     const dl = darkLight;
@@ -303,7 +266,7 @@ const Dashboard = () => {
                         <span className="text-xs text-red-400">—</span>
                     ) : (
                         <h3 className={`text-xl sm:text-2xl font-extrabold tracking-tight ${textColor}`}>
-                            {prefix}{typeof value === "number" ? value.toLocaleString() : (value ?? "—")}
+                            {prefix}{typeof value === "number" ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : (value ?? "—")}
                         </h3>
                     )}
                 </div>
@@ -314,26 +277,6 @@ const Dashboard = () => {
             <p className={`text-xs ${dl ? "text-gray-500" : "text-gray-400"}`}>{description}</p>
         </div>
     );
-
-    // const ChartCard = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
-    //     <div className={`rounded-2xl shadow-xl p-4 sm:p-6 border h-full ${dl ? "bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700" : "bg-white border-gray-100"}`}>
-    //         <h2 className={`text-sm sm:text-lg font-bold mb-3 sm:mb-5 flex items-center gap-2 ${dl ? "text-white" : "text-gray-900"}`}>
-    //             <span className="text-blue-500">{icon}</span>{title}
-    //         </h2>
-    //         <div className="h-[200px] sm:h-[250px] w-full">{children}</div>
-    //     </div>
-    // );
-
-    // const tooltipStyle = {
-    //     backgroundColor: dl ? "#1f2937" : "#fff",
-    //     borderColor: dl ? "#374151" : "#e5e7eb",
-    //     borderRadius: "10px",
-    //     color: dl ? "#f9fafb" : "#111827",
-    //     fontSize: "12px",
-    // };
-
-    // Error banner
-    const hasError = errorDashboard || errorStock;
 
     return (
         <div className="flex-1 flex flex-col gap-4 sm:gap-6 px-2 sm:px-4 pb-8">
@@ -359,11 +302,11 @@ const Dashboard = () => {
                     {/* Refresh button */}
                     <button
                         type="button"
-                        onClick={() => { fetchDashboard(); fetchStock(); }}
-                        disabled={loadingDashboard || loadingStock}
+                        onClick={() => fetchSummary()}
+                        disabled={loading}
                         className="p-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-all disabled:opacity-50"
                         title="Refresh data">
-                        <BiRefresh className={`text-lg ${(loadingDashboard || loadingStock) ? "animate-spin" : ""}`} />
+                        <BiRefresh className={`text-lg ${loading ? "animate-spin" : ""}`} />
                     </button>
                     <div className="hidden sm:flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20">
                         <BiStore className="text-white text-lg" />
@@ -383,215 +326,194 @@ const Dashboard = () => {
             </div>
 
             {/* ===== ERROR BANNER ===== */}
-            {hasError && (
+            {error && (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-sm">
                     <BiXCircle className="text-lg flex-shrink-0" />
-                    <span>{errorDashboard || errorStock}</span>
+                    <span>{error}</span>
                 </div>
             )}
 
-            {/* ===== SECTION: Sales & Finance (from /api/Dashboard) ===== */}
+            {/* ===== SECTION: Sales Summary ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    Sales & Finance
+                    Sales Summary
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    <MetricCard
-                        title="Cash Received"
-                        prefix="$"
-                        value={dashboardData?.totalCashReceived}
-                        icon={<BiDollarCircle />}
-                        gradient="bg-gradient-to-br from-blue-500 to-blue-700"
-                        textColor="text-blue-500"
-                        description="Total cash collected"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
-                    />
-                    <MetricCard
-                        title="Tax Amount"
-                        prefix="$"
-                        value={dashboardData?.totalTaxAmount}
-                        icon={<BiCreditCard />}
-                        gradient="bg-gradient-to-br from-pink-500 to-pink-700"
-                        textColor="text-pink-500"
-                        description="Total tax collected"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
                     <MetricCard
                         title="Total Orders"
-                        value={dashboardData?.totalOrders}
+                        value={summary?.salesSummary?.totalOrders}
                         icon={<BiCart />}
                         gradient="bg-gradient-to-br from-emerald-500 to-emerald-700"
                         textColor="text-emerald-500"
-                        description="All orders placed"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
+                        description="Completed orders"
+                        isLoading={loading}
+                        isError={!!error}
                     />
-                    {/* <MetricCard
-                        title="Completed Orders"
-                        value={dashboardData?.totalCompletedOrders}
-                        icon={<BiCheckCircle />}
+                    <MetricCard
+                        title="Total Sale Price"
+                        prefix="$"
+                        value={summary?.salesSummary?.totalSold}
+                        icon={<BiDollarCircle />}
+                        gradient="bg-gradient-to-br from-blue-500 to-blue-700"
+                        textColor="text-blue-500"
+                        description="Total sales revenue"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
+
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 mt-3 sm:mt-4">
+                    <MetricCard
+                        title="Cash Sales"
+                        prefix="$"
+                        value={summary?.salesSummary?.saleByCashTotal}
+                        icon={<BiCreditCard />}
                         gradient="bg-gradient-to-br from-teal-500 to-teal-700"
                         textColor="text-teal-500"
-                        description="Successfully completed"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
-                    /> */}
+                        description="Paid by cash"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
+                    <MetricCard
+                        title="QR Sales"
+                        prefix="$"
+                        value={summary?.salesSummary?.saleByQRTotal}
+                        icon={<BiQrScan />}
+                        gradient="bg-gradient-to-br from-pink-500 to-pink-700"
+                        textColor="text-pink-500"
+                        description="Paid by KHQR"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
+                    <MetricCard
+                        title="Point Sales"
+                        prefix="$"
+                        value={summary?.salesSummary?.saleByPointTotal}
+                        icon={<BiCoinStack />}
+                        gradient="bg-gradient-to-br from-amber-500 to-amber-700"
+                        textColor="text-amber-500"
+                        description="Paid by points"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
                 </div>
             </div>
 
-            {/* ===== SECTION: Order Status ===== */}
+            {/* ===== SECTION: Stock Summary ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    Order Status
+                    Stock In Summary
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {/* <MetricCard
-                        title="Cancelled Orders"
-                        value={dashboardData?.totalCancelledOrders}
-                        icon={<BiXCircle />}
-                        gradient="bg-gradient-to-br from-red-500 to-red-700"
-                        textColor="text-red-500"
-                        description="Orders cancelled"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
-                    /> */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
                     <MetricCard
-                        title="Refunded Orders"
-                        value={dashboardData?.totalRefundedOrders}
-                        icon={<BiRevision />}
-                        gradient="bg-gradient-to-br from-orange-500 to-orange-700"
-                        textColor="text-orange-500"
-                        description="Orders refunded"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
+                        title="Total Quantity"
+                        value={summary?.stockSummary?.totalQuantity}
+                        icon={<BiBox />}
+                        gradient="bg-gradient-to-br from-sky-500 to-sky-700"
+                        textColor="text-sky-500"
+                        description="Net stock-in quantity"
+                        isLoading={loading}
+                        isError={!!error}
                     />
                     <MetricCard
-                        title="Total Customers"
-                        value={dashboardData?.totalCustomers}
-                        icon={<BiUser />}
-                        gradient="bg-gradient-to-br from-purple-500 to-purple-700"
-                        textColor="text-purple-500"
-                        description="Registered customers"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
+                        title="Grand Total Price"
+                        prefix="$"
+                        value={summary?.stockSummary?.grandTotalPrice}
+                        icon={<BiDollarCircle />}
+                        gradient="bg-gradient-to-br from-indigo-500 to-indigo-700"
+                        textColor="text-indigo-500"
+                        description="Net stock-in value"
+                        isLoading={loading}
+                        isError={!!error}
                     />
-                    <MetricCard
-                        title="Total Staffs"
-                        value={dashboardData?.totalStaffs}
-                        icon={<BiUser />}
-                        gradient="bg-gradient-to-br from-cyan-500 to-cyan-700"
-                        textColor="text-cyan-500"
-                        description="Active staff members"
-                        isLoading={loadingDashboard}
-                        isError={!!errorDashboard}
-                    />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
+                    <div className={`rounded-2xl p-4 sm:p-5 border-2 ${dl ? "border-blue-700/40 bg-blue-900/10" : "border-blue-200 bg-blue-50"}`}>
+                        <p className={`text-sm font-bold mb-3 flex items-center gap-2 ${dl ? "text-blue-300" : "text-blue-700"}`}>
+                            🔢 Serialized
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Qty</p>
+                                {loading ? <AiOutlineLoading3Quarters className="animate-spin text-lg text-gray-400 mt-1" /> :
+                                    <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>{(summary?.stockSummary?.totalSerialQty ?? 0).toLocaleString()}</p>}
+                            </div>
+                            <div>
+                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Price</p>
+                                {loading ? <AiOutlineLoading3Quarters className="animate-spin text-lg text-gray-400 mt-1" /> :
+                                    <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>${(summary?.stockSummary?.totalSerialPrice ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`rounded-2xl p-4 sm:p-5 border-2 ${dl ? "border-purple-700/40 bg-purple-900/10" : "border-purple-200 bg-purple-50"}`}>
+                        <p className={`text-sm font-bold mb-3 flex items-center gap-2 ${dl ? "text-purple-300" : "text-purple-700"}`}>
+                            📦 Non-Serialized
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Qty</p>
+                                {loading ? <AiOutlineLoading3Quarters className="animate-spin text-lg text-gray-400 mt-1" /> :
+                                    <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>{(summary?.stockSummary?.totalNonSerialQty ?? 0).toLocaleString()}</p>}
+                            </div>
+                            <div>
+                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Price</p>
+                                {loading ? <AiOutlineLoading3Quarters className="animate-spin text-lg text-gray-400 mt-1" /> :
+                                    <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>${(summary?.stockSummary?.totalNonSerialPrice ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* ===== SECTION: Store Info ===== */}
             <div>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                    Total add stock
-                </p>
-                <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
-                    <MetricCard
-                        title="Total Stock All"
-                        value={stockData?.totalStockAll}
-                        icon={<BiDesktop />}
-                        gradient="bg-gradient-to-br from-purple-500 to-purple-700"
-                        textColor="text-purple-500"
-                        description="All stock combined"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                    <MetricCard
-                        title="Total Cost All"
-                        prefix="$"
-                        value={stockData?.totalCostAll}
-                        icon={<BiTrendingUp />}
-                        gradient="bg-gradient-to-br from-teal-500 to-teal-700"
-                        textColor="text-teal-500"
-                        description="Total inventory cost"
-                        isLoading={loadingStock}
-                        isError={!!errorStock}
-                    />
-                </div>
-            </div>
-            <div>
-                <p className={`text-xs font-bold uppercase tracking-widest mb-3 px-1 ${dl ? "text-gray-500" : "text-gray-400"}`}>
                     Store Info
                 </p>
-                <div className="grid grid-cols-6 gap-3 sm:gap-4 mt-5">
-                    <div className="col-span-3">
-                        <MetricCard
-                            title="Total Branches"
-                            value={dashboardData?.totalBranches}
-                            icon={<BiBuilding />}
-                            gradient="bg-gradient-to-br from-indigo-500 to-indigo-700"
-                            textColor="text-indigo-500"
-                            description="Store branches"
-                            isLoading={loadingDashboard}
-                            isError={!!errorDashboard}
-                        />
-                    </div>
-                    <div className="col-span-3">
-                        <MetricCard
-                            title="Total Categories"
-                            value={dashboardData?.totalCategories}
-                            icon={<BiCategory />}
-                            gradient="bg-gradient-to-br from-yellow-500 to-yellow-700"
-                            textColor="text-yellow-500"
-                            description="Product categories"
-                            isLoading={loadingDashboard}
-                            isError={!!errorDashboard}
-                        />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <MetricCard
+                        title="Total Suppliers"
+                        value={summary?.totalSuppliers}
+                        icon={<BiBuilding />}
+                        gradient="bg-gradient-to-br from-indigo-500 to-indigo-700"
+                        textColor="text-indigo-500"
+                        description="Registered suppliers"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
+                    <MetricCard
+                        title="Total Customers"
+                        value={summary?.totalCustomers}
+                        icon={<BiUser />}
+                        gradient="bg-gradient-to-br from-purple-500 to-purple-700"
+                        textColor="text-purple-500"
+                        description="Registered customers"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
+                    <MetricCard
+                        title="Total Staff"
+                        value={summary?.totalStaff}
+                        icon={<BiUser />}
+                        gradient="bg-gradient-to-br from-cyan-500 to-cyan-700"
+                        textColor="text-cyan-500"
+                        description="Active staff members"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
+                    <MetricCard
+                        title="Total Categories"
+                        value={summary?.totalCategories}
+                        icon={<BiCategory />}
+                        gradient="bg-gradient-to-br from-yellow-500 to-yellow-700"
+                        textColor="text-yellow-500"
+                        description="Product categories"
+                        isLoading={loading}
+                        isError={!!error}
+                    />
                 </div>
             </div>
 
-            {/* ===== CHARTS ===== */}
-            {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-                <div className="lg:col-span-2">
-                    <ChartCard title="Monthly Revenue Flow" icon={<FaChartLine />}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={STATIC_MONTHLY_DATA} barSize={20}>
-                                <defs>
-                                    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#3b82f6" />
-                                        <stop offset="100%" stopColor="#1d4ed8" />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke={dl ? "#374151" : "#f0f0f0"} vertical={false} />
-                                <XAxis dataKey="name" stroke={dl ? "#6b7280" : "#9ca3af"} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <YAxis stroke={dl ? "#6b7280" : "#9ca3af"} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
-                                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: dl ? "#ffffff08" : "#00000008" }} />
-                                <Bar dataKey="revenue" fill="url(#blueGrad)" radius={[6, 6, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </ChartCard>
-                </div>
-                <div className="lg:col-span-1">
-                    <ChartCard title="Weekly Sales Trend" icon={<BiTrendingUp />}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={STATIC_WEEKLY_DATA}>
-                                <defs>
-                                    <linearGradient id="emeraldGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke={dl ? "#374151" : "#f0f0f0"} vertical={false} />
-                                <XAxis dataKey="name" stroke={dl ? "#6b7280" : "#9ca3af"} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <YAxis stroke={dl ? "#6b7280" : "#9ca3af"} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
-                                <Tooltip contentStyle={tooltipStyle} />
-                                <Area type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={2.5} fill="url(#emeraldGrad)" dot={{ r: 3, fill: "#10b981" }} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </ChartCard>
-                </div>
-            </div> */}
         </div>
     );
 };

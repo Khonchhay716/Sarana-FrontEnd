@@ -89,7 +89,7 @@ const CustomerList = () => {
                 <img
                     src={record.imageProfile || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
                     alt={record.firstName}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                    className="w-10 h-10 rounded-full object-contain border-2 border-gray-200"
                 />
             ),
         },
@@ -127,36 +127,36 @@ const CustomerList = () => {
                 </span>
             ),
         },
-        {
-            title: 'User Account',
-            key: 'user',
-            width: 120,
-            render: (_, record) => {
-                const customerName = `${record.firstName} ${record.lastName}`;
-                const hasUser = !!record.user;
-                return (
-                    <div className="flex items-center gap-2">
-                        <ComponentPermission scopes={[hasUser ? "user:update" : "user:create"]}>
-                            <button
-                                title={hasUser ? "Edit User Account" : "Add User Account"}
-                                onClick={() => setActiveModal({
-                                    type: "personForm",
-                                    customerId: record.id,
-                                    customerName,
-                                    userId: record.user?.id,
-                                })}
-                                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer">
-                                {hasUser ? (
-                                    <FaUserCheck size={18} className={dl ? "text-green-400" : "text-green-600"} />
-                                ) : (
-                                    <FaUserPlus size={18} className={dl ? "text-gray-400" : "text-gray-500"} />
-                                )}
-                            </button>
-                        </ComponentPermission>
-                    </div>
-                );
-            },
-        },
+        // {
+        //     title: 'User Account',
+        //     key: 'user',
+        //     width: 120,
+        //     render: (_, record) => {
+        //         const customerName = `${record.firstName} ${record.lastName}`;
+        //         const hasUser = !!record.user;
+        //         return (
+        //             <div className="flex items-center gap-2">
+        //                 <ComponentPermission scopes={[hasUser ? "user:update" : "user:create"]}>
+        //                     <button
+        //                         title={hasUser ? "Edit User Account" : "Add User Account"}
+        //                         onClick={() => setActiveModal({
+        //                             type: "personForm",
+        //                             customerId: record.id,
+        //                             customerName,
+        //                             userId: record.user?.id,
+        //                         })}
+        //                         className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer">
+        //                         {hasUser ? (
+        //                             <FaUserCheck size={18} className={dl ? "text-green-400" : "text-green-600"} />
+        //                         ) : (
+        //                             <FaUserPlus size={18} className={dl ? "text-gray-400" : "text-gray-500"} />
+        //                         )}
+        //                     </button>
+        //                 </ComponentPermission>
+        //             </div>
+        //         );
+        //     },
+        // },
         {
             title: 'Phone Number',
             key: 'phoneNumber',
@@ -167,7 +167,7 @@ const CustomerList = () => {
             ),
         },
         {
-            title: 'Created Date',
+            title: 'Date',
             key: 'createdDate',
             render: (_, record) => (
                 <span className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>
@@ -209,20 +209,20 @@ const CustomerList = () => {
                 <div className="flex items-center gap-1 min-w-0">
                     <BiGroup className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0 ${dl ? "text-blue-400" : "text-blue-600"}`} />
                     <h3 className={`font-bold text-sm sm:text-2xl whitespace-nowrap ${dl ? 'text-white' : 'text-gray-900'}`}>
-                        CUSTOMER MANAGEMENT
+                        MEMBER MANAGEMENT
                     </h3>
                 </div>
                 <ComponentPermission scopes={["customer:create"]}>
                     <button
                         onClick={() => setActiveModal({ type: "customerForm" })}
                         className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                        Add Customer
+                        Add Member
                     </button>
                 </ComponentPermission>
             </div>
 
             <XDataTable
-                TableName='Customer list'
+                TableName='Member list'
                 columns={columns}
                 apiUrl='Customer'
                 selection={false}

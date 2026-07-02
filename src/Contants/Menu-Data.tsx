@@ -23,6 +23,9 @@ import {
   MdOutlineStorefront,
   MdPeopleAlt,
   MdInventory2,
+  MdCompareArrows,
+  MdTune,
+  MdAssignmentReturn,
 } from "react-icons/md";
 
 import { BiSolidDiscount } from "react-icons/bi";
@@ -77,16 +80,16 @@ const menuItems = [
       },
     ],
   },
+  // {
+  //   label: "Branch",
+  //   icon: <MdOutlineStorefront />,
+  //   path: "/branch",
+  //   permission: "branch:read",
+  // },
   {
-    label: "Branch",
-    icon: <MdOutlineStorefront />,
-    path: "/branch",
-    permission: "branch:read",
-  },
-  {
-    label: "Customer",
+    label: "Member",
     icon: <MdPeopleAlt />,
-    path: "/customer",
+    path: "/member",
     permission: "customer:read",
   },
   {
@@ -94,6 +97,12 @@ const menuItems = [
     icon: <FaUserTie />,
     path: "/staff",
     permission: "staff:read",
+  },
+  {
+    label: "Supplier",
+    icon: <MdPeopleAlt />,
+    path: "/supplier",
+    permission: "supplier:read",
   },
   {
     label: "Category",
@@ -119,11 +128,35 @@ const menuItems = [
     path: "/discount",
     permission: "discount:read",
   },
+  // {
+  //   label: "Stock",
+  //   icon: <MdInventory2 />,
+  //   path: "/stock",
+  //   permission: "manage_stock:all",
+  // },
   {
-    label: "Stock",
+    label: "Stock Management",
     icon: <MdInventory2 />,
-    path: "/stock",
-    permission: "manage_stock:all",
+    children: [
+      {
+        name: "Stock Movement",
+        path: "/stock-movement",
+        icon: <MdCompareArrows />,
+        permission: "stockmovement:read",
+      },
+      {
+        name: "Stock Adjustment",
+        path: "/stock-adjustment",
+        icon: <MdTune />,
+        permission: "adjustment:read",
+      },
+      {
+        name: "Stock Return",
+        path: "/stock-return",
+        icon: <MdAssignmentReturn />,
+        permission: "stockreturn:read",
+      },
+    ],
   },
   {
     label: "User Management",

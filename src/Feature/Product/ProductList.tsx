@@ -9,26 +9,24 @@ import { HookIntergrateAPI } from '../../component/HookintagrateAPI/Hookintegart
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import { useFileUpload } from '../../component/FileUpload/Usefileupload';
 
-interface Category { id: number; name: string; }
-
 interface Product {
     id: number;
+    code: string;
     name: string;
     description: string;
-    sku: string;
-    barcode: string;
-    price: number;
+    imageUrl: string;
+    productType: string;
+    unit: string;
     costPrice: number;
-    taxRate: Number;
-    stock: number;
-    imageProduct: string;
-    categoryId: number;
-    category: Category;
-    isSerialNumber: boolean;
+    salePrice: number;
+    lowStockThreshold: number;
+    stockQuantity: number;
     isDeleted: boolean;
     createdDate: string;
     updatedDate: string;
     createdBy: string;
+    categoryId: number | null;  
+    categoryName: string;  
 }
 
 const ProductList = () => {
@@ -43,26 +41,12 @@ const ProductList = () => {
     const { deleteImage } = useFileUpload();
 
     const columns: TableColumnsType<Product> = [
-        // {
-        //     title: 'Image',
-        //     key: 'image',
-        //     width: 70,
-        //     align: 'center',
-        //     render: (_, record) => (
-        //         <img src={record.imageProduct || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
-        //             alt={record.name} className="w-10 h-10 rounded-lg object-cover" />
-        //     ),
-        // },
         {
             title: "Image", key: "image",
             render: (_, record) => (
                 <div className="flex items-center gap-3">
-                    <img src={record.imageProduct || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
-                        alt={record.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-gray-700" />
-                    {/* <div>
-                        <p className={`font-bold text-sm ${darkLight ? "text-white" : "text-gray-800"}`}>{record.name}</p>
-                        <span className="text-[10px] uppercase tracking-wider font-mono text-gray-500">{record.sku}</span>
-                    </div> */}
+                    <img src={record.imageUrl || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
+                        alt={record.name} className="w-11 h-11 rounded-xl object-contain ring-2 ring-gray-100 dark:ring-gray-700" />
                 </div>
             ),
         },
@@ -77,49 +61,52 @@ const ProductList = () => {
                 </div>
             ),
         },
-        // {
-        //     title: 'SKU',
-        //     dataIndex: 'sku',
-        //     key: 'sku',
-        //     render: (sku: string) => (
-        //         <span className={`font-mono text-xs px-2 py-1 rounded ${darkLight ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>{sku || "—"}</span>
-        //     ),
-        // },
         {
-            title: 'Storage',
-            dataIndex: 'storage',
-            key: 'storage',
-            render: (barcode: string) => (
-                <span className={`text-xs ${darkLight ? "text-gray-400" : "text-gray-500"}`}>{barcode || "N/A"}</span>
+            title: 'Code',
+            dataIndex: 'code',
+            key: 'code',
+            render: (code: string) => (
+                <span className={`font-mono text-xs px-2 py-1 rounded ${darkLight ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"}`}>{code || "—"}</span>
             ),
         },
         {
             title: 'Category',
-            key: 'category',
+            key: 'categoryName',
+            width: 140,
             render: (_, record) => (
-                <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                    {record.category?.name || "—"}
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-lg ${record.categoryName 
+                    ? (darkLight ? "bg-indigo-900/30 text-indigo-300" : "bg-indigo-50 text-indigo-600") 
+                    : (darkLight ? "bg-gray-700/50 text-gray-500" : "bg-gray-100 text-gray-400")}`}>
+                    {record.categoryName || "Uncategorized"}
                 </span>
             ),
         },
         {
+            title: 'Unit',
+            dataIndex: 'unit',
+            key: 'unit',
+            render: (unit: string) => (
+                <span className={`text-xs ${darkLight ? "text-gray-400" : "text-gray-500"}`}>{unit || "N/A"}</span>
+            ),
+        },
+        {
             title: 'Type',
-            key: 'isSerialNumber',
+            key: 'productType',
             align: 'center',
             render: (_, record) => (
-                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${record.isSerialNumber
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${record.productType === "Serialized"
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                     : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"}`}>
-                    {record.isSerialNumber ? "Serialized" : "Non-Serialized"}
+                    {record?.productType}
                 </span>
             ),
         },
         {
             title: 'Sale Price',
-            key: 'price',
+            key: 'salePrice',
             render: (_, record) => (
                 <p className={`font-semibold text-sm ${darkLight ? "text-green-400" : "text-green-600"}`}>
-                    ${record.price.toFixed(2)}
+                    ${record.salePrice.toFixed(2)}
                 </p>
             ),
         },
@@ -133,20 +120,11 @@ const ProductList = () => {
             ),
         },
         {
-            title: 'Tax Rate',
-            key: 'taxRate',
-            render: (_, record) => (
-                <p className={`text-sm ${darkLight ? "text-gray-300" : "text-gray-600"}`}>
-                    {(Number(record.taxRate) ?? 0).toFixed(2)}%
-                </p>
-            ),
-        },
-        {
-            title: 'Stock',
-            key: 'stock',
+            title: 'stockQuantity',
+            key: 'stockQuantity',
             align: 'center',
             render: (_, record) => {
-                const stock = record.stock ?? 0;
+                const stock = record.stockQuantity ?? 0;
                 const colorClass = stock === 0
                     ? "bg-red-100 text-red-700"
                     : stock <= 5
@@ -197,8 +175,8 @@ const ProductList = () => {
     const handleDeleteConfirm = async () => {
         if (!recordToDelete) return;
         try {
-            await deleteImage(recordToDelete.imageProduct);
-            await DeleteData("Product", recordToDelete.id);
+            await deleteImage(recordToDelete.imageUrl);
+            await DeleteData("Products", recordToDelete.id);
             handleCloseDeleteModal();
             setRefreshTables(new Date());
         } catch (error) {
@@ -227,15 +205,14 @@ const ProductList = () => {
             <XDataTable
                 TableName='Product list'
                 columns={columns}
-                apiUrl='Product'
+                apiUrl='Products'
                 selection={false}
                 hideAction={true}
-                searchPlaceholder="Search by name, SKU, barcode..."
+                searchPlaceholder="Search by name, code..."
             />
 
             {showModal && <ProductForm productId={selectedProductId} onClose={handleCloseModal} />}
 
-            {/* Delete Modal */}
             {showDeleteModal && (
                 <>
                     <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${isDeleteAnimating ? "opacity-100" : "opacity-0"}`}

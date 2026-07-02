@@ -140,10 +140,10 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
                         <div className="flex justify-between items-start gap-3">
                             <div className="min-w-0">
                                 <h2 className={`text-base sm:text-2xl font-bold truncate ${dl ? "text-white" : "text-gray-900"}`}>
-                                    {customerId ? "Edit Customer" : "Add New Customer"}
+                                    {customerId ? "Edit Member" : "Add New Member"}
                                 </h2>
                                 <p className={`text-xs sm:text-sm mt-0.5 truncate ${dl ? "text-gray-400" : "text-gray-500"}`}>
-                                    {customerId ? "Update customer information" : "Fill in the details to create a new customer"}
+                                    {customerId ? "Update Member information" : "Fill in the details to create a new Member"}
                                 </p>
                             </div>
                             <button onClick={handleClose}
@@ -224,10 +224,9 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
                                         : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"}`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xl">{formData.status ? "✅" : "⛔"}</span>
                                                 <div>
                                                     <p className={`text-sm font-bold ${formData.status ? dl ? "text-green-300" : "text-green-700" : dl ? "text-gray-300" : "text-gray-700"}`}>
-                                                        Customer Status
+                                                        Member Status
                                                     </p>
                                                     <p className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>
                                                         {formData.status ? "Customer is active and can make purchases" : "Customer is inactive"}
@@ -272,7 +271,7 @@ const CustomerForm = ({ customerId, onClose }: CustomerFormProps) => {
                                             </span>
                                         ) : (
                                             <>
-                                                <span className="hidden sm:inline">{customerId ? "Update Customer" : "Create Customer"}</span>
+                                                <span className="hidden sm:inline">{customerId ? "Update Member" : "Create Member"}</span>
                                                 <span className="sm:hidden">{customerId ? "Update" : "Create"}</span>
                                             </>
                                         )}

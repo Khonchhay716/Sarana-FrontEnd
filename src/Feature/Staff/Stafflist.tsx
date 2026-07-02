@@ -101,7 +101,7 @@ const StaffList = () => {
                 <img
                     src={record.imageProfile || "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"}
                     alt={record.firstName}
-                    className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                    className="w-8 h-8 rounded-full object-contain border border-gray-200"
                 />
             ),
         },

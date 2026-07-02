@@ -1,55 +1,37 @@
 import type { TableColumnsType } from 'antd';
 import XDataTable from '../../component/XDataTable/XDataTable';
 import "../../component/XDataTable/XdataTable.css";
-import { BiCategory } from 'react-icons/bi';
+import { TbTruckDelivery } from 'react-icons/tb';
 import { useState } from 'react';
 import { useGlobleContextDarklight, useRefreshTable } from '../../AllContext/context';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
-import { useFileUpload } from '../../component/FileUpload/Usefileupload'; // ✅ Import Hook
-import CategoryForm from './CategoryForm1';
+import SupplierForm from './SupplierForm';
 
-interface Category {
+interface Supplier {
     id: number;
     name: string;
-    description: string;
-    image: string;
-    isActive: boolean;
+    phone: string;
+    email: string;
+    address: string;
     createdDate: string;
     updatedDate: string;
     createdBy: string;
 }
 
-const CategoryList = () => {
+const SupplierList = () => {
     const { darkLight } = useGlobleContextDarklight();
     const [showModal, setShowModal] = useState(false);
-    const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
-    const [recordToDelete, setRecordToDelete] = useState<Category | null>(null); // ✅ Store ទាំង Record
+    const [selectedSupplierId, setSelectedSupplierId] = useState<number | undefined>(undefined);
+    const [recordToDelete, setRecordToDelete] = useState<Supplier | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
-    const { deleteImage } = useFileUpload(); // ✅ ប្រើ deleteImage ពី Hook
 
-    const columns: TableColumnsType<Category> = [
+    const columns: TableColumnsType<Supplier> = [
         {
-            title: 'Image',
-            key: 'image',
-            width: 70,
-            align: 'center',
-            render: (_, record) => (
-                record.image
-                    ? <img src={record.image} alt={record.name}
-                        onError={(e) => { (e.target as HTMLImageElement).src = "https://yokohama-soei-fc.com/wpdata/wp-content/uploads/2022/03/noimage.png"; }}
-                        className="w-10 h-10 rounded-lg object-contain mx-auto" />
-                    : <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto text-lg font-bold
-                        ${darkLight ? "bg-gray-700 text-gray-400" : "bg-purple-100 text-purple-500"}`}>
-                        {record.name?.charAt(0).toUpperCase()}
-                    </div>
-            ),
-        },
-        {
-            title: 'Category Name',
+            title: 'Supplier Name',
             key: 'name',
             render: (_, record) => (
                 <div>
@@ -58,27 +40,26 @@ const CategoryList = () => {
             ),
         },
         {
-            title: 'Status',
-            key: 'isActive',
-            align: 'center',
+            title: 'Phone',
+            key: 'phone',
             render: (_, record) => (
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${record.isActive
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-600"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${record.isActive ? "bg-teal-500" : "bg-red-400"}`} />
-                    {record.isActive ? "Active" : "Inactive"}
-                </span>
+                <p className={`text-xs ${darkLight ? "text-gray-300" : "text-gray-600"}`}>{record.phone || "-"}</p>
             ),
         },
         {
-            title: 'Description',
-            key: 'description',
+            title: 'Email',
+            key: 'email',
             render: (_, record) => (
-                <div>
-                    <p className={`text-xs mt-0.5 truncate max-w-[220px] ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
-                        {record.description}
-                    </p>
-                </div>
+                <p className={`text-xs ${darkLight ? "text-gray-300" : "text-gray-600"}`}>{record.email || "-"}</p>
+            ),
+        },
+        {
+            title: 'Address',
+            key: 'address',
+            render: (_, record) => (
+                <p className={`text-xs mt-0.5 truncate max-w-[220px] ${darkLight ? "text-gray-400" : "text-gray-500"}`}>
+                    {record.address || "-"}
+                </p>
             ),
         },
         {
@@ -88,13 +69,13 @@ const CategoryList = () => {
             width: 130,
             render: (_, record) => (
                 <div className="flex gap-2 justify-center">
-                    <ComponentPermission scopes={["category:update"]}>
+                    <ComponentPermission scopes={["supplier:update"]}>
                         <button onClick={() => handleEdit(record)}
                             className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
                             Edit
                         </button>
                     </ComponentPermission>
-                    <ComponentPermission scopes={["category:delete"]}>
+                    <ComponentPermission scopes={["supplier:delete"]}>
                         <button onClick={() => handleOpenDeleteModal(record)}
                             className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors cursor-pointer">
                             Delete
@@ -105,12 +86,12 @@ const CategoryList = () => {
         },
     ];
 
-    const handleAddCategory = () => { setSelectedCategoryId(undefined); setShowModal(true); };
-    const handleEdit = (record: Category) => { setSelectedCategoryId(record.id); setShowModal(true); };
-    const handleCloseModal = () => { setShowModal(false); setSelectedCategoryId(undefined); };
+    const handleAddSupplier = () => { setSelectedSupplierId(undefined); setShowModal(true); };
+    const handleEdit = (record: Supplier) => { setSelectedSupplierId(record.id); setShowModal(true); };
+    const handleCloseModal = () => { setShowModal(false); setSelectedSupplierId(undefined); };
 
-    const handleOpenDeleteModal = (record: Category) => {
-        setRecordToDelete(record); //Store ទាំង Record
+    const handleOpenDeleteModal = (record: Supplier) => {
+        setRecordToDelete(record);
         setShowDeleteModal(true);
         setTimeout(() => setIsDeleteAnimating(true), 10);
     };
@@ -123,15 +104,11 @@ const CategoryList = () => {
     const handleDeleteConfirm = async () => {
         if (!recordToDelete) return;
         try {
-            // Delete រូបភាព ដំបូង — ប្រើ deleteImage ពី Hook
-            await deleteImage(recordToDelete.image);
-
-            // Delete Record
-            await DeleteData("Category", recordToDelete.id);
+            await DeleteData("Suppliers", recordToDelete.id);
             handleCloseDeleteModal();
             setRefreshTables(new Date());
         } catch (error) {
-            console.error("Error deleting category:", error);
+            console.error("Error deleting supplier:", error);
         }
     };
 
@@ -139,29 +116,29 @@ const CategoryList = () => {
         <>
             <div className="flex items-center justify-between gap-2 my-2">
                 <div className="flex items-center gap-1 min-w-0">
-                    <BiCategory className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0 ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
+                    <TbTruckDelivery className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0 ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
                     <h3 className={`font-bold text-sm sm:text-2xl whitespace-nowrap ${darkLight ? 'text-white' : 'text-gray-900'}`}>
-                        CATEGORY MANAGEMENT
+                        SUPPLIER MANAGEMENT
                     </h3>
                 </div>
-                <ComponentPermission scopes={["category:create"]}>
-                    <button onClick={handleAddCategory}
+                <ComponentPermission scopes={["supplier:create"]}>
+                    <button onClick={handleAddSupplier}
                         className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                        Add Category
+                        Add Supplier
                     </button>
                 </ComponentPermission>
             </div>
 
             <XDataTable
-                TableName='Category list'
+                TableName='Supplier list'
                 columns={columns}
-                apiUrl='Category'
+                apiUrl='Suppliers'
                 selection={true}
                 hideAction={true}
-                searchPlaceholder="Search by name, description..."
+                searchPlaceholder="Search by name, phone, email..."
             />
 
-            {showModal && <CategoryForm categoryId={selectedCategoryId} onClose={handleCloseModal} />}
+            {showModal && <SupplierForm supplierId={selectedSupplierId} onClose={handleCloseModal} />}
 
             {/* Delete Modal */}
             {showDeleteModal && (
@@ -180,7 +157,7 @@ const CategoryList = () => {
                                 </div>
                                 <h3 className={`text-xl font-bold mb-2 ${darkLight ? "text-white" : "text-gray-900"}`}>Confirm Deletion</h3>
                                 <p className={`mb-6 ${darkLight ? "text-gray-300" : "text-gray-600"}`}>
-                                    This action cannot be undone. Do you want to delete this category?
+                                    This action cannot be undone. Do you want to delete this supplier?
                                 </p>
                                 <div className="flex justify-center gap-3">
                                     <button onClick={handleCloseDeleteModal}
@@ -201,4 +178,4 @@ const CategoryList = () => {
     );
 };
 
-export default CategoryList;
+export default SupplierList;

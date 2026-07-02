@@ -33,7 +33,7 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
     const { createData, updateData, GetDatabyID, loading } = HookIntergrateAPI<DiscountFormData>();
     const [isAnimating, setIsAnimating] = useState(false);
     const hasInitialized = useRef(false);
-    const [isGlobal, setIsGlobal] = useState(true);
+    const [isAllProduct, setIsAllProduct] = useState(true);
     const [selectedProducts, setSelectedProducts] = useState<SingleValue[]>([]);
 
     const [formData, setFormData] = useState<DiscountFormData>({
@@ -66,7 +66,7 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
                 isActive: data.isActive ?? true,
                 productIds: data.products?.map((p: any) => p.productId) ?? [],
             });
-            setIsGlobal(data.isGlobal ?? true);
+            setIsAllProduct(data.isAllProducts ?? true);
             if (data.products?.length > 0) {
                 setSelectedProducts(data.products.map((p: any) => ({
                     id: p.productId, name: p.productName,
@@ -97,7 +97,7 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
         if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
             alertError("End date must be after start date!"); return;
         }
-        if (!isGlobal && formData.productIds.length === 0) {
+        if (!isAllProduct && formData.productIds.length === 0) {
             alertError("Please select at least one product!"); return;
         }
         const payload = {
@@ -109,7 +109,8 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
             startDate: formData.startDate || null,
             endDate: formData.endDate || null,
             isActive: formData.isActive,
-            productIds: isGlobal ? [] : formData.productIds,
+            isAllProducts: isAllProduct,
+            productIds: isAllProduct ? [] : formData.productIds,
         };
         if (discountId) {
             await updateData("Discount", discountId, payload as any, () => setTimeout(() => handleClose(), 500));
@@ -263,27 +264,27 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
                                 {/* Apply To */}
                                 <div>
                                     <label className={labelClass}>Apply To</label>
-                                    <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${isGlobal
+                                    <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${isAllProduct
                                         ? dl ? "border-purple-600 bg-purple-900/20" : "border-purple-400 bg-purple-50"
                                         : dl ? "border-orange-600 bg-orange-900/20" : "border-orange-400 bg-orange-50"}`}>
                                         <div>
-                                            <p className={`text-sm font-semibold ${isGlobal ? dl ? "text-purple-300" : "text-purple-700" : dl ? "text-orange-300" : "text-orange-700"}`}>
-                                                {isGlobal ? "🌐 All Products" : "🎯 Specific Products"}
+                                            <p className={`text-sm font-semibold ${isAllProduct ? dl ? "text-purple-300" : "text-purple-700" : dl ? "text-orange-300" : "text-orange-700"}`}>
+                                                {isAllProduct ? "🌐 All Products" : "🎯 Specific Products"}
                                             </p>
                                             <p className={`text-xs ${dl ? "text-gray-500" : "text-gray-400"}`}>
-                                                {isGlobal ? "Applies to every product" : "Select products below"}
+                                                {isAllProduct ? "Applies to every product" : "Select products below"}
                                             </p>
                                         </div>
                                         <button type="button"
-                                            onClick={() => { setIsGlobal(v => !v); setSelectedProducts([]); setFormData(prev => ({ ...prev, productIds: [] })); }}
-                                            className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 focus:outline-none shadow-inner ${!isGlobal ? "bg-orange-500" : dl ? "bg-gray-600" : "bg-gray-300"}`}>
-                                            <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ${!isGlobal ? "left-4" : "left-0.5"}`} />
+                                            onClick={() => { setIsAllProduct(v => !v); setSelectedProducts([]); setFormData(prev => ({ ...prev, productIds: [] })); }}
+                                            className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 focus:outline-none shadow-inner ${isAllProduct ? "bg-orange-500" : dl ? "bg-gray-600" : "bg-gray-300"}`}>
+                                            <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ${isAllProduct ? "left-4" : "left-0.5"}`} />
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* Product selector */}
-                                {!isGlobal && (
+                                {!isAllProduct && (
                                     <div className="md:col-span-2">
                                         <label className={labelClass}>
                                             Select Products <span className="text-red-500">*</span>
@@ -299,7 +300,7 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
                                             multiple={true}
                                             placeholder="Search and select products..."
                                             selectOption={{
-                                                apiEndpoint: "Product",
+                                                apiEndpoint: "Products",
                                                 id: "id", name: "name", value: "id",
                                                 pageSize: 20, searchParam: "Search",
                                             }}

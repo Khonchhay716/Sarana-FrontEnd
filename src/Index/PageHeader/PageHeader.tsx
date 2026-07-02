@@ -51,7 +51,7 @@ const Index = () => {
 
   // ── Full menu — used everywhere (mobile overlay + desktop sidebar) ─────────
   const renderMenu = () => (
-    <nav className="flex-1 overflow-y-auto px-3 space-y-1 sidebar-nav mt-3" style={{ scrollbarWidth: "thin" }}>
+    <nav className="flex-1 overflow-y-auto px-2 space-y-1 sidebar-nav mt-3 pb-5" style={{ scrollbarWidth: "thin" }}>
       {filteredMenu.map((item) => {
         const visibleChildren = item.children?.filter((child) => hasPermission(child.permission));
         const isOpen = active === item.label;
@@ -125,12 +125,10 @@ const Index = () => {
           {/* ══════════════ MOBILE — full-screen overlay ══════════════ */}
           {sidebarVisible && (
             <div className="md:hidden">
-              {/* Backdrop */}
               <div
                 className="fixed inset-0 top-[65px] bg-black/50 z-30"
                 onClick={() => setSidebarVisible(false)}
               />
-              {/* Full-screen menu */}
               <div className={`fixed inset-0 top-[65px] z-40 flex flex-col ${darkLight ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}>
                 {renderMenu()}
               </div>

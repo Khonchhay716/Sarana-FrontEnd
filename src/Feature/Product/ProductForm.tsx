@@ -1,27 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { useGlobleContextDarklight } from "../../AllContext/context";
-import XSelectSearch, { SingleValue } from "../../component/XSelectSearch/Xselectsearch";
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
 import { alertError } from "../../HtmlHelper/Alert";
 import { useFileUpload } from "../../component/FileUpload/Usefileupload";
 import ComponentPermission from "../../component/ProtextRoute/ComponentPermissions";
+import XSelectSearch, { SingleValue } from "../../component/XSelectSearch/Xselectsearch";
+
+const PRODUCT_TYPE = {
+    Serialized: 0,
+    NonSerialized: 1,
+};
 
 interface ProductFormData {
     id?: number;
+    code: string;
     name: string;
     description: string;
-    sku: string;
-    barcode: string;
-    price: number;
-    costPrice: number;
-    taxRate: number;
+    imageUrl: string;
+    productType: number;
+    unit: string;
+    costPrice: number | string;
+    salePrice: number | string;
+    lowStockThreshold: number | "";
     categoryId: number | null;
-    branchId: number | null;
-    imageProduct: string;
-    isSerialNumber: boolean;
-    minStock: number;
-    ram: string;
-    storage: string;
 }
 
 interface ProductFormProps {
@@ -34,9 +35,8 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
     const { createData, updateData, GetDatabyID, loading } = HookIntergrateAPI<ProductFormData>();
     const [isAnimating, setIsAnimating] = useState(false);
     const hasInitialized = useRef(false);
-    const [selectedCategory, setSelectedCategory] = useState<SingleValue | null>(null);
-    const [selectedBranch, setSelectedBranch] = useState<SingleValue | null>(null);
     const [alertEnabled, setAlertEnabled] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<SingleValue | null>(null);
 
     const {
         preview: imagePreview,
@@ -52,20 +52,16 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
     } = useFileUpload();
 
     const [formData, setFormData] = useState<ProductFormData>({
+        code: "",
         name: "",
         description: "",
-        sku: "",
-        barcode: "",
-        price: 0,
-        costPrice: 0,
-        taxRate: 0,
+        imageUrl: "",
+        productType: PRODUCT_TYPE.NonSerialized,
+        unit: "",
+        costPrice: "",
+        salePrice: "",
+        lowStockThreshold: "",
         categoryId: null,
-        branchId: null,
-        imageProduct: "",
-        isSerialNumber: false,
-        minStock: 0,
-        ram: "",
-        storage: "",
     });
 
     const dl = darkLight;
@@ -83,47 +79,55 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
 
     const loadProductData = async () => {
         if (!productId) return;
-        const data: any = await GetDatabyID("Product", productId);
+        const data: any = await GetDatabyID("Products", productId);
         if (data) {
             setFormData({
                 id: data.id,
+                code: data.code || "",
                 name: data.name || "",
                 description: data.description || "",
-                sku: data.sku || "",
-                barcode: data.barcode || "",
-                price: data.price ?? 0,
-                costPrice: data.costPrice ?? 0,
-                taxRate: data.taxRate ?? 0,
+                imageUrl: data.imageUrl || "",
+                productType: data.productType ?? PRODUCT_TYPE.NonSerialized,
+                unit: data.unit || "",
+                // no input / 0 => show empty field
+                costPrice: data.costPrice ? data.costPrice : "",
+                salePrice: data.salePrice ? data.salePrice : "",
+                lowStockThreshold: data.lowStockThreshold ? data.lowStockThreshold : "",
                 categoryId: data.categoryId ?? null,
-                branchId: data.branchId ?? null,
-                imageProduct: data.imageProduct || "",
-                isSerialNumber: data.isSerialNumber ?? false,
-                minStock: data.minStock ?? 0,
-                ram: data.ram || "",
-                storage: data.storage || "",
             });
-            if ((data.minStock ?? 0) > 0) setAlertEnabled(true);
-            if (data.imageProduct) setExistingUrl(data.imageProduct);
-            if (data.category)
-                setSelectedCategory({ id: data.categoryId, name: data.category.name, value: data.categoryId, data: data.category });
-            if (data.branch)
-                setSelectedBranch({ id: data.branchId, name: data.branch.name, value: data.branchId, data: data.branch });
+            if ((data.lowStockThreshold ?? 0) > 0) setAlertEnabled(true);
+            if (data.imageUrl) setExistingUrl(data.imageUrl);
+
+            if (data.categoryId) {
+                setSelectedCategory({
+                    id: data.categoryId,
+                    name: data.categoryName || "Unknown Category",
+                    value: data.categoryId,
+                    data: null
+                });
+            }
         }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
-        setFormData(prev => ({ ...prev, [name]: type === "number" ? parseFloat(value) || 0 : value }));
+        if (type === "number") {
+            // allow empty box, don't force 0 while typing
+            setFormData(prev => ({
+                ...prev,
+                [name]: value === "" ? "" : parseFloat(value),
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
-    const handleCategoryChange = (value: SingleValue | null) => {
-        setSelectedCategory(value);
-        setFormData(prev => ({ ...prev, categoryId: value ? Number(value.id) : null }));
-    };
-
-    const handleBranchChange = (value: SingleValue | null) => {
-        setSelectedBranch(value);
-        setFormData(prev => ({ ...prev, branchId: value ? Number(value.id) : null }));
+    const handleCategoryChange = (val: SingleValue | null) => {
+        setSelectedCategory(val);
+        setFormData(prev => ({
+            ...prev,
+            categoryId: val ? (val.id as number) : null
+        }));
     };
 
     const handleClose = () => { setIsAnimating(false); setTimeout(() => onClose(), 300); };
@@ -131,51 +135,48 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name.trim()) { alertError("Product name is required!"); return; }
-        if (!formData.sku.trim()) { alertError("SKU is required!"); return; }
-        if (!formData.categoryId) { alertError("Category is required!"); return; }
-        if (formData.price < 0) { alertError("Price cannot be negative!"); return; }
-        if (alertEnabled && formData.minStock <= 0) {
+        if (!formData.code.trim()) { alertError("Code is required!"); return; }
+        if (formData.salePrice === "" || formData.salePrice === null) { alertError("Sale price is required!"); return; }
+        if (formData.costPrice === "" || formData.costPrice === null) { alertError("Cost price is required!"); return; }
+        if (Number(formData.salePrice) < 0) { alertError("Sale price cannot be negative!"); return; }
+        if (Number(formData.costPrice) < 0) { alertError("Cost price cannot be negative!"); return; }
+        if (alertEnabled && (formData.lowStockThreshold === "" || Number(formData.lowStockThreshold) <= 0)) {
             alertError("Low stock threshold must be greater than 0 when alert is enabled!"); return;
         }
 
-        let imageUrl = formData.imageProduct;
+        let imageUrl = formData.imageUrl;
 
         if (isRemoved) {
-            await deleteImage(formData.imageProduct);
+            await deleteImage(formData.imageUrl);
             imageUrl = "";
-
         } else if (hasNewFile) {
-            await deleteImage(formData.imageProduct);
+            await deleteImage(formData.imageUrl);
             const uploadedUrl = await uploadFile();
             if (!uploadedUrl) return;
             imageUrl = uploadedUrl;
         }
 
         const payload = {
+            code: formData.code,
             name: formData.name,
             description: formData.description,
-            sku: formData.sku,
-            barcode: formData.barcode,
-            price: formData.price,
-            costPrice: formData.costPrice,
-            taxRate: formData.taxRate,
+            imageUrl: imageUrl,
+            productType: formData.productType,
+            unit: formData.unit,
+            costPrice: formData.costPrice === "" ? 0 : Number(formData.costPrice),
+            salePrice: formData.salePrice === "" ? 0 : Number(formData.salePrice),
+            lowStockThreshold: alertEnabled ? (formData.lowStockThreshold === "" ? 0 : Number(formData.lowStockThreshold)) : 0,
             categoryId: formData.categoryId,
-            branchId: formData.branchId,
-            imageProduct: imageUrl,
-            isSerialNumber: formData.isSerialNumber,
-            minStock: alertEnabled ? formData.minStock : 0,
-            ram: formData.isSerialNumber ? (formData.ram || null) : null,
-            storage: formData.isSerialNumber ? (formData.storage || null) : null,
         };
 
         if (productId) {
-            await updateData("Product", productId, payload as any, () => setTimeout(() => handleClose(), 500), undefined,
+            await updateData("Products", productId, payload as any, () => setTimeout(() => handleClose(), 500), undefined,
                 async () => {
                     if (hasNewFile && imageUrl) await deleteImage(imageUrl);
                 }
             );
         } else {
-            await createData("Product", payload as any, () => setTimeout(() => handleClose(), 500), false,
+            await createData("Products", payload as any, () => setTimeout(() => handleClose(), 500), false,
                 async () => {
                     if (imageUrl) await deleteImage(imageUrl);
                 }
@@ -253,56 +254,45 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                         className={inputClass} placeholder="Enter product name" />
                                 </div>
 
-                                {/* SKU */}
+                                {/* Code */}
                                 <div>
-                                    <label className={labelClass}>SKU <span className="text-red-500">*</span></label>
-                                    <input type="text" name="sku" value={formData.sku} onChange={handleInputChange}
-                                        className={inputClass} placeholder="Enter SKU" />
+                                    <label className={labelClass}>Code <span className="text-red-500">*</span></label>
+                                    <input type="text" name="code" value={formData.code} onChange={handleInputChange}
+                                        className={inputClass} placeholder="Enter product code" />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Category</label>
+                                    <XSelectSearch
+                                        value={selectedCategory}
+                                        onChange={handleCategoryChange}
+                                        placeholder="Select category..."
+                                        selectOption={{
+                                            apiEndpoint: "Category",
+                                            id: "id",
+                                            name: "name"
+                                        }}
+                                    />
                                 </div>
 
-                                {/* Barcode */}
+                                {/* Unit */}
                                 <div>
-                                    <label className={labelClass}>Barcode</label>
-                                    <input type="text" name="barcode" value={formData.barcode} onChange={handleInputChange}
-                                        className={inputClass} placeholder="Enter barcode" />
-                                </div>
-
-                                {/* Category */}
-                                <div>
-                                    <label className={labelClass}>Category <span className="text-red-500">*</span></label>
-                                    <XSelectSearch value={selectedCategory} onChange={handleCategoryChange} multiple={false}
-                                        placeholder="Select category"
-                                        selectOption={{ apiEndpoint: "Category/lookup", id: "id", name: "name", value: "id", pageSize: 20, searchParam: "Search" }}
-                                        isSearchable={true} />
-                                </div>
-
-                                {/* Branch */}
-                                <div>
-                                    <label className={labelClass}>Branch</label>
-                                    <XSelectSearch value={selectedBranch} onChange={handleBranchChange} multiple={false}
-                                        placeholder="Select branch (optional)"
-                                        selectOption={{ apiEndpoint: "Branch/lookup", id: "id", name: "branchName", value: "id", pageSize: 20, searchParam: "Search" }} />
+                                    <label className={labelClass}>Unit</label>
+                                    <input type="text" name="unit" value={formData.unit} onChange={handleInputChange}
+                                        className={inputClass} placeholder="e.g. pcs, box, kg" />
                                 </div>
 
                                 {/* Sale Price */}
                                 <div>
                                     <label className={labelClass}>Sale Price ($) <span className="text-red-500">*</span></label>
-                                    <input type="number" name="price" value={formData.price} onChange={handleInputChange}
+                                    <input type="number" name="salePrice" value={formData.salePrice} onChange={handleInputChange}
                                         className={inputClass} placeholder="0.00" min={0} step="0.01" />
                                 </div>
 
                                 {/* Cost Price */}
                                 <div>
-                                    <label className={labelClass}>Cost Price ($)</label>
+                                    <label className={labelClass}>Cost Price ($) <span className="text-red-500">*</span></label>
                                     <input type="number" name="costPrice" value={formData.costPrice} onChange={handleInputChange}
                                         className={inputClass} placeholder="0.00" min={0} step="0.01" />
-                                </div>
-
-                                {/* Tax Rate */}
-                                <div>
-                                    <label className={labelClass}>Tax Rate (%)</label>
-                                    <input type="number" name="taxRate" value={formData.taxRate} onChange={handleInputChange}
-                                        className={inputClass} placeholder="0" min={0} step="0.01" />
                                 </div>
 
                                 {/* Stock Tracking Type */}
@@ -310,30 +300,30 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                     <label className={labelClass}>Stock Tracking Type</label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <button type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, isSerialNumber: false, ram: "", storage: "" }))}
+                                            onClick={() => setFormData(prev => ({ ...prev, productType: PRODUCT_TYPE.NonSerialized }))}
                                             disabled={!!productId}
-                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${!formData.isSerialNumber
+                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${formData.productType === PRODUCT_TYPE.NonSerialized
                                                 ? "border-purple-500 bg-purple-50"
                                                 : dl ? "border-gray-600 bg-gray-700/30" : "border-gray-200 bg-gray-50"
                                                 } ${!!productId ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-purple-400"}`}>
                                             <div>
-                                                <p className={`text-sm font-bold ${!formData.isSerialNumber ? "text-purple-600" : dl ? "text-gray-300" : "text-gray-700"}`}>Non-Serialized</p>
+                                                <p className={`text-sm font-bold ${formData.productType === PRODUCT_TYPE.NonSerialized ? "text-purple-600" : dl ? "text-gray-300" : "text-gray-700"}`}>Non-Serialized</p>
                                                 <p className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>Track by quantity</p>
                                             </div>
-                                            {!formData.isSerialNumber && <span className="ml-auto w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">✓</span>}
+                                            {formData.productType === PRODUCT_TYPE.NonSerialized && <span className="ml-auto w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">✓</span>}
                                         </button>
                                         <button type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, isSerialNumber: true }))}
+                                            onClick={() => setFormData(prev => ({ ...prev, productType: PRODUCT_TYPE.Serialized }))}
                                             disabled={!!productId}
-                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${formData.isSerialNumber
+                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${formData.productType === PRODUCT_TYPE.Serialized
                                                 ? "border-blue-500 bg-blue-50"
                                                 : dl ? "border-gray-600 bg-gray-700/30" : "border-gray-200 bg-gray-50"
                                                 } ${!!productId ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-blue-400"}`}>
                                             <div>
-                                                <p className={`text-sm font-bold ${formData.isSerialNumber ? "text-blue-600" : dl ? "text-gray-300" : "text-gray-700"}`}>Serialized</p>
+                                                <p className={`text-sm font-bold ${formData.productType === PRODUCT_TYPE.Serialized ? "text-blue-600" : dl ? "text-gray-300" : "text-gray-700"}`}>Serialized</p>
                                                 <p className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>Track by serial number</p>
                                             </div>
-                                            {formData.isSerialNumber && <span className="ml-auto w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">✓</span>}
+                                            {formData.productType === PRODUCT_TYPE.Serialized && <span className="ml-auto w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">✓</span>}
                                         </button>
                                     </div>
                                     {!!productId && (
@@ -343,32 +333,6 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                     )}
                                 </div>
 
-                                {/* RAM + Storage */}
-                                {formData.isSerialNumber && (
-                                    <div className="md:col-span-2">
-                                        <div className={`rounded-xl border-2 p-4 transition-all ${dl ? "border-blue-700 bg-blue-900/10" : "border-blue-200 bg-blue-50/50"}`}>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={`block mb-1.5 text-sm font-semibold ${dl ? "text-blue-300" : "text-blue-700"}`}>
-                                                        RAM
-                                                        <span className={`ml-1 text-xs font-normal ${dl ? "text-gray-500" : "text-gray-400"}`}>(optional)</span>
-                                                    </label>
-                                                    <input type="text" name="ram" value={formData.ram} onChange={handleInputChange}
-                                                        className={inputClass} placeholder="e.g. 8GB, 12GB, 16GB" />
-                                                </div>
-                                                <div>
-                                                    <label className={`block mb-1.5 text-sm font-semibold ${dl ? "text-blue-300" : "text-blue-700"}`}>
-                                                        Storage
-                                                        <span className={`ml-1 text-xs font-normal ${dl ? "text-gray-500" : "text-gray-400"}`}>(optional)</span>
-                                                    </label>
-                                                    <input type="text" name="storage" value={formData.storage} onChange={handleInputChange}
-                                                        className={inputClass} placeholder="e.g. 128GB, 256GB, 1TB" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
                                 {/* Low Stock Alert */}
                                 <div className="md:col-span-2">
                                     <div className={`rounded-xl border-2 transition-all p-4 ${alertEnabled
@@ -376,7 +340,6 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                         : dl ? "border-gray-600 bg-gray-700/20" : "border-gray-200 bg-gray-50"}`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xl">🔔</span>
                                                 <div>
                                                     <p className={`text-sm font-bold ${alertEnabled ? dl ? "text-amber-300" : "text-amber-700" : dl ? "text-gray-300" : "text-gray-700"}`}>
                                                         Low Stock Alert
@@ -387,7 +350,7 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                                 </div>
                                             </div>
                                             <button type="button"
-                                                onClick={() => { setAlertEnabled(v => !v); if (alertEnabled) setFormData(prev => ({ ...prev, minStock: 0 })); }}
+                                                onClick={() => { setAlertEnabled(v => !v); if (alertEnabled) setFormData(prev => ({ ...prev, lowStockThreshold: "" })); }}
                                                 className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${alertEnabled ? "bg-amber-500" : dl ? "bg-gray-600" : "bg-gray-300"}`}>
                                                 <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${alertEnabled ? "left-5" : "left-0.5"}`} />
                                             </button>
@@ -398,14 +361,14 @@ const ProductForm = ({ productId, onClose }: ProductFormProps) => {
                                                     <label className={`text-xs font-semibold mb-1 block ${dl ? "text-amber-300" : "text-amber-700"}`}>
                                                         Alert when stock ≤
                                                     </label>
-                                                    <input type="number" name="minStock" value={formData.minStock} onChange={handleInputChange}
+                                                    <input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleInputChange}
                                                         min={1} placeholder="e.g. 5"
                                                         className={`w-full px-4 py-2.5 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${dl
                                                             ? "bg-gray-700/50 border-amber-600 text-gray-100 focus:border-amber-500"
                                                             : "bg-white border-amber-400 text-gray-900 focus:border-amber-500 focus:bg-amber-50/30"}`} />
                                                 </div>
                                                 <div className={`flex-1 text-xs rounded-lg p-3 ${dl ? "bg-amber-900/20 text-amber-300" : "bg-amber-50 text-amber-700"}`}>
-                                                    Warning badge appears when stock reaches <strong>{formData.minStock || "?"}</strong> units or below.
+                                                    Warning badge appears when stock reaches <strong>{formData.lowStockThreshold || "?"}</strong> units or below.
                                                 </div>
                                             </div>
                                         )}
