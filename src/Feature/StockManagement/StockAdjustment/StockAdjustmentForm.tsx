@@ -212,7 +212,7 @@ const StockAdjustmentForm = ({ initialProduct, onClose, onSuccess }: StockAdjust
 
         setSaving(true);
         try {
-            await AxiosApi.post("stock/adjust", payload);
+            await AxiosApi.post("stock/adjustments", payload);
             onSuccess();
             setRefreshTables(new Date());
             alertify.success("Stock adjustment saved");

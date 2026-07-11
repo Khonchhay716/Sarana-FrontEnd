@@ -9,11 +9,9 @@ import {
 } from "react-icons/bi";
 import { AxiosApi } from "../component/Axios/Axios";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 type FilterOption = "today" | "thisWeek" | "thisMonth" | "lastMonth" | "thisYear" | "custom" | "none";
 interface DateRange { from: string; to: string; }
 
-// ✅ Matches DashboardSummaryInfo from POS.Application/Features/Dashboard/DashboardSummaryQuery.cs
 interface SalesSummary {
     totalSold: number;
     totalOrders: number;
