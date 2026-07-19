@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import carFront from '../../../assets/carfront.png';
 import front_left from '../../../assets/front-left.png';
 import front_right from '../../../assets/front-right.png';

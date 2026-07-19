@@ -5,7 +5,6 @@ import { useGlobleContextDarklight } from '../../../AllContext/context';
 import ComponentPermission from '../../../component/ProtextRoute/ComponentPermissions';
 import XDataTable from '../../../component/XDataTable/XDataTable';
 import StockInForm from './Stockinform';
-import StockOutForm from './Stockoutform';
 import StockMovementDetail from './StockMovementDetail'; // ✅ Import Detail Component
 import StockInSummaryButton from './StockInSummaryButton';
 
@@ -31,10 +30,10 @@ interface StockMovementRow {
     createdBy: { id: number; name: string } | null; // ✅ Made nullable
 }
 
-// ✅ Added beautiful type badges
+// ✅ Added beautiful type badges — Out no longer appears: GET /api/stock/movements
+// excludes it now, stock-out has its own dedicated screen/history.
 const TYPE_LABEL: Record<string, { label: string; icon: string; dark: string; light: string }> = {
     "In": { label: "Stock In", icon: "📥", dark: "bg-emerald-900/40 text-emerald-300", light: "bg-emerald-100 text-emerald-700" },
-    "Out": { label: "Stock Out", icon: "📤", dark: "bg-red-900/40 text-red-300", light: "bg-red-100 text-red-700" },
     "Adjustment": { label: "Adjust", icon: "⚙️", dark: "bg-amber-900/40 text-amber-300", light: "bg-amber-100 text-amber-700" },
     "ReturnOut": { label: "Return Out", icon: "🚚", dark: "bg-purple-900/40 text-purple-300", light: "bg-purple-100 text-purple-700" },
     "ReturnIn": { label: "Return In", icon: "🔄", dark: "bg-blue-900/40 text-blue-300", light: "bg-blue-100 text-blue-700" },
@@ -43,13 +42,10 @@ const TYPE_LABEL: Record<string, { label: string; icon: string; dark: string; li
 const StockMovementList = () => {
     const { darkLight } = useGlobleContextDarklight();
     const [showInModal, setShowInModal] = useState(false);
-    const [showOutModal, setShowOutModal] = useState(false);
     const [viewId, setViewId] = useState<number | null>(null);
 
     const handleOpenIn = () => setShowInModal(true);
-    const handleOpenOut = () => setShowOutModal(true);
     const handleCloseIn = () => setShowInModal(false);
-    const handleCloseOut = () => setShowOutModal(false);
 
     const columns: TableColumnsType<StockMovementRow> = [
         {
@@ -166,11 +162,6 @@ const StockMovementList = () => {
                             ➕ Stock In
                         </button>
                     </ComponentPermission>
-                    <ComponentPermission scopes={["stockmovement:create"]}>
-                        <button onClick={handleOpenOut} className="bg-red-500 hover:bg-red-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                            ➖ Stock Out
-                        </button>
-                    </ComponentPermission>
                 </div>
             </div>
 
@@ -184,7 +175,6 @@ const StockMovementList = () => {
             />
 
             {showInModal && <StockInForm onClose={handleCloseIn} onSuccess={handleCloseIn} />}
-            {showOutModal && <StockOutForm onClose={handleCloseOut} onSuccess={handleCloseOut} />}
 
             {viewId !== null && <StockMovementDetail id={viewId} onClose={() => setViewId(null)} />}
         </>

@@ -26,6 +26,7 @@ export const all_routes = {
     Discount: "discount",
     LowStock: "lowstock",
     SaleProduct: "sale-product",
+    StockOut: "stock-out",
     OrderList: "order-list",
     Member: "member",
     Staff: "staff",

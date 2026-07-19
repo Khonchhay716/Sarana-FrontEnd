@@ -8,7 +8,6 @@ import CustomerForm from './CustomerForm';
 import PersonForm from './PersonForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import { useFileUpload } from '../../component/FileUpload/Usefileupload';
-import { FaUserCheck, FaUserPlus } from 'react-icons/fa';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
 interface UserInfo {

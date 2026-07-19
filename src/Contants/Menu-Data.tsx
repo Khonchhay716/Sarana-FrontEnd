@@ -20,7 +20,6 @@ import {
 } from "react-icons/fa";
 
 import {
-  MdOutlineStorefront,
   MdPeopleAlt,
   MdInventory2,
   MdCompareArrows,

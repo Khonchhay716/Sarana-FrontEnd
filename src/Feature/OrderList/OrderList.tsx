@@ -1,19 +1,18 @@
 import type { TableColumnsType } from 'antd';
 import XDataTable from '../../component/XDataTable/XDataTable';
 import "../../component/XDataTable/XdataTable.css";
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useGlobleContextDarklight } from '../../AllContext/context';
 import {
-    ShoppingCart, ChevronDown, X, TrendingUp, Eye, Package, CreditCard,
-    User, Clock, Hash, Shield, SlidersHorizontal, Loader2,
-    BarChart3, DollarSign, Banknote, QrCode, Star
+    ShoppingCart, X, TrendingUp, Eye, Package,
+    Clock, SlidersHorizontal,
+    BarChart3
 } from 'lucide-react';
 import XSelectSearch, { SingleValue } from '../../component/XSelectSearch/Xselectsearch';
-import { AxiosApi } from '../../component/Axios/Axios';
-import { alertError } from '../../HtmlHelper/Alert';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import OrderDetailModal from './OrderDetailModal';
 import SalesSummaryModal from './showFilterSalesuumary';
+import StockOutModal from '../StockManagement/StockOut/StockOutModal';
 
 // ==================== INTERFACES (matched to real API) ====================
 
@@ -32,50 +31,7 @@ interface OrderListItem {
     note: string;
     createdDate: string;
     createBy: number;
-}
-
-// ---- Detail response (GET /api/orders/{id}) ----
-interface OrderDetailItem {
-    id: number;
-    productId: number;
-    productName: string;
-    quantity: number;
-    unitPrice: number;
-    imageUrl: string | null;
-    discountAmount: number;
-    discountName: string | null;
-    globalDiscountAmount: number;
-    globalDiscountName: string | null;
-    lineTotal: number;
-    serialNumbers: string[] | null;
-    warrantyDays: number | null;
-    warrantyStartDate: string | null;
-    warrantyEndDate: string | null;
-    hasWarranty: boolean;
-    isWarrantyActive: boolean;
-    remainingWarrantyDays: number | null;
-    warrantyStatus: string;
-}
-
-interface OrderDetail {
-    id: number;
-    orderNo: string;
-    customerId: number | null;
-    customerName: string;
-    createBy: {
-        id: number;
-        name: string;
-    }
-    status: string;
-    paymentMethod: string;
-    subTotal: number;
-    discountAmount: number;
-    totalAmount: number;
-    pointEarned: number;
-    pointUsed: number;
-    note: string;
-    createdDate: string;
-    items: OrderDetailItem[];
+    stockOutStatus: "Pending" | "Completed" | "NotApplicable";
 }
 
 // ---- Sales summary response (GET /api/orders/sales-summary) ----
@@ -262,6 +218,7 @@ const OrderList = () => {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+    const [stockOutOrderNo, setStockOutOrderNo] = useState<string | null>(null);
 
     const extraParams: Record<string, string> = {};
     if (selectedCustomer?.id) extraParams['CustomerId'] = String(selectedCustomer.id);
@@ -282,13 +239,13 @@ const OrderList = () => {
 
     const columns: TableColumnsType<OrderListItem> = [
         {
-            title: 'Order', key: 'orderNo', width: 210,
+            title: 'Order', key: 'orderNo', width: 130,
             render: (_, record) => (
                 <p className={`font-bold text-sm font-mono ${darkLight ? 'text-indigo-300' : 'text-indigo-600'}`}>{record.orderNo}</p>
             ),
         },
         {
-            title: 'Date', key: 'createdDate', width: 170,
+            title: 'Date', key: 'createdDate', width: 150,
             render: (_, record) => (
                 <p className={`text-xs flex items-center gap-1 ${darkLight ? 'text-gray-400' : 'text-gray-500'}`}>
                     <Clock className="w-3 h-3" />
@@ -341,9 +298,20 @@ const OrderList = () => {
             render: (_, r) => <span className={`text-xs ${darkLight ? 'text-gray-400' : 'text-gray-500'}`}>{r.paymentMethod}</span>,
         },
         {
-            title: 'Action', key: 'action', align: 'center', width: 100,
+            title: 'Action', key: 'action', align: 'center', width: 200,
             render: (_, record) => (
-                <div className="flex gap-1.5 justify-end">
+                <div className="flex gap-1.5 justify-end flex-nowrap whitespace-nowrap">
+                    {record.stockOutStatus !== 'NotApplicable' && (
+                        <button onClick={() => record.stockOutStatus === 'Pending' && setStockOutOrderNo(record.orderNo)}
+                            disabled={record.stockOutStatus === 'Completed'}
+                            title={record.stockOutStatus === 'Completed' ? 'All serialized items already handed out' : undefined}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                            ${record.stockOutStatus === 'Completed'
+                                    ? (darkLight ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed')
+                                    : (darkLight ? 'bg-red-900/40 text-red-300 hover:bg-red-900/60' : 'bg-red-50 text-red-600 hover:bg-red-100')}`}>
+                            <Package className="w-3.5 h-3.5" /> {record.stockOutStatus === 'Completed' ? 'Handed Out' : 'Stock Out'}
+                        </button>
+                    )}
                     <ComponentPermission scopes={["order:view"]}>
                         <button onClick={() => setSelectedOrderId(record.id)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
@@ -436,6 +404,11 @@ const OrderList = () => {
             {/* ── View Modal ── */}
             {selectedOrderId != null && (
                 <OrderDetailModal orderId={selectedOrderId} darkLight={darkLight} onClose={() => setSelectedOrderId(null)} />
+            )}
+
+            {/* ── Stock Out Modal ── */}
+            {stockOutOrderNo != null && (
+                <StockOutModal orderNo={stockOutOrderNo} onClose={() => setStockOutOrderNo(null)} />
             )}
         </>
     );

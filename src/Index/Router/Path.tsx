@@ -16,11 +16,11 @@ import Permissions from "../../Feature/Role/Rolepermission.tsx";
 import ProtextRoute from "../../component/ProtextRoute/AuthPermissionScope.tsx";
 import Profile from "../../Feature/Profile.tsx/Profile.tsx";
 import ProductList from "../../Feature/Product/ProductList.tsx";
-import StockList from "../../Feature/Stock/StockList.tsx";
 import BranchList from "../../Feature/Branch/Branchlist.tsx";
 import DiscountList from "../../Feature/Discount/Discountlist.tsx";
 import ProductLowStockList from "../../Feature/Product/Productlowstocklist.tsx";
 import PosShop from "../../Feature/POS-Sale/Pos-Sale.tsx";
+import StockOutPage from "../../Feature/StockManagement/StockOut/StockOutPage.tsx";
 import OrderList from "../../Feature/OrderList/OrderList.tsx";
 import CustomerList from "../../Feature/Customer/Customerlist.tsx";
 import StaffList from "../../Feature/Staff/Stafflist.tsx";
@@ -31,7 +31,6 @@ import PointSetupPage from "../../Feature/PointSetup/PointSetupPage.tsx";
 import CategoryList from "../../Feature/Category/CategoryList1.tsx";
 import AutoClaimCamera from "../../component/Form/FormLoginLogout/Login.tsx";
 import StockMovementList from "../../Feature/StockManagement/StockMovement/StockMovement.tsx";
-import StockInForm from "../../Feature/StockManagement/StockMovement/Stockinform.tsx";
 import StockAdjustmentList from "../../Feature/StockManagement/StockAdjustment/StockAdjustmentList.tsx";
 import StockReturnList from "../../Feature/StockManagement/StockReturn/StockReturnList.tsx";
 import SupplierList from "../../Feature/supplier/SupplierList.tsx";
@@ -112,6 +111,15 @@ export const path = [
         element: (
             <ProtextRoute scopes={["order:create"]}>
                 <PosShop />
+            </ProtextRoute>
+        ),
+        route: Route,
+    },
+    {
+        path: routes.StockOut,
+        element: (
+            <ProtextRoute scopes={["stockmovement:create"]}>
+                <StockOutPage />
             </ProtextRoute>
         ),
         route: Route,
