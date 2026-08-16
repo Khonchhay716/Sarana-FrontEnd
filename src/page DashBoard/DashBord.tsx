@@ -1,6 +1,7 @@
 import { useGlobleContextDarklight } from '../AllContext/context';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     BiDesktop, BiCart, BiDollarCircle, BiCreditCard, BiStore,
     BiCalendar, BiChevronDown, BiX, BiRefresh,
@@ -188,6 +189,7 @@ const FilterDropdown = ({
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 const Dashboard = () => {
     const { darkLight } = useGlobleContextDarklight();
+    const navigate = useNavigate();
 
     // Filter state
     const [filterOption, setFilterOption] = useState<FilterOption>("none");
@@ -226,7 +228,7 @@ const Dashboard = () => {
         } finally {
             setTimeout(() => {
                 setLoading(false);
-            }, 300);
+            }, 100);
 
         }
     }, [fromDate, toDate]);
@@ -243,14 +245,17 @@ const Dashboard = () => {
 
     // ── Sub-components ──────────────────────────────────────────────────────────
     const MetricCard = ({
-        title, value, icon, gradient, textColor, description, prefix = "", isLoading, isError,
+        title, value, icon, gradient, textColor, description, prefix = "", isLoading, isError, onClick,
     }: {
         title: string; value?: number | string | null;
         icon: React.ReactNode; gradient: string; textColor: string;
         description: string; prefix?: string;
-        isLoading?: boolean; isError?: boolean;
+        isLoading?: boolean; isError?: boolean; onClick?: () => void;
     }) => (
-        <div className={`p-4 sm:p-5 rounded-2xl shadow-xl flex-1 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl border ${dl
+        <div
+            onClick={onClick}
+            role={onClick ? "button" : undefined}
+            className={`p-4 sm:p-5 rounded-2xl shadow-xl flex-1 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl border ${onClick ? "cursor-pointer" : ""} ${dl
             ? "bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 hover:border-gray-500"
             : "bg-white border-gray-100 hover:border-gray-300"}`}>
             <div className="flex items-start justify-between mb-3 sm:mb-4">
@@ -346,6 +351,7 @@ const Dashboard = () => {
                         description="Completed orders"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/order-list")}
                     />
                     <MetricCard
                         title="Total Sale Price"
@@ -357,6 +363,7 @@ const Dashboard = () => {
                         description="Total sales revenue"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/order-list")}
                     />
 
                 </div>
@@ -371,6 +378,7 @@ const Dashboard = () => {
                         description="Paid by cash"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/order-list")}
                     />
                     <MetricCard
                         title="QR Sales"
@@ -382,6 +390,7 @@ const Dashboard = () => {
                         description="Paid by KHQR"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/order-list")}
                     />
                     <MetricCard
                         title="Point Sales"
@@ -393,6 +402,7 @@ const Dashboard = () => {
                         description="Paid by points"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/order-list")}
                     />
                 </div>
             </div>
@@ -412,6 +422,7 @@ const Dashboard = () => {
                         description="Net stock-in quantity"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/product")}
                     />
                     <MetricCard
                         title="Grand Total Price"
@@ -423,10 +434,13 @@ const Dashboard = () => {
                         description="Net stock-in value"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/product")}
                     />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
-                    <div className={`rounded-2xl p-4 sm:p-5 border-2 ${dl ? "border-blue-700/40 bg-blue-900/10" : "border-blue-200 bg-blue-50"}`}>
+                    <div
+                        onClick={() => navigate("/product")}
+                        className={`rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all hover:scale-[1.02] ${dl ? "border-blue-700/40 bg-blue-900/10" : "border-blue-200 bg-blue-50"}`}>
                         <p className={`text-sm font-bold mb-3 flex items-center gap-2 ${dl ? "text-blue-300" : "text-blue-700"}`}>
                             🔢 Serialized
                         </p>
@@ -443,7 +457,9 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-                    <div className={`rounded-2xl p-4 sm:p-5 border-2 ${dl ? "border-purple-700/40 bg-purple-900/10" : "border-purple-200 bg-purple-50"}`}>
+                    <div
+                        onClick={() => navigate("/product")}
+                        className={`rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all hover:scale-[1.02] ${dl ? "border-purple-700/40 bg-purple-900/10" : "border-purple-200 bg-purple-50"}`}>
                         <p className={`text-sm font-bold mb-3 flex items-center gap-2 ${dl ? "text-purple-300" : "text-purple-700"}`}>
                             📦 Non-Serialized
                         </p>
@@ -478,6 +494,7 @@ const Dashboard = () => {
                         description="Registered suppliers"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/supplier")}
                     />
                     <MetricCard
                         title="Total Customers"
@@ -488,6 +505,7 @@ const Dashboard = () => {
                         description="Registered customers"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/member")}
                     />
                     <MetricCard
                         title="Total Staff"
@@ -498,6 +516,7 @@ const Dashboard = () => {
                         description="Active staff members"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/staff")}
                     />
                     <MetricCard
                         title="Total Categories"
@@ -508,6 +527,7 @@ const Dashboard = () => {
                         description="Product categories"
                         isLoading={loading}
                         isError={!!error}
+                        onClick={() => navigate("/category")}
                     />
                 </div>
             </div>

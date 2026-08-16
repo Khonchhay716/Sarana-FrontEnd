@@ -8,6 +8,7 @@ import ProductForm from './ProductForm';
 import { HookIntergrateAPI } from '../../component/HookintagrateAPI/HookintegarteApi';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 import { useFileUpload } from '../../component/FileUpload/Usefileupload';
+import XSelectSearch, { type SingleValue } from '../../component/XSelectSearch/Xselectsearch';
 
 interface Product {
     id: number;
@@ -36,6 +37,7 @@ const ProductList = () => {
     const [recordToDelete, setRecordToDelete] = useState<Product | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleteAnimating, setIsDeleteAnimating] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<SingleValue | null>(null);
     const { DeleteData } = HookIntergrateAPI();
     const { setRefreshTables } = useRefreshTable();
     const { deleteImage } = useFileUpload();
@@ -186,7 +188,7 @@ const ProductList = () => {
 
     return (
         <>
-            <div className="flex items-center justify-between gap-2 my-2">
+            <div className="flex items-center justify-between gap-2 my-2 flex-wrap">
                 <div className="flex items-center gap-2 min-w-0">
                     <BiPackage className={`w-7 h-7 sm:w-9 sm:h-9 drop-shadow-lg animate-bounce flex-shrink-0
                         ${darkLight ? "text-purple-400" : "text-purple-600"}`} />
@@ -194,12 +196,27 @@ const ProductList = () => {
                         PRODUCT MANAGEMENT
                     </h3>
                 </div>
-                <ComponentPermission scopes={["product:create"]}>
-                    <button onClick={handleAddProduct}
-                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                        Add Product
-                    </button>
-                </ComponentPermission>
+                <div className="flex items-center gap-2">
+                    <div className="w-48">
+                        <XSelectSearch
+                            value={selectedCategory}
+                            onChange={setSelectedCategory}
+                            placeholder="Filter by category..."
+                            clearable
+                            selectOption={{
+                                apiEndpoint: "Category",
+                                id: "id",
+                                name: "name"
+                            }}
+                        />
+                    </div>
+                    <ComponentPermission scopes={["product:create"]}>
+                        <button onClick={handleAddProduct}
+                            className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
+                            Add Product
+                        </button>
+                    </ComponentPermission>
+                </div>
             </div>
 
             <XDataTable
@@ -209,6 +226,7 @@ const ProductList = () => {
                 selection={false}
                 hideAction={true}
                 searchPlaceholder="Search by name, code..."
+                extraParams={selectedCategory ? { CategoryId: String(selectedCategory.id) } : undefined}
             />
 
             {showModal && <ProductForm productId={selectedProductId} onClose={handleCloseModal} />}
