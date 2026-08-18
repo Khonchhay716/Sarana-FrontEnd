@@ -210,7 +210,7 @@ const StockReturnForm = ({ onClose, onSuccess }: { onClose: () => void; onSucces
                                                     </div>
                                                     <div className={`flex flex-wrap gap-1.5 min-h-[30px] p-2 rounded border border-dashed ${dl ? "border-gray-600" : "border-gray-300"}`}>
                                                         {item.serialNumbers.map(sn => (
-                                                            <span key={sn} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-purple-900/30 text-purple-300 text-xs font-mono">
+                                                            <span key={sn} className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-xs font-mono ${dl ? "bg-purple-900/30 text-purple-300" : "bg-purple-100 text-purple-700"}`}>
                                                                 {sn}
                                                                 <button type="button" onClick={() => handleRemoveSerial(item.tempId, sn)} className="w-4 h-4 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[9px]">✕</button>
                                                             </span>
