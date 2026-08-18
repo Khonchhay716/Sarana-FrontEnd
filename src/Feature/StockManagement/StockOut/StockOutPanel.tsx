@@ -170,9 +170,7 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
     );
 
     return (
-        <ComponentPermission scopes={["stockmovement:create"]} fallback={
-            <p className="text-sm text-red-500">You don't have permission to perform stock out.</p>
-        }>
+        <>
             {!selectedOrderItem ? (
                 orderAlreadyDone ? (
                     // ✅ CHANGED: nothing left to hand out for this order — hide the form
@@ -260,7 +258,7 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
                     )}
                 </div>
             )}
-        </ComponentPermission>
+        </>
     );
 };
 
