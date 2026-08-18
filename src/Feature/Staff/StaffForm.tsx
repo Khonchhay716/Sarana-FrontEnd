@@ -238,6 +238,19 @@ const StaffForm = ({ staffId, onClose }: StaffFormProps) => {
                                         onChange={handleInputChange} className={inputClass} placeholder="Enter last name" />
                                 </div>
 
+                                {/* Supervisor */}
+                                <div className="md:col-span-2">
+                                    <label className={labelClass}>Supervisor</label>
+                                    <XSelectSearch
+                                        multiple={false}
+                                        value={selectedSupervisor}
+                                        onChange={handleSupervisorChange}
+                                        placeholder="Select supervisor..."
+                                        selectOption={{ apiEndpoint: "Staff/lookup", id: "id", name: "fullName", value: "id" }}
+                                        bgColor={dl ? "#374151" : "#ffffff"}
+                                    />
+                                </div>
+
                                 {/* Phone Number */}
                                 <div>
                                     <label className={labelClass}>Phone Number <span className="text-red-500">*</span></label>
@@ -261,19 +274,6 @@ const StaffForm = ({ staffId, onClose }: StaffFormProps) => {
                                             onChange={handleInputChange} className={`${inputClass} pl-7`}
                                             placeholder="0.00" min="0" step="0.01" />
                                     </div>
-                                </div>
-
-                                {/* Supervisor */}
-                                <div className="md:col-span-2">
-                                    <label className={labelClass}>Supervisor</label>
-                                    <XSelectSearch
-                                        multiple={false}
-                                        value={selectedSupervisor}
-                                        onChange={handleSupervisorChange}
-                                        placeholder="Select supervisor..."
-                                        selectOption={{ apiEndpoint: "Staff/lookup", id: "id", name: "fullName", value: "id" }}
-                                        bgColor={dl ? "#374151" : "#ffffff"}
-                                    />
                                 </div>
 
                                 {/* Status */}
