@@ -3,7 +3,6 @@ import { useGlobleContextDarklight, useRefreshTable } from "../../../AllContext/
 import { alertError } from "../../../HtmlHelper/Alert";
 import { AxiosApi } from "../../../component/Axios/Axios";
 import alertify from "alertifyjs";
-import ComponentPermission from "../../../component/ProtextRoute/ComponentPermissions";
 
 // GET /api/orders/pending-items?orderNo=... — serialized order lines still awaiting handout
 interface PendingOrderItem {
