@@ -31,7 +31,7 @@ interface OrderListItem {
     note: string;
     createdDate: string;
     createBy: number;
-    stockOutStatus: "Pending" | "Completed" | "NotApplicable";
+    stockOutStatus: "Pending" | "Partial" | "Completed" | "NotApplicable";
 }
 
 // ---- Sales summary response (GET /api/orders/sales-summary) ----
@@ -302,9 +302,9 @@ const OrderList = () => {
             render: (_, record) => (
                 <div className="flex gap-1.5 justify-end flex-nowrap whitespace-nowrap">
                     {record.stockOutStatus !== 'NotApplicable' && (
-                        <button onClick={() => record.stockOutStatus === 'Pending' && setStockOutOrderNo(record.orderNo)}
+                        <button onClick={() => record.stockOutStatus !== 'Completed' && setStockOutOrderNo(record.orderNo)}
                             disabled={record.stockOutStatus === 'Completed'}
-                            title={record.stockOutStatus === 'Completed' ? 'All serialized items already handed out' : undefined}
+                            title={record.stockOutStatus === 'Completed' ? 'All items already handed out' : undefined}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
                             ${record.stockOutStatus === 'Completed'
                                     ? (darkLight ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed')

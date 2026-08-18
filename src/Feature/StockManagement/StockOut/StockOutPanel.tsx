@@ -4,13 +4,15 @@ import { alertError } from "../../../HtmlHelper/Alert";
 import { AxiosApi } from "../../../component/Axios/Axios";
 import alertify from "alertifyjs";
 
-// GET /api/orders/pending-items?orderNo=... — serialized order lines still awaiting handout
+// GET /api/orders/pending-items?orderNo=... — order lines still awaiting handout
+// (both serialized and non-serialized)
 interface PendingOrderItem {
     orderItemId: number;
     productId: number;
     productCode: string;
     productName: string;
     quantity: number;
+    requiresSerial: boolean;
 }
 
 // GET /api/products/Scan-Serial?serialNo=... response
@@ -19,6 +21,18 @@ interface ProductScanInfo {
     productName: string;
     isSerial: boolean;
     scannedSerialNumber: string | null;
+    [key: string]: any;
+}
+
+// GET /api/products/Scan?code=... response — used to verify a scanned/entered code
+// matches the locked non-serialized order line before confirming stock/out.
+interface ProductCodeScanInfo {
+    productId: number;
+    productCode: string;
+    productName: string;
+    productType: string;
+    isSerial: boolean;
+    stockQuantity: number;
     [key: string]: any;
 }
 
@@ -31,8 +45,9 @@ interface StockOutPanelProps {
     onDone?: () => void;
 }
 
-// Find an order by Order No, then scan the physical unit's serial to confirm handout —
-// used at stock-out time only, for serialized order lines.
+// Find an order by Order No, then confirm handout per line — serialized lines are
+// confirmed by scanning each unit's serial; non-serialized lines are confirmed by
+// scanning/entering the product code and submitting the (fixed) ordered quantity.
 const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPanelProps) => {
     const { darkLight } = useGlobleContextDarklight();
     const dl = darkLight;
@@ -50,6 +65,13 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
     const [validatingSerial, setValidatingSerial] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const scanInputRef = useRef<HTMLInputElement>(null);
+
+    // Non-serialized confirm flow: scan/enter the product code to verify it matches
+    // the locked line, then submit the (fixed) ordered quantity.
+    const [codeInput, setCodeInput] = useState("");
+    const [validatingCode, setValidatingCode] = useState(false);
+    const [codeVerified, setCodeVerified] = useState(false);
+    const codeInputRef = useRef<HTMLInputElement>(null);
 
     const handleOrderLookup = async (noOverride?: string) => {
         const no = (noOverride ?? orderNoInput).trim(); if (!no) return;
@@ -86,13 +108,16 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
         setPendingItems([]);
         setSerialNumbers([]);
         setNewSerialInput("");
-        setTimeout(() => scanInputRef.current?.focus(), 50);
+        setCodeInput("");
+        setCodeVerified(false);
+        setTimeout(() => (item.requiresSerial ? scanInputRef : codeInputRef).current?.focus(), 50);
     };
 
     const handleChangeOrderItem = () => {
         setSelectedOrderItem(null);
         setOrderNoInput(""); setOrderLookupError(""); setOrderAlreadyDone(false); setPendingItems([]);
         setSerialNumbers([]); setNewSerialInput("");
+        setCodeInput(""); setCodeVerified(false);
     };
 
     const handleRemoveSerial = (sn: string) => {
@@ -119,6 +144,8 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
             setSelectedOrderItem(null);
             setSerialNumbers([]);
             setNewSerialInput("");
+            setCodeInput("");
+            setCodeVerified(false);
             handleOrderLookup(orderNoInput);
         } catch (err: any) {
             alertError(err?.response?.data?.message || "Failed to save stock out.");
@@ -155,6 +182,28 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
             alertError(err?.response?.data?.message || `Serial "${t}" not found or not available.`);
         } finally {
             setValidatingSerial(false);
+        }
+    };
+
+    // Scanning/entering a code validates it via GET /api/products/Scan — confirms it
+    // resolves to the same product as the locked order item. Quantity for a
+    // non-serialized line is fixed to the ordered quantity, so once the code matches,
+    // staff just confirms — no per-unit scanning needed.
+    const handleScanCode = async () => {
+        const t = codeInput.trim(); if (!t || !selectedOrderItem) return;
+        setValidatingCode(true);
+        try {
+            const res = await AxiosApi.get("Products/Scan", { params: { Code: t } });
+            const scanned: ProductCodeScanInfo | undefined = res?.data?.data;
+            if (!scanned) { alertError(`Code "${t}" not found.`); return; }
+            if (scanned.productId !== selectedOrderItem.productId) {
+                alertError(`Code "${t}" belongs to a different product (${scanned.productName}).`); return;
+            }
+            setCodeVerified(true);
+        } catch (err: any) {
+            alertError(err?.response?.data?.message || `Code "${t}" not found.`);
+        } finally {
+            setValidatingCode(false);
         }
     };
 
@@ -195,7 +244,9 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
                                     <button key={it.orderItemId} type="button" onClick={() => handleSelectPendingItem(it)}
                                         className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all ${dl ? "border-gray-600 hover:border-red-500 hover:bg-red-900/10" : "border-gray-200 hover:border-red-400 hover:bg-red-50/50"}`}>
                                         <p className={`text-sm font-semibold ${dl ? "text-gray-100" : "text-gray-900"}`}>{it.productName} <span className="font-mono text-xs text-gray-400">{it.productCode}</span></p>
-                                        <p className={`text-xs mt-0.5 ${dl ? "text-gray-400" : "text-gray-500"}`}>Needs {it.quantity} serial(s)</p>
+                                        <p className={`text-xs mt-0.5 ${dl ? "text-gray-400" : "text-gray-500"}`}>
+                                            {it.requiresSerial ? `Needs ${it.quantity} serial(s)` : `Qty ${it.quantity} — scan code to confirm`}
+                                        </p>
                                     </button>
                                 ))}
                             </div>
@@ -207,9 +258,15 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
                     <div className={`rounded-xl border p-3 flex items-center justify-between gap-3 ${dl ? "border-gray-600 bg-gray-700/30" : "border-gray-200 bg-gray-50"}`}>
                         <div className="min-w-0">
                             <p className={`text-xs ${dl ? "text-gray-400" : "text-gray-500"}`}>Order <span className="font-mono">{orderNoInput}</span></p>
-                            <p className={`text-sm font-bold truncate ${dl ? "text-white" : "text-gray-900"}`}>{selectedOrderItem.productName}</p>
+                            <p className={`text-sm font-bold truncate ${dl ? "text-white" : "text-gray-900"}`}>{selectedOrderItem.productName} <span className="font-mono text-xs font-normal text-gray-400">{selectedOrderItem.productCode}</span></p>
                             <p className={`text-xs mt-0.5 ${dl ? "text-gray-400" : "text-gray-500"}`}>
-                                <span className={`px-2 py-0.5 rounded-full font-bold ${dl ? "bg-red-900/30 text-red-300" : "bg-red-100 text-red-700"}`}>{serialNumbers.length} / {selectedOrderItem.quantity} scanned</span>
+                                {selectedOrderItem.requiresSerial ? (
+                                    <span className={`px-2 py-0.5 rounded-full font-bold ${dl ? "bg-red-900/30 text-red-300" : "bg-red-100 text-red-700"}`}>{serialNumbers.length} / {selectedOrderItem.quantity} scanned</span>
+                                ) : (
+                                    <span className={`px-2 py-0.5 rounded-full font-bold ${codeVerified ? (dl ? "bg-emerald-900/30 text-emerald-300" : "bg-emerald-100 text-emerald-700") : (dl ? "bg-red-900/30 text-red-300" : "bg-red-100 text-red-700")}`}>
+                                        {codeVerified ? "Code verified" : `Qty ${selectedOrderItem.quantity}`}
+                                    </span>
+                                )}
                             </p>
                         </div>
                         <button type="button" onClick={handleChangeOrderItem} disabled={submitting}
@@ -218,42 +275,85 @@ const StockOutPanel = ({ initialOrderNo, onStockOutSuccess, onDone }: StockOutPa
                         </button>
                     </div>
 
-                    <div>
-                        <label className={labelClass}>Scan Serial Number</label>
-                        <div className="flex gap-2">
-                            <input ref={scanInputRef} type="text" value={newSerialInput} autoFocus
-                                disabled={validatingSerial || submitting}
-                                onChange={e => setNewSerialInput(e.target.value)}
-                                onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleScanSerial())}
-                                className={`${inputClass} disabled:opacity-50`}
-                                placeholder="Scan serial number — Enter to submit" />
-                            <div className={`w-[46px] flex-shrink-0 flex items-center justify-center rounded-lg cursor-default select-none ${dl ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"}`}>
-                                {(validatingSerial || submitting) ? <Spinner size={4} /> : (
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-                                        <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-                                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-                                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                                        <line x1="7" y1="12" x2="17" y2="12"></line>
-                                    </svg>
-                                )}
+                    {selectedOrderItem.requiresSerial ? (
+                        <>
+                            <div>
+                                <label className={labelClass}>Scan Serial Number</label>
+                                <div className="flex gap-2">
+                                    <input ref={scanInputRef} type="text" value={newSerialInput} autoFocus
+                                        disabled={validatingSerial || submitting}
+                                        onChange={e => setNewSerialInput(e.target.value)}
+                                        onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleScanSerial())}
+                                        className={`${inputClass} disabled:opacity-50`}
+                                        placeholder="Scan serial number — Enter to submit" />
+                                    <div className={`w-[46px] flex-shrink-0 flex items-center justify-center rounded-lg cursor-default select-none ${dl ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"}`}>
+                                        {(validatingSerial || submitting) ? <Spinner size={4} /> : (
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                                <line x1="7" y1="12" x2="17" y2="12"></line>
+                                            </svg>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className={`text-xs mt-1.5 ${dl ? "text-gray-500" : "text-gray-400"}`}>Stock out is recorded automatically once the required quantity has been scanned.</p>
                             </div>
-                        </div>
-                        <p className={`text-xs mt-1.5 ${dl ? "text-gray-500" : "text-gray-400"}`}>Stock out is recorded automatically once the required quantity has been scanned.</p>
-                    </div>
 
-                    {serialNumbers.length > 0 && (
-                        <div className={`flex gap-2 rounded-xl border-2 border-dashed p-3 ${dl ? "border-gray-600" : "border-gray-300"}`}>
-                            <div className={`rounded-xl border p-4 min-h-[60px] flex flex-wrap items-center gap-x-1.5 gap-y-2 w-full ${dl ? "border-gray-600" : "border-gray-200"}`}>
-                                {serialNumbers.map(sn => (
-                                    <span key={sn} className={`inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full ${dl ? "bg-red-900/30" : "bg-red-50"}`}>
-                                        <span className={`text-sm font-mono ${dl ? "text-red-200" : "text-red-700"}`}>{sn}</span>
-                                        <button type="button" onClick={() => handleRemoveSerial(sn)} disabled={submitting}
-                                            className="w-5 h-5 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] flex-shrink-0 transition-colors disabled:opacity-50">✕</button>
-                                    </span>
-                                ))}
+                            {serialNumbers.length > 0 && (
+                                <div className={`flex gap-2 rounded-xl border-2 border-dashed p-3 ${dl ? "border-gray-600" : "border-gray-300"}`}>
+                                    <div className={`rounded-xl border p-4 min-h-[60px] flex flex-wrap items-center gap-x-1.5 gap-y-2 w-full ${dl ? "border-gray-600" : "border-gray-200"}`}>
+                                        {serialNumbers.map(sn => (
+                                            <span key={sn} className={`inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full ${dl ? "bg-red-900/30" : "bg-red-50"}`}>
+                                                <span className={`text-sm font-mono ${dl ? "text-red-200" : "text-red-700"}`}>{sn}</span>
+                                                <button type="button" onClick={() => handleRemoveSerial(sn)} disabled={submitting}
+                                                    className="w-5 h-5 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] flex-shrink-0 transition-colors disabled:opacity-50">✕</button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div>
+                                <label className={labelClass}>Scan Product Code</label>
+                                <div className="flex gap-2">
+                                    <input ref={codeInputRef} type="text" value={codeInput} autoFocus
+                                        disabled={validatingCode || submitting || codeVerified}
+                                        onChange={e => setCodeInput(e.target.value)}
+                                        onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleScanCode())}
+                                        className={`${inputClass} disabled:opacity-50`}
+                                        placeholder="Scan or type product code — Enter to verify" />
+                                    <div className={`w-[46px] flex-shrink-0 flex items-center justify-center rounded-lg cursor-default select-none ${dl ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"}`}>
+                                        {(validatingCode) ? <Spinner size={4} /> : (
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                                <line x1="7" y1="12" x2="17" y2="12"></line>
+                                            </svg>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className={`text-xs mt-1.5 ${dl ? "text-gray-500" : "text-gray-400"}`}>Verify the scanned code matches this product, then confirm to record the full ordered quantity.</p>
                             </div>
-                        </div>
+
+                            <div>
+                                <label className={labelClass}>Quantity</label>
+                                <input type="number" value={selectedOrderItem.quantity} disabled readOnly
+                                    className={`${inputClass} opacity-70 cursor-not-allowed`} />
+                            </div>
+
+                            {codeVerified && (
+                                <button type="button" onClick={() => submitStockOut(selectedOrderItem, [])} disabled={submitting}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 bg-red-600 text-white hover:bg-red-700">
+                                    {submitting ? <Spinner size={4} /> : "Confirm Stock Out"}
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             )}
