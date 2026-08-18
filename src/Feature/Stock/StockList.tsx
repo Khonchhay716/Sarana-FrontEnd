@@ -392,6 +392,7 @@ import StockForm, { StockFormProduct } from './StockForm';
 import { useGlobleContextDarklight } from '../../AllContext/context';
 import { AxiosApi } from '../../component/Axios/Axios';
 import "../../component/XDataTable/XdataTable.css";
+import { toLocalDate, parseLocalDateString, toLocalDayStart, toLocalDayEnd } from '../../utils/dateRange';
 
 interface Category { id: number; name: string; }
 interface SerialNumber {
@@ -427,13 +428,6 @@ const FILTER_OPTIONS: { label: string; value: FilterOption }[] = [
     { label: "This Year", value: "thisYear" },
     { label: "Custom", value: "custom" },
 ];
-
-const toLocalDate = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-};
 
 const getRange = (option: FilterOption): { from: string; to: string } => {
     const now = new Date();
@@ -585,8 +579,8 @@ const StockList = () => {
         try {
             setLoadingSummary(true);
             const params = new URLSearchParams();
-            if (from) params.append("StartDate", from);
-            if (to) params.append("EndDate", to);
+            if (from) params.append("StartDate", toLocalDayStart(parseLocalDateString(from)));
+            if (to) params.append("EndDate", toLocalDayEnd(parseLocalDateString(to)));
             const res = await AxiosApi.get(`Stock/stock-summary?${params.toString()}`);
             const data: StockSummaryResponse = res?.data?.data ?? res?.data ?? res;
             setSummary({

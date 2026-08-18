@@ -13,6 +13,7 @@ import ComponentPermission from '../../component/ProtextRoute/ComponentPermissio
 import OrderDetailModal from './OrderDetailModal';
 import SalesSummaryModal from './showFilterSalesuumary';
 import StockOutModal from '../StockManagement/StockOut/StockOutModal';
+import { toLocalDate, parseLocalDateString, toLocalDayStart, toLocalDayEnd } from '../../utils/dateRange';
 
 // ==================== INTERFACES (matched to real API) ====================
 
@@ -38,13 +39,12 @@ interface OrderListItem {
 
 // ==================== CONSTANTS ====================
 const DATE_PRESETS = [
-    { label: 'Today', getValue: () => { const d = new Date(); return { from: fmt(d), to: fmt(d) }; } },
-    { label: 'This Week', getValue: () => { const now = new Date(); const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1); return { from: fmt(mon), to: fmt(now) }; } },
-    { label: 'This Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth(), 1); return { from: fmt(first), to: fmt(now) }; } },
-    { label: 'Last Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth() - 1, 1); const last = new Date(now.getFullYear(), now.getMonth(), 0); return { from: fmt(first), to: fmt(last) }; } },
-    { label: 'This Year', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), 0, 1); return { from: fmt(first), to: fmt(now) }; } },
+    { label: 'Today', getValue: () => { const d = new Date(); return { from: toLocalDate(d), to: toLocalDate(d) }; } },
+    { label: 'This Week', getValue: () => { const now = new Date(); const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1); return { from: toLocalDate(mon), to: toLocalDate(now) }; } },
+    { label: 'This Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth(), 1); return { from: toLocalDate(first), to: toLocalDate(now) }; } },
+    { label: 'Last Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth() - 1, 1); const last = new Date(now.getFullYear(), now.getMonth(), 0); return { from: toLocalDate(first), to: toLocalDate(last) }; } },
+    { label: 'This Year', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), 0, 1); return { from: toLocalDate(first), to: toLocalDate(now) }; } },
 ];
-function fmt(d: Date) { return d.toISOString().split('T')[0]; }
 
 // ==================== STYLES ====================
 const getStatusStyle = (name: string) => ({
@@ -223,8 +223,8 @@ const OrderList = () => {
     const extraParams: Record<string, string> = {};
     if (selectedCustomer?.id) extraParams['CustomerId'] = String(selectedCustomer.id);
     if (selectedStaff?.id) extraParams['StaffId'] = String(selectedStaff.id);
-    if (fromDate) extraParams['FromDate'] = fromDate;
-    if (toDate) extraParams['ToDate'] = toDate;
+    if (fromDate) extraParams['FromDate'] = toLocalDayStart(parseLocalDateString(fromDate));
+    if (toDate) extraParams['ToDate'] = toLocalDayEnd(parseLocalDateString(toDate));
 
     const activeFilterCount = [selectedCustomer, selectedStaff, fromDate || toDate].filter(Boolean).length;
 

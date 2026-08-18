@@ -9,6 +9,7 @@ import {
     BiXCircle, BiQrScan, BiCoinStack, BiBox,
 } from "react-icons/bi";
 import { AxiosApi } from "../component/Axios/Axios";
+import { toLocalDate, parseLocalDateString, toLocalDayStart } from "../utils/dateRange";
 
 type FilterOption = "today" | "thisWeek" | "thisMonth" | "lastMonth" | "thisYear" | "custom" | "none";
 interface DateRange { from: string; to: string; }
@@ -47,32 +48,6 @@ const FILTER_OPTIONS: { label: string; value: FilterOption }[] = [
     { label: "This Year", value: "thisYear" },
     { label: "Custom", value: "custom" },
 ];
-
-const toLocalDate = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-};
-
-// Parses a "YYYY-MM-DD" string (from toLocalDate, or a native <input type="date">) into
-// a Date at LOCAL midnight of that day. Never pass such a string to `new Date(str)` directly —
-// the single-arg string constructor parses date-only strings as UTC midnight, which is the
-// exact bug this fixes.
-const parseLocalDateString = (s: string): Date => {
-    const [y, m, day] = s.split("-").map(Number);
-    return new Date(y, m - 1, day, 0, 0, 0, 0);
-};
-
-// Local midnight of the given Date, serialized as the UTC instant it represents. Safe
-// because the Date is built from local wall-clock getters (getFullYear/getMonth/getDate),
-// so toISOString() just converts that already-correct local instant to UTC — unlike sending
-// a bare "YYYY-MM-DD" string, which forces the backend to guess a timezone offset based on
-// its own server clock instead of the user's.
-const toLocalDayStart = (d: Date) => {
-    const local = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-    return local.toISOString();
-};
 
 const getRange = (option: FilterOption): DateRange => {
     const now = new Date();

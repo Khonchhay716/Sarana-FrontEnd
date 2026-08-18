@@ -4,6 +4,7 @@ import XSelectSearch, { SingleValue } from "../../component/XSelectSearch/Xselec
 import { HookIntergrateAPI } from "../../component/HookintagrateAPI/HookintegarteApi";
 import { alertError } from "../../HtmlHelper/Alert";
 import ComponentPermission from "../../component/ProtextRoute/ComponentPermissions";
+import { parseLocalDateString, toLocalDayStart, toLocalDayEnd } from "../../utils/dateRange";
 
 interface DiscountFormData {
     id?: number;
@@ -106,8 +107,8 @@ const DiscountForm = ({ discountId, onClose }: DiscountFormProps) => {
             type: formData.type,
             value: formData.value,
             minOrderAmount: formData.minOrderAmount || null,
-            startDate: formData.startDate || null,
-            endDate: formData.endDate || null,
+            startDate: formData.startDate ? toLocalDayStart(parseLocalDateString(formData.startDate)) : null,
+            endDate: formData.endDate ? toLocalDayEnd(parseLocalDateString(formData.endDate)) : null,
             isActive: formData.isActive,
             isAllProducts: isAllProduct,
             productIds: isAllProduct ? [] : formData.productIds,

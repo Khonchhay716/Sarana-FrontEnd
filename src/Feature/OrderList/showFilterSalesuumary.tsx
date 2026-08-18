@@ -3,6 +3,7 @@ import { AxiosApi } from "../../component/Axios/Axios";
 import { alertError } from "../../HtmlHelper/Alert";
 import { Banknote, BarChart3, DollarSign, Loader2, QrCode, ShoppingCart, Star, X } from "lucide-react";
 import XSelectSearch, { SingleValue } from "../../component/XSelectSearch/Xselectsearch";
+import { toLocalDate, parseLocalDateString, toLocalDayStart, toLocalDayEnd } from "../../utils/dateRange";
 
 interface SalesSummary {
     totalSold: number;
@@ -19,13 +20,12 @@ interface ApiResponse<T> {
 }
 
 const DATE_PRESETS = [
-    { label: 'Today', getValue: () => { const d = new Date(); return { from: fmt(d), to: fmt(d) }; } },
-    { label: 'This Week', getValue: () => { const now = new Date(); const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1); return { from: fmt(mon), to: fmt(now) }; } },
-    { label: 'This Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth(), 1); return { from: fmt(first), to: fmt(now) }; } },
-    { label: 'Last Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth() - 1, 1); const last = new Date(now.getFullYear(), now.getMonth(), 0); return { from: fmt(first), to: fmt(last) }; } },
-    { label: 'This Year', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), 0, 1); return { from: fmt(first), to: fmt(now) }; } },
+    { label: 'Today', getValue: () => { const d = new Date(); return { from: toLocalDate(d), to: toLocalDate(d) }; } },
+    { label: 'This Week', getValue: () => { const now = new Date(); const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1); return { from: toLocalDate(mon), to: toLocalDate(now) }; } },
+    { label: 'This Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth(), 1); return { from: toLocalDate(first), to: toLocalDate(now) }; } },
+    { label: 'Last Month', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth() - 1, 1); const last = new Date(now.getFullYear(), now.getMonth(), 0); return { from: toLocalDate(first), to: toLocalDate(last) }; } },
+    { label: 'This Year', getValue: () => { const now = new Date(); const first = new Date(now.getFullYear(), 0, 1); return { from: toLocalDate(first), to: toLocalDate(now) }; } },
 ];
-function fmt(d: Date) { return d.toISOString().split('T')[0]; }
 
 const DateFilter = ({ darkLight, fromDate, toDate, onChange }: {
     darkLight: boolean; fromDate: string; toDate: string; onChange: (from: string, to: string) => void;
@@ -90,8 +90,8 @@ const SalesSummaryModal = ({ darkLight, onClose }: { darkLight: boolean; onClose
     const fetchSummary = () => {
         const params: Record<string, string> = {};
         if (selectedStaff?.id) params['StaffId'] = String(selectedStaff.id);
-        if (fromDate) params['StartDate'] = fromDate;
-        if (toDate) params['EndDate'] = toDate;
+        if (fromDate) params['StartDate'] = toLocalDayStart(parseLocalDateString(fromDate));
+        if (toDate) params['EndDate'] = toLocalDayEnd(parseLocalDateString(toDate));
 
         setLoading(true);
         AxiosApi.get<ApiResponse<SalesSummary>>('Orders/sales-summary', { params })
