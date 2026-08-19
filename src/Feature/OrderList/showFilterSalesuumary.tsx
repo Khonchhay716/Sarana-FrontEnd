@@ -3,7 +3,7 @@ import { AxiosApi } from "../../component/Axios/Axios";
 import { alertError } from "../../HtmlHelper/Alert";
 import { Banknote, BarChart3, DollarSign, Loader2, QrCode, ShoppingCart, Star, X } from "lucide-react";
 import XSelectSearch, { SingleValue } from "../../component/XSelectSearch/Xselectsearch";
-import { toLocalDate, parseLocalDateString, toLocalDayStart, toLocalDayEnd } from "../../utils/dateRange";
+import { toLocalDate, parseLocalDateString, toLocalDayStart } from "../../utils/dateRange";
 
 interface SalesSummary {
     totalSold: number;
@@ -91,7 +91,7 @@ const SalesSummaryModal = ({ darkLight, onClose }: { darkLight: boolean; onClose
         const params: Record<string, string> = {};
         if (selectedStaff?.id) params['StaffId'] = String(selectedStaff.id);
         if (fromDate) params['StartDate'] = toLocalDayStart(parseLocalDateString(fromDate));
-        if (toDate) params['EndDate'] = toLocalDayEnd(parseLocalDateString(toDate));
+        if (toDate) params['EndDate'] = toLocalDayStart(parseLocalDateString(toDate));
 
         setLoading(true);
         AxiosApi.get<ApiResponse<SalesSummary>>('Orders/sales-summary', { params })

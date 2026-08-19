@@ -4,7 +4,7 @@ import { useGlobleContextDarklight } from "../../../AllContext/context";
 import XSelectSearch, { SingleValue } from "../../../component/XSelectSearch/Xselectsearch";
 import { alertError } from "../../../HtmlHelper/Alert";
 import { AxiosApi } from "../../../component/Axios/Axios";
-import { parseLocalDateString, toLocalDayStart, toLocalDayEnd } from "../../../utils/dateRange";
+import { parseLocalDateString, toLocalDayStart } from "../../../utils/dateRange";
 
 interface StockInSummaryResult {
     grandTotalPrice: number;
@@ -48,7 +48,7 @@ const StockInSummaryButton = () => {
                 SupplierId: selectedSupplier?.id,
                 CreatedBy: selectedUser?.id,
                 From: fromDate ? toLocalDayStart(parseLocalDateString(fromDate)) : undefined,
-                To: toDate ? toLocalDayEnd(parseLocalDateString(toDate)) : undefined,
+                To: toDate ? toLocalDayStart(parseLocalDateString(toDate)) : undefined,
             };
             const res = await AxiosApi("stock/in/summary", { params });
             setResult(res.data); // or setResult(res) — confirm this per my earlier note

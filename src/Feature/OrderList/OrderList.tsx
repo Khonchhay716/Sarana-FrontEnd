@@ -13,7 +13,7 @@ import ComponentPermission from '../../component/ProtextRoute/ComponentPermissio
 import OrderDetailModal from './OrderDetailModal';
 import SalesSummaryModal from './showFilterSalesuumary';
 import StockOutModal from '../StockManagement/StockOut/StockOutModal';
-import { toLocalDate, parseLocalDateString, toLocalDayStart, toLocalDayEnd } from '../../utils/dateRange';
+import { toLocalDate, parseLocalDateString, toLocalDayStart } from '../../utils/dateRange';
 
 // ==================== INTERFACES (matched to real API) ====================
 
@@ -224,7 +224,7 @@ const OrderList = () => {
     if (selectedCustomer?.id) extraParams['CustomerId'] = String(selectedCustomer.id);
     if (selectedStaff?.id) extraParams['StaffId'] = String(selectedStaff.id);
     if (fromDate) extraParams['FromDate'] = toLocalDayStart(parseLocalDateString(fromDate));
-    if (toDate) extraParams['ToDate'] = toLocalDayEnd(parseLocalDateString(toDate));
+    if (toDate) extraParams['ToDate'] = toLocalDayStart(parseLocalDateString(toDate));
 
     const activeFilterCount = [selectedCustomer, selectedStaff, fromDate || toDate].filter(Boolean).length;
 

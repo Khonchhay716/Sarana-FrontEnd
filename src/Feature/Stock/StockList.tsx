@@ -392,7 +392,7 @@ import StockForm, { StockFormProduct } from './StockForm';
 import { useGlobleContextDarklight } from '../../AllContext/context';
 import { AxiosApi } from '../../component/Axios/Axios';
 import "../../component/XDataTable/XdataTable.css";
-import { toLocalDate, parseLocalDateString, toLocalDayStart, toLocalDayEnd } from '../../utils/dateRange';
+import { toLocalDate, parseLocalDateString, toLocalDayStart } from '../../utils/dateRange';
 
 interface Category { id: number; name: string; }
 interface SerialNumber {
@@ -409,13 +409,15 @@ interface StockItem {
     isSerialNumber: boolean; serialNumbers: SerialNumber[]; stockMovements: StockMovement[];
 }
 
+// GET /api/stock/in/summary response — stock RECEIVED during the selected period
+// (a flow metric), not currently on-hand stock.
 interface StockSummaryResponse {
-    totalStockSerial: number;
-    totalStockMovement: number;
-    totalStockAll: number;
-    totalCostSerial: number;
-    totalCostMovement: number;
-    totalCostAll: number;
+    totalQuantity: number;
+    totalSerialQty: number;
+    totalNonSerialQty: number;
+    grandTotalPrice: number;
+    totalSerialPrice: number;
+    totalNonSerialPrice: number;
 }
 
 type FilterOption = "today" | "thisWeek" | "thisMonth" | "lastMonth" | "thisYear" | "custom" | "none";
@@ -560,8 +562,8 @@ const StockList = () => {
 
     const [loadingSummary, setLoadingSummary] = useState(false);
     const [summary, setSummary] = useState<StockSummaryResponse>({
-        totalStockSerial: 0, totalStockMovement: 0, totalStockAll: 0,
-        totalCostSerial: 0, totalCostMovement: 0, totalCostAll: 0,
+        totalQuantity: 0, totalSerialQty: 0, totalNonSerialQty: 0,
+        grandTotalPrice: 0, totalSerialPrice: 0, totalNonSerialPrice: 0,
     });
 
     useEffect(() => {
@@ -579,17 +581,17 @@ const StockList = () => {
         try {
             setLoadingSummary(true);
             const params = new URLSearchParams();
-            if (from) params.append("StartDate", toLocalDayStart(parseLocalDateString(from)));
-            if (to) params.append("EndDate", toLocalDayEnd(parseLocalDateString(to)));
-            const res = await AxiosApi.get(`Stock/stock-summary?${params.toString()}`);
+            if (from) params.append("From", toLocalDayStart(parseLocalDateString(from)));
+            if (to) params.append("To", toLocalDayStart(parseLocalDateString(to)));
+            const res = await AxiosApi.get(`stock/in/summary?${params.toString()}`);
             const data: StockSummaryResponse = res?.data?.data ?? res?.data ?? res;
             setSummary({
-                totalStockSerial: data.totalStockSerial ?? 0,
-                totalStockMovement: data.totalStockMovement ?? 0,
-                totalStockAll: data.totalStockAll ?? 0,
-                totalCostSerial: data.totalCostSerial ?? 0,
-                totalCostMovement: data.totalCostMovement ?? 0,
-                totalCostAll: data.totalCostAll ?? 0,
+                totalQuantity: data.totalQuantity ?? 0,
+                totalSerialQty: data.totalSerialQty ?? 0,
+                totalNonSerialQty: data.totalNonSerialQty ?? 0,
+                grandTotalPrice: data.grandTotalPrice ?? 0,
+                totalSerialPrice: data.totalSerialPrice ?? 0,
+                totalNonSerialPrice: data.totalNonSerialPrice ?? 0,
             });
         } catch (err) { console.error("Failed to fetch stock summary:", err); }
         finally { setLoadingSummary(false); }
@@ -721,10 +723,10 @@ const StockList = () => {
                 {/* ===== SUMMARY CARDS ===== */}
                 <div className={cardClass}>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-                        <MiniCard label="Total Stock" sublabel="all available" value={summary.totalStockAll.toLocaleString()} icon={<BiBarChartAlt2 />} loading={loadingSummary} color="blue" darkLight={dl} />
-                        <MiniCard label="Serial Stock" sublabel="available serials" value={summary.totalStockSerial.toLocaleString()} icon={<BiTag />} loading={loadingSummary} color="purple" darkLight={dl} />
-                        <MiniCard label="Non-Serial" sublabel="available units" value={summary.totalStockMovement.toLocaleString()} icon={<BiBox />} loading={loadingSummary} color="teal" darkLight={dl} />
-                        <MiniCard label="Total Cost" sublabel="in period" value={fmt$(summary.totalCostAll)} icon={<BiDollarCircle />} loading={loadingSummary} color="orange" darkLight={dl} />
+                        <MiniCard label="Total Stock In" sublabel="received in period" value={summary.totalQuantity.toLocaleString()} icon={<BiBarChartAlt2 />} loading={loadingSummary} color="blue" darkLight={dl} />
+                        <MiniCard label="Serial Stock In" sublabel="serial qty received" value={summary.totalSerialQty.toLocaleString()} icon={<BiTag />} loading={loadingSummary} color="purple" darkLight={dl} />
+                        <MiniCard label="Non-Serial Stock In" sublabel="non-serial qty received" value={summary.totalNonSerialQty.toLocaleString()} icon={<BiBox />} loading={loadingSummary} color="teal" darkLight={dl} />
+                        <MiniCard label="Total Cost" sublabel="stock-in cost, in period" value={fmt$(summary.grandTotalPrice)} icon={<BiDollarCircle />} loading={loadingSummary} color="orange" darkLight={dl} />
                     </div>
                 </div>
             </div>
