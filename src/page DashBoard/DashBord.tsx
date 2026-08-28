@@ -337,18 +337,18 @@ const Dashboard = () => {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
                     <MetricCard
-                        title="Total Orders"
+                        title="Total Sale"
                         value={summary?.salesSummary?.totalOrders}
                         icon={<BiCart />}
                         gradient="bg-gradient-to-br from-emerald-500 to-emerald-700"
                         textColor="text-emerald-500"
-                        description="Completed orders"
+                        description="Total number of orders"
                         isLoading={loading}
                         isError={!!error}
                         onClick={() => navigate("/order-list")}
                     />
                     <MetricCard
-                        title="Total Sale Price"
+                        title="Total Revenue"
                         prefix="$"
                         value={summary?.salesSummary?.totalSold}
                         icon={<BiDollarCircle />}
@@ -413,19 +413,19 @@ const Dashboard = () => {
                         icon={<BiBox />}
                         gradient="bg-gradient-to-br from-sky-500 to-sky-700"
                         textColor="text-sky-500"
-                        description="Net stock-in quantity"
+                        description="Total stock-in quantity"
                         isLoading={loading}
                         isError={!!error}
                         onClick={() => navigate("/product")}
                     />
                     <MetricCard
-                        title="Grand Total Price"
+                        title="Total Stock Cost"
                         prefix="$"
                         value={summary?.stockSummary?.grandTotalPrice}
                         icon={<BiDollarCircle />}
                         gradient="bg-gradient-to-br from-indigo-500 to-indigo-700"
                         textColor="text-indigo-500"
-                        description="Net stock-in value"
+                        description="Total stock-in cost"
                         isLoading={loading}
                         isError={!!error}
                         onClick={() => navigate("/product")}
@@ -445,7 +445,7 @@ const Dashboard = () => {
                                     <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>{(summary?.stockSummary?.totalSerialQty ?? 0).toLocaleString()}</p>}
                             </div>
                             <div>
-                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Price</p>
+                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Cost</p>
                                 {loading ? <AiOutlineLoading3Quarters className="animate-spin text-lg text-gray-400 mt-1" /> :
                                     <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>${(summary?.stockSummary?.totalSerialPrice ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
                             </div>
@@ -464,7 +464,7 @@ const Dashboard = () => {
                                     <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>{(summary?.stockSummary?.totalNonSerialQty ?? 0).toLocaleString()}</p>}
                             </div>
                             <div>
-                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Price</p>
+                                <p className={`text-[10px] uppercase font-bold ${dl ? "text-gray-500" : "text-gray-400"}`}>Cost</p>
                                 {loading ? <AiOutlineLoading3Quarters className="animate-spin text-lg text-gray-400 mt-1" /> :
                                     <p className={`text-lg font-bold ${dl ? "text-gray-100" : "text-gray-800"}`}>${(summary?.stockSummary?.totalNonSerialPrice ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
                             </div>

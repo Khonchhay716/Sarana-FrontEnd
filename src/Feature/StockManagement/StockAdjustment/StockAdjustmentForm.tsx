@@ -38,8 +38,8 @@ enum AdjustmentReason {
 type SerialAddMode = "single" | "csv";
 
 const ADJUSTMENT_TYPES = [
-    { value: TypeAdjustment.Over, label: "Over", description: "Stock is more than recorded", icon: "📈", color: { dark: "border-emerald-500 bg-emerald-900/30 text-emerald-300", light: "border-emerald-500 bg-emerald-50 text-emerald-700" }, inactive: { dark: "border-gray-600 text-gray-400 hover:border-gray-500", light: "border-gray-300 text-gray-500 hover:border-gray-400" } },
-    { value: TypeAdjustment.Lost, label: "Lost", description: "Stock is less than recorded", icon: "📉", color: { dark: "border-red-500 bg-red-900/30 text-red-300", light: "border-red-500 bg-red-50 text-red-700" }, inactive: { dark: "border-gray-600 text-gray-400 hover:border-gray-500", light: "border-gray-300 text-gray-500 hover:border-gray-400" } },
+    { value: TypeAdjustment.Over, label: "Increase", description: "Stock is more than recorded", icon: "📈", color: { dark: "border-emerald-500 bg-emerald-900/30 text-emerald-300", light: "border-emerald-500 bg-emerald-50 text-emerald-700" }, inactive: { dark: "border-gray-600 text-gray-400 hover:border-gray-500", light: "border-gray-300 text-gray-500 hover:border-gray-400" } },
+    { value: TypeAdjustment.Lost, label: "Decrease", description: "Stock is less than recorded", icon: "📉", color: { dark: "border-red-500 bg-red-900/30 text-red-300", light: "border-red-500 bg-red-50 text-red-700" }, inactive: { dark: "border-gray-600 text-gray-400 hover:border-gray-500", light: "border-gray-300 text-gray-500 hover:border-gray-400" } },
 ];
 
 // Matches POS.Domain.Enums.AdjustmentReason exactly (Damaged, Lost, Correction, Other)

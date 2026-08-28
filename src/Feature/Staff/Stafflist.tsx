@@ -13,11 +13,18 @@ import StaffPersonForm from './Staffpersonform';
 import StaffTree from './StaffTree';
 import ComponentPermission from '../../component/ProtextRoute/ComponentPermissions';
 
+interface RoleInfo {
+    id: number;
+    name: string;
+    description: string;
+}
+
 interface UserInfo {
     id: number;
     username: string;
     email: string;
     isActive: boolean;
+    roles?: RoleInfo[];
 }
 
 interface SupervisorInfo {
@@ -199,6 +206,28 @@ const StaffList = () => {
                             }
                         </button>
                     </ComponentPermission>
+                );
+            },
+        },
+        {
+            title: 'Roles',
+            key: 'roles',
+            render: (_, record) => {
+                const roles = record.user?.roles;
+                if (!roles || roles.length === 0) {
+                    return <span className={`text-xs ${dl ? "text-gray-500" : "text-gray-400"}`}>—</span>;
+                }
+                return (
+                    <div className="flex flex-wrap gap-1 max-w-[180px]">
+                        {roles.map(role => (
+                            <span
+                                key={role.id}
+                                title={role.description}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${dl ? "bg-purple-900/30 text-purple-300" : "bg-purple-100 text-purple-700"}`}>
+                                {role.name}
+                            </span>
+                        ))}
+                    </div>
                 );
             },
         },

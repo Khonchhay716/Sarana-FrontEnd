@@ -104,6 +104,7 @@ interface PlaceOrderPayload {
 interface ReceiptData {
   transId: string;
   customerName: string;
+  createdByName?: string;
   items: CartItem[];
   subtotal: number;
   totalTax: number;
@@ -219,8 +220,8 @@ function ReceiptModal({ data, onClose }: { data: ReceiptData; onClose: () => voi
               <h2 className="text-lg font-black text-emerald-600 tracking-tight">Transaction Successful!</h2>
             </div>
             <div className="flex justify-between text-xs text-slate-500 mb-1">
-              <span>Date: <b className="text-slate-700">{dateStr}</b></span>
-              <span>Time: <b className="text-slate-700">{timeStr}</b></span>
+              <span>Date: <b className="text-slate-700">{dateStr} {timeStr}</b></span>
+              {data.createdByName && (<span>Cashier: <b className="text-slate-700">{data.createdByName}</b></span>)}
             </div>
             <div className="flex justify-between text-xs text-slate-500 mb-4">
               <span>Trans: <b className="text-slate-700">{data.transId}</b></span>
@@ -282,7 +283,7 @@ function ReceiptModal({ data, onClose }: { data: ReceiptData; onClose: () => voi
         <div ref={printRef} style={{ position: "absolute", left: "-9999px", top: 0 }}>
           <div className="center" style={{ marginBottom: "2px" }}><div className="title">SOKHA SK</div><div className="subtitle">SECURITY & TECH SOLUTIONS</div><div style={{ fontSize: "9px" }}>www.sokhask.com</div></div>
           <div className="divider-double" />
-          <table><tbody><tr><td>Date: {dateStr}</td><td className="right">Time: {timeStr}</td></tr><tr><td>Trans: {data.transId}</td><td className="right">Customer: {data.customerName}</td></tr></tbody></table>
+          <table><tbody><tr><td>Date: {dateStr} {timeStr}</td><td className="right">{data.createdByName ? `Cashier: ${data.createdByName}` : ""}</td></tr><tr><td>Trans: {data.transId}</td><td className="right">Customer: {data.customerName}</td></tr></tbody></table>
           <div className="divider" />
           <table><thead><tr><th>Item</th><th className="qty">Qty</th><th className="right">Price</th><th className="right">Total</th></tr></thead><tbody>
             {data.items.map(item => (<tr key={item.id}><td>{item.name}</td><td className="qty">{item.qty}</td><td className="right">${Number(item.salePrice).toFixed(2)}</td><td className="right bold">${(item.salePrice * item.qty).toFixed(2)}</td></tr>))}
@@ -814,6 +815,7 @@ export default function PosShop() {
       setReceiptData({
         transId: trans?.orderNo ?? trans?.id?.toString() ?? "#000",
         customerName: selectedCustomer?.name ?? "Walk-in",
+        createdByName: trans?.createBy?.name ?? trans?.createdBy?.name,
         items: cart, subtotal, totalTax, totalAmount: finalTotal,
         paymentMethod, cashGiven: paymentMethod === 1 ? cashGiven : undefined,
         change: paymentMethod === 1 ? Math.max(0, cashGiven - finalTotal) : undefined,

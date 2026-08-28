@@ -42,13 +42,13 @@ const menuItems = [
     icon: <FaCashRegister />,
     children: [
       {
-        name: "Sale Product",
+        name: "Sale",
         icon: <FaShoppingCart />,
         path: "/sale-product",
         permission: "order:create",
       },
       {
-        name: "Order List",
+        name: "Sale List",
         icon: <FaClipboardList />,
         path: "/order-list",
         permission: "order:read",
